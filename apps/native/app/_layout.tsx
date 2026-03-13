@@ -1,5 +1,5 @@
 import "@/global.css";
-import { Stack } from "expo-router";
+import { Slot } from "expo-router";
 import { HeroUINativeProvider } from "heroui-native";
 import { useEffect } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
@@ -9,7 +9,7 @@ import { useUniwind } from "uniwind";
 import { useThemeStore } from "@/stores/theme-store";
 
 export const unstable_settings = {
-  initialRouteName: "/",
+  initialRouteName: "/home",
 };
 
 function ThemeSync() {
@@ -29,9 +29,7 @@ export default function Layout() {
       <KeyboardProvider>
         <HeroUINativeProvider>
           <ThemeSync />
-          <Stack screenOptions={{ headerShown: false }}>
-            <Stack.Screen name="(tabs)" />
-          </Stack>
+          <Slot />
         </HeroUINativeProvider>
       </KeyboardProvider>
     </GestureHandlerRootView>
