@@ -54,7 +54,7 @@ export default function SignUpScreen() {
         <Text className="mb-2 font-black text-4xl text-white">
           Create account
         </Text>
-        <Text className="mb-8 text-gray-400">Join pinfire and compete</Text>
+        <Text className="mb-8 text-gray-400">Join agon and compete</Text>
 
         <TextInput
           className="mb-3 rounded-2xl bg-neutral-900 px-4 py-4 text-base text-white"

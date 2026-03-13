@@ -1,9 +1,9 @@
 import * as SecureStore from "expo-secure-store";
 import { create } from "zustand";
 
-const KEY_USER_ID = "pinfire_user_id";
-const KEY_USER_NAME = "pinfire_user_name";
-const KEY_USER_EMAIL = "pinfire_user_email";
+const KEY_USER_ID = "agon_user_id";
+const KEY_USER_NAME = "agon_user_name";
+const KEY_USER_EMAIL = "agon_user_email";
 
 // In-memory fallback when SecureStore is unavailable (e.g. some simulators)
 const memStore = new Map<string, string>();

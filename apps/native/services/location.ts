@@ -12,7 +12,7 @@ import {
 import type { TaskManagerTaskBody } from "expo-task-manager";
 import { defineTask } from "expo-task-manager";
 
-export const BACKGROUND_LOCATION_TASK = "PINFIRE_BACKGROUND_LOCATION";
+export const BACKGROUND_LOCATION_TASK = "agon_BACKGROUND_LOCATION";
 
 export type TelemetryPoint = {
   timestamp: number;
@@ -96,7 +96,7 @@ export async function startTracking(
       timeInterval: 3000,
       distanceInterval: 5,
       foregroundService: {
-        notificationTitle: "pinfire is tracking your run",
+        notificationTitle: "agon is tracking your run",
         notificationBody: "Your run is in progress.",
         notificationColor: "#FF4500",
       },
