@@ -16,7 +16,9 @@ export default defineSchema({
     phoneNumber: v.optional(v.union(v.null(), v.string())),
     phoneNumberVerified: v.optional(v.union(v.null(), v.boolean())),
     elo: v.number(),
-  }).index("by_email", ["email"]),
+  })
+    .index("by_email", ["email"])
+    .index("by_elo", ["elo"]),
 
   passwords: defineTable({
     userId: v.id("users"),
@@ -92,6 +94,14 @@ export default defineSchema({
   })
     .index("by_code", ["code"])
     .index("by_created_by", ["createdBy"]),
+
+  friends: defineTable({
+    userId: v.id("users"),
+    friendId: v.id("users"),
+    createdAt: v.number(),
+  })
+    .index("by_user", ["userId"])
+    .index("by_user_friend", ["userId", "friendId"]),
 
   liveParticipants: defineTable({
     roomId: v.id("liveRooms"),

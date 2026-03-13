@@ -1,222 +1,231 @@
-import BottomSheet, {
-  BottomSheetBackdrop,
-  BottomSheetScrollView,
-} from "@gorhom/bottom-sheet";
-// import { api } from "@unihack/backend/convex/_generated/api";
-// import type { Id } from "@unihack/backend/convex/_generated/dataModel";
-// import { useQuery } from "convex/react";
+import { api } from "@unihack/backend/convex/_generated/api";
+import type { Id } from "@unihack/backend/convex/_generated/dataModel";
+import { useMutation, useQuery } from "convex/react";
 import { useRouter } from "expo-router";
-import { ChevronRight, Swords, Users, Zap } from "lucide-react-native";
-import { useCallback, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
-  Pressable,
+  Modal,
+  ScrollView,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
-import { type RunMode, useRunStore } from "@/stores/run-store";
-
-const DISTANCES = [
-  { label: "1 km", value: 1000 },
-  { label: "3 km", value: 3000 },
-  { label: "5 km", value: 5000 },
-  { label: "10 km", value: 10_000 },
-  { label: "Half marathon", value: 21_097 },
-];
+import { useAuthStore } from "@/stores/auth-store";
+import { useRunStore } from "@/stores/run-store";
 
 type Props = {
   visible: boolean;
   onClose: () => void;
+  initialGhostUserId?: string | null;
 };
 
-export default function RunConfigModal({ visible, onClose }: Props) {
+function formatPace(secPerKm: number): string {
+  if (secPerKm <= 0 || !Number.isFinite(secPerKm)) {
+    return "--:--";
+  }
+  const mins = Math.floor(secPerKm / 60);
+  const secs = Math.floor(secPerKm % 60);
+  return `${mins}:${secs.toString().padStart(2, "0")} /km`;
+}
+
+function formatDist(m: number): string {
+  return m >= 1000 ? `${(m / 1000).toFixed(1)} km` : `${Math.round(m)} m`;
+}
+
+export function RunConfigModal({
+  visible,
+  onClose,
+  initialGhostUserId,
+}: Props) {
+  const { userId } = useAuthStore();
+  const store = useRunStore();
   const router = useRouter();
-  const sheetRef = useRef<BottomSheet>(null);
-  const [step, setStep] = useState<1 | 2>(1);
-  const [selectedMode, setSelectedMode] = useState<RunMode | null>(null);
-  const [selectedDistance, setSelectedDistance] = useState<number>(5000);
+
+  const [mode, setMode] = useState<"solo" | "ghost">("solo");
+  const [selectedGhostId, setSelectedGhostId] = useState<string | null>(null);
+  const [distanceKm, setDistanceKm] = useState("5.0");
   const [loading, setLoading] = useState(false);
 
-  const configureRun = useRunStore((s) => s.configureRun);
+  const startRunMutation = useMutation(api.runs.startRun);
+  const availableGhosts = useQuery(
+    api.runs.getAllAvailableGhosts,
+    userId ? { currentUserId: userId as Id<"users"> } : "skip"
+  );
 
-  // const opponent = useQuery(
-  //   api.runs.findRankedOpponent,
-  //   selectedMode === "ranked" ? { distance: selectedDistance } : "skip"
-  // );
-
-  // biome-ignore lint/suspicious/useAwait: PASS
-  const handleStart = async () => {
-    if (!selectedMode) {
+  useEffect(() => {
+    if (!(initialGhostUserId && availableGhosts)) {
       return;
     }
+    const match = availableGhosts.find((g) => g.userId === initialGhostUserId);
+    if (match) {
+      setMode("ghost");
+      setSelectedGhostId(match.userId);
+    }
+  }, [initialGhostUserId, availableGhosts]);
+
+  const selectedGhost =
+    availableGhosts?.find((g) => g.userId === selectedGhostId) ?? null;
+
+  const handleStart = async () => {
+    if (!userId || loading) {
+      return;
+    }
+    const runMode = mode === "ghost" && selectedGhost ? "ranked" : "social";
     setLoading(true);
     try {
-      const runConfig: any = {
-        mode: selectedMode,
-        targetDistance: selectedDistance,
-      };
-
-      // if (opponent?.runId) {
-      //   runConfig.opponentRunId = opponent.runId;
-      // }
-      // if (opponent?.opponentUserId) {
-      //   runConfig.opponentUserId = opponent.opponentUserId;
-      // }
-      // if (opponent?.opponentName) {
-      //   runConfig.opponentName = opponent.opponentName;
-      // }
-
-      configureRun(runConfig);
+      const runId = await startRunMutation({
+        userId: userId as Id<"users">,
+        mode: runMode,
+      });
+      store.startRun(runId, runMode, userId);
+      if (selectedGhost) {
+        store.setGhostRun({
+          userId: selectedGhost.userId,
+          name: selectedGhost.name,
+          avgPace: selectedGhost.bestPace,
+          totalDistance: selectedGhost.bestDistance,
+        });
+      }
+      const km = Number.parseFloat(distanceKm);
+      store.setTargetDistance(Number.isFinite(km) && km > 0 ? km * 1000 : 0);
       onClose();
-      router.push("/run/active");
+      router.replace("/run/active");
     } finally {
       setLoading(false);
     }
   };
 
-  const renderBackdrop = useCallback(
-    // biome-ignore lint/suspicious/noExplicitAny: PASS
-    (props: any) => (
-      <BottomSheetBackdrop
-        {...props}
-        appearsOnIndex={0}
-        disappearsOnIndex={-1}
-      />
-    ),
-    []
-  );
-
-  if (!visible) {
-    return null;
-  }
-
   return (
-    <BottomSheet
-      backdropComponent={renderBackdrop}
-      backgroundStyle={{ backgroundColor: "#111" }}
-      enablePanDownToClose
-      handleIndicatorStyle={{ backgroundColor: "#444" }}
-      onClose={onClose}
-      ref={sheetRef}
-      snapPoints={["80%"]}
+    <Modal
+      animationType="slide"
+      onRequestClose={onClose}
+      presentationStyle="pageSheet"
+      visible={visible}
     >
-      <BottomSheetScrollView contentContainerStyle={{ padding: 24 }}>
-        {step === 1 ? (
-          <>
-            <Text className="mb-6 font-bold text-2xl text-white">
-              Choose Mode
-            </Text>
-            <ModeCard
-              icon={<Swords color="#FF4500" size={24} />}
-              onPress={() => setSelectedMode("ranked")}
-              selected={selectedMode === "ranked"}
-              subtitle="Race global players • Elo at stake"
-              title="Ranked"
-            />
-            <ModeCard
-              icon={<Users color="#3b82f6" size={24} />}
-              onPress={() => setSelectedMode("social")}
-              selected={selectedMode === "social"}
-              subtitle="Race a friend's ghost • No Elo"
-              title="Social"
-            />
-            <ModeCard
-              icon={<Zap color="#f59e0b" size={24} />}
-              onPress={() => setSelectedMode("live")}
-              selected={selectedMode === "live"}
-              subtitle="Real-time room with friends"
-              title="Live"
-            />
-            <TouchableOpacity
-              className="mt-6 flex-row items-center justify-center rounded-2xl bg-orange-500 py-4"
-              disabled={!selectedMode}
-              onPress={() => setStep(2)}
-              style={{ opacity: selectedMode ? 1 : 0.4 }}
-            >
-              <Text className="mr-2 font-bold text-lg text-white">Next</Text>
-              <ChevronRight color="white" size={20} />
-            </TouchableOpacity>
-          </>
-        ) : (
-          <>
-            <Text className="mb-6 font-bold text-2xl text-white">
-              Select Distance
-            </Text>
-            {DISTANCES.map((d) => (
-              <Pressable
-                className="mb-3 flex-row items-center justify-between rounded-2xl p-4"
-                key={d.value}
-                onPress={() => setSelectedDistance(d.value)}
-                style={{
-                  backgroundColor:
-                    selectedDistance === d.value ? "#FF4500" : "#1f1f1f",
-                }}
-              >
-                <Text
-                  className="font-semibold text-lg text-white"
-                  style={{
-                    color: selectedDistance === d.value ? "white" : "#9ca3af",
-                  }}
-                >
-                  {d.label}
-                </Text>
-              </Pressable>
-            ))}
-            <TouchableOpacity
-              className="mt-6 items-center rounded-2xl bg-orange-500 py-4"
-              disabled={loading}
-              onPress={handleStart}
-            >
-              {loading ? (
-                <ActivityIndicator color="white" />
-              ) : (
-                <Text className="font-bold text-lg text-white">
-                  Start Run 🏃
-                </Text>
-              )}
-            </TouchableOpacity>
-          </>
-        )}
-      </BottomSheetScrollView>
-    </BottomSheet>
-  );
-}
-
-function ModeCard({
-  icon,
-  title,
-  subtitle,
-  selected,
-  onPress,
-}: {
-  icon: React.ReactNode;
-  title: string;
-  subtitle: string;
-  selected: boolean;
-  onPress: () => void;
-}) {
-  return (
-    <Pressable
-      className="mb-3 flex-row items-center rounded-2xl p-4"
-      onPress={onPress}
-      style={{
-        backgroundColor: selected ? "#1c1c1c" : "#1a1a1a",
-        borderWidth: 2,
-        borderColor: selected ? "#FF4500" : "#2a2a2a",
-      }}
-    >
-      <View className="mr-4">{icon}</View>
-      <View className="flex-1">
-        <Text className="font-bold text-base text-white">{title}</Text>
-        <Text className="text-gray-400 text-sm">{subtitle}</Text>
-      </View>
-      {/** biome-ignore lint/nursery/noLeakedRender: PASS */}
-      {selected && (
-        <View className="h-5 w-5 items-center justify-center rounded-full bg-orange-500">
-          <Text className="font-bold text-white text-xs">✓</Text>
+      <View className="flex-1 bg-black">
+        {/* Header */}
+        <View className="flex-row items-center justify-between px-6 pt-6 pb-4">
+          <Text className="font-black text-2xl text-white">Start a Run</Text>
+          <TouchableOpacity onPress={onClose}>
+            <Text className="text-base text-gray-400">Cancel</Text>
+          </TouchableOpacity>
         </View>
-      )}
-    </Pressable>
+
+        <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
+          {/* Mode toggle */}
+          <View className="mx-6 mb-6 flex-row gap-2 rounded-2xl bg-neutral-900 p-1">
+            <TouchableOpacity
+              className={`flex-1 items-center rounded-xl py-2 ${
+                mode === "solo" ? "bg-orange-500" : "bg-transparent"
+              }`}
+              onPress={() => setMode("solo")}
+            >
+              <Text
+                className={`font-semibold text-sm ${
+                  mode === "solo" ? "text-white" : "text-gray-400"
+                }`}
+              >
+                Solo
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              className={`flex-1 items-center rounded-xl py-2 ${
+                mode === "ghost" ? "bg-orange-500" : "bg-transparent"
+              }`}
+              onPress={() => setMode("ghost")}
+            >
+              <Text
+                className={`font-semibold text-sm ${
+                  mode === "ghost" ? "text-white" : "text-gray-400"
+                }`}
+              >
+                Race a Ghost
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Target distance */}
+          <View className="mx-6 mb-6">
+            <Text className="mb-2 font-semibold text-gray-400 text-sm uppercase tracking-widest">
+              Target Distance (km)
+            </Text>
+            <TextInput
+              className="rounded-xl bg-neutral-900 px-4 py-3 text-base text-white"
+              keyboardType="decimal-pad"
+              onChangeText={setDistanceKm}
+              placeholder="5.0"
+              placeholderTextColor="#6b7280"
+              value={distanceKm}
+            />
+          </View>
+
+          {/* Ghost list */}
+          {mode === "ghost" && (
+            <View className="mx-6 mb-6">
+              <Text className="mb-3 font-semibold text-gray-400 text-sm uppercase tracking-widest">
+                Select Ghost
+              </Text>
+              {availableGhosts === undefined ? (
+                <ActivityIndicator color="#FF4500" />
+              ) : availableGhosts.length === 0 ? (
+                <Text className="text-gray-500 text-sm">
+                  No ghosts available yet. Complete a run first!
+                </Text>
+              ) : (
+                availableGhosts.map((ghost) => {
+                  const isSelected = ghost.userId === selectedGhostId;
+                  return (
+                    <TouchableOpacity
+                      className={`mb-2 flex-row items-center rounded-2xl px-4 py-3 ${
+                        isSelected
+                          ? "border border-orange-500 bg-orange-500/10"
+                          : "bg-neutral-900"
+                      }`}
+                      key={ghost.userId}
+                      onPress={() =>
+                        setSelectedGhostId(isSelected ? null : ghost.userId)
+                      }
+                    >
+                      <View className="flex-1">
+                        <Text className="font-semibold text-white">
+                          {ghost.name}
+                          {ghost.isSelf ? " (You)" : ""}
+                        </Text>
+                        <Text className="text-gray-400 text-xs">
+                          {formatPace(ghost.bestPace)} ·{" "}
+                          {formatDist(ghost.bestDistance)}
+                        </Text>
+                      </View>
+                      {isSelected ? (
+                        <Text className="font-bold text-orange-500">✓</Text>
+                      ) : null}
+                    </TouchableOpacity>
+                  );
+                })
+              )}
+            </View>
+          )}
+        </ScrollView>
+
+        {/* Start button */}
+        <View className="px-6 pb-8">
+          <TouchableOpacity
+            className={`items-center rounded-2xl py-4 ${
+              loading ? "bg-orange-500/50" : "bg-orange-500"
+            }`}
+            disabled={loading}
+            onPress={handleStart}
+          >
+            {loading ? (
+              <ActivityIndicator color="white" />
+            ) : (
+              <Text className="font-bold text-lg text-white">Start Run ▶</Text>
+            )}
+          </TouchableOpacity>
+        </View>
+      </View>
+    </Modal>
   );
 }

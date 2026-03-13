@@ -1,9 +1,8 @@
 import { v } from "convex/values";
-import { query } from "./_generated/server";
 import type { Id } from "./_generated/dataModel";
+import { query } from "./_generated/server";
 
 const ONE_DAY_MS = 86_400_000;
-
 
 function dateKey(ts: number): string {
   const d = new Date(ts);
@@ -32,7 +31,6 @@ function computeLongestStreak(sortedDates: string[]): number {
   return longest;
 }
 
-
 export const getUserByEmail = query({
   args: { email: v.string() },
   returns: v.union(v.id("users"), v.null()),
@@ -45,18 +43,38 @@ export const getUserByEmail = query({
   },
 });
 
-
-
 // ------------------------------------------------------------------
 // GLOBAL LEADERBOARD
 // ------------------------------------------------------------------
 export const getGlobalLeaderboard = query({
   args: {
     limit: v.number(),
-    sortBy: v.union(v.literal("pace"), v.literal("distance")),
+    sortBy: v.union(v.literal("pace"), v.literal("distance"), v.literal("elo")),
   },
+  returns: v.array(
+    v.object({
+      userId: v.id("users"),
+      name: v.string(),
+      value: v.number(),
+      runId: v.optional(v.id("runs")),
+    })
+  ),
   handler: async (ctx, args) => {
-    // 1. Fetch all completed runs
+    if (args.sortBy === "elo") {
+      const users = await ctx.db
+        .query("users")
+        .withIndex("by_elo")
+        .order("desc")
+        .take(args.limit);
+      return users.map((user) => ({
+        userId: user._id,
+        name: user.name,
+        value: user.elo,
+        runId: undefined,
+      }));
+    }
+
+    // 1. Fetch completed runs sorted by the relevant index
     const allRuns = await ctx.db
       .query("runs")
       .filter((q) => q.eq(q.field("status"), "completed"))
@@ -72,8 +90,9 @@ export const getGlobalLeaderboard = query({
       const existing = userBests.get(run.userId);
       const value = args.sortBy === "pace" ? run.avgPace : run.distance;
 
-      // Skip invalid paces
-      if (args.sortBy === "pace" && value <= 0) { continue; }
+      if (args.sortBy === "pace" && value <= 0) {
+        continue;
+      }
 
       if (!existing) {
         userBests.set(run.userId, {
@@ -84,7 +103,6 @@ export const getGlobalLeaderboard = query({
         continue;
       }
 
-      // If sorting by pace, lower is better. If distance, higher is better.
       const isBetter =
         args.sortBy === "pace"
           ? value < existing.value
@@ -99,19 +117,19 @@ export const getGlobalLeaderboard = query({
       }
     }
 
-    // 3. Sort the aggregated personal bests
-    const sortedBests = Array.from(userBests.values()).sort((a, b) => args.sortBy === "pace" ? a.value - b.value : b.value - a.value);
+    const sortedBests = Array.from(userBests.values()).sort((a, b) =>
+      args.sortBy === "pace" ? a.value - b.value : b.value - a.value
+    );
 
-    // 4. Take top N and fetch their names
     const topEntries = sortedBests.slice(0, args.limit);
     const enrichedEntries = await Promise.all(
       topEntries.map(async (entry) => {
         const user = await ctx.db.get(entry.userId as Id<"users">);
         return {
-          userId: entry.userId,
+          userId: entry.userId as Id<"users">,
           name: user?.name ?? "Unknown Runner",
           value: entry.value,
-          runId: entry.runId,
+          runId: entry.runId as Id<"runs">,
         };
       })
     );

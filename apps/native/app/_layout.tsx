@@ -1,6 +1,6 @@
 import "@/global.css";
-import { Slot } from "expo-router";
 import { ConvexProvider, ConvexReactClient } from "convex/react";
+import { Slot } from "expo-router";
 import { HeroUINativeProvider } from "heroui-native";
 import { useEffect } from "react";
 import { View } from "react-native";
@@ -61,5 +61,4 @@ export default function Layout() {
       </ConvexProvider>
     </GestureHandlerRootView>
   );
-  )
 }

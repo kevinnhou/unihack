@@ -10,6 +10,7 @@
 
 import type * as auth from "../auth.js";
 import type * as authpwd from "../authpwd.js";
+import type * as friends from "../friends.js";
 import type * as http from "../http.js";
 import type * as live from "../live.js";
 import type * as runs from "../runs.js";
@@ -25,6 +26,7 @@ import type {
 declare const fullApi: ApiFromModules<{
   auth: typeof auth;
   authpwd: typeof authpwd;
+  friends: typeof friends;
   http: typeof http;
   live: typeof live;
   runs: typeof runs;

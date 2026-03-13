@@ -5,6 +5,33 @@ const KEY_USER_ID = "pinfire_user_id";
 const KEY_USER_NAME = "pinfire_user_name";
 const KEY_USER_EMAIL = "pinfire_user_email";
 
+// In-memory fallback when SecureStore is unavailable (e.g. some simulators)
+const memStore = new Map<string, string>();
+
+async function storeSet(key: string, value: string): Promise<void> {
+  try {
+    await SecureStore.setItemAsync(key, value);
+  } catch {
+    memStore.set(key, value);
+  }
+}
+
+async function storeGet(key: string): Promise<string | null> {
+  try {
+    return await SecureStore.getItemAsync(key);
+  } catch {
+    return memStore.get(key) ?? null;
+  }
+}
+
+async function storeDel(key: string): Promise<void> {
+  try {
+    await SecureStore.deleteItemAsync(key);
+  } catch {
+    memStore.delete(key);
+  }
+}
+
 type AuthState = {
   userId: string | null;
   userName: string | null;
@@ -23,24 +50,24 @@ export const useAuthStore = create<AuthState>((set) => ({
   isLoading: true,
 
   signIn: async (userId, name, email) => {
-    await SecureStore.setItemAsync(KEY_USER_ID, userId);
-    await SecureStore.setItemAsync(KEY_USER_NAME, name);
-    await SecureStore.setItemAsync(KEY_USER_EMAIL, email);
+    await storeSet(KEY_USER_ID, userId);
+    await storeSet(KEY_USER_NAME, name);
+    await storeSet(KEY_USER_EMAIL, email);
     set({ userId, userName: name, userEmail: email });
   },
 
   signOut: async () => {
-    await SecureStore.deleteItemAsync(KEY_USER_ID);
-    await SecureStore.deleteItemAsync(KEY_USER_NAME);
-    await SecureStore.deleteItemAsync(KEY_USER_EMAIL);
+    await storeDel(KEY_USER_ID);
+    await storeDel(KEY_USER_NAME);
+    await storeDel(KEY_USER_EMAIL);
     set({ userId: null, userName: null, userEmail: null });
   },
 
   loadFromStorage: async () => {
     try {
-      const userId = await SecureStore.getItemAsync(KEY_USER_ID);
-      const userName = await SecureStore.getItemAsync(KEY_USER_NAME);
-      const userEmail = await SecureStore.getItemAsync(KEY_USER_EMAIL);
+      const userId = await storeGet(KEY_USER_ID);
+      const userName = await storeGet(KEY_USER_NAME);
+      const userEmail = await storeGet(KEY_USER_EMAIL);
       set({ userId, userName, userEmail, isLoading: false });
     } catch {
       set({ isLoading: false });

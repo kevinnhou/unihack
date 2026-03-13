@@ -1,19 +1,13 @@
 import { api } from "@unihack/backend/convex/_generated/api";
 import type { Id } from "@unihack/backend/convex/_generated/dataModel";
-import { useMutation, useQuery } from "convex/react";
+import { useMutation } from "convex/react";
 import { useRouter } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
-import {
-  AppState,
-  type AppStateStatus,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useLocationTracking } from "@/hooks/use-location-tracking";
 import { useLivePing } from "@/hooks/use-live-ping";
-import { useRunStore, type GhostInfo } from "@/stores/run-store";
+import { useLocationTracking } from "@/hooks/use-location-tracking";
+import { type GhostInfo, useRunStore } from "@/stores/run-store";
 
 function formatTime(totalSeconds: number): string {
   const m = Math.floor(totalSeconds / 60);
@@ -166,7 +160,7 @@ export default function ActiveRunScreen() {
     }
 
     router.replace({
-      pathname: "/run/summary",
+      pathname: "/run/finish",
       params: {
         distance: String(summary.distance),
         duration: String(summary.elapsedSeconds),
@@ -193,7 +187,9 @@ export default function ActiveRunScreen() {
     : null;
 
   const targetDistance =
-    store.ghostRun?.totalDistance ?? Math.max(store.distance, 1000);
+    store.targetDistance > 0
+      ? store.targetDistance
+      : (store.ghostRun?.totalDistance ?? Math.max(store.distance, 1000));
 
   return (
     <SafeAreaView className="flex-1 bg-black">

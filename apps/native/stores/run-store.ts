@@ -32,6 +32,7 @@ type RunState = {
   ghostRun: GhostInfo | null;
   liveRoomId: string | null;
   userId: string | null;
+  targetDistance: number;
   startRun: (runId: string, mode: "ranked" | "social", userId?: string) => void;
   addTelemetryPoint: (
     point: TelemetryPoint,
@@ -42,6 +43,7 @@ type RunState = {
   endRun: () => RunSummary;
   setGhostRun: (ghost: GhostInfo | null) => void;
   setLiveRoomId: (id: string | null) => void;
+  setTargetDistance: (meters: number) => void;
   reset: () => void;
 };
 
@@ -57,6 +59,7 @@ const initialState = {
   ghostRun: null as GhostInfo | null,
   liveRoomId: null as string | null,
   userId: null as string | null,
+  targetDistance: 0,
 };
 
 export const useRunStore = create<RunState>((set, get) => ({
@@ -107,6 +110,10 @@ export const useRunStore = create<RunState>((set, get) => ({
 
   setLiveRoomId: (id) => {
     set({ liveRoomId: id });
+  },
+
+  setTargetDistance: (meters) => {
+    set({ targetDistance: meters });
   },
 
   reset: () => {

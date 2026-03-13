@@ -1,3 +1,6 @@
+/** biome-ignore-all lint/nursery/noLeakedRender: <explanation> */
+/** biome-ignore-all lint/complexity/noExcessiveCognitiveComplexity: <explanation> */
+/** biome-ignore-all assist/source/useSortedAttributes: <explanation> */
 import { api } from "@unihack/backend/convex/_generated/api";
 import type { Id } from "@unihack/backend/convex/_generated/dataModel";
 import { useQuery } from "convex/react";
@@ -7,15 +10,14 @@ import { useState } from "react";
 import {
   ActivityIndicator,
   Clipboard,
-  Modal,
   ScrollView,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { RunConfigModal } from "@/components/RunConfigModal";
 import { useAuthStore } from "@/stores/auth-store";
-import { useRunStore } from "@/stores/run-store";
 
 type SortBy = "streak" | "distance" | "pace";
 
@@ -41,12 +43,9 @@ export default function SquadDetailScreen() {
 
   const { userId } = useAuthStore();
   const [sortBy, setSortBy] = useState<SortBy>("distance");
-  const [confirmRace, setConfirmRace] = useState<{
-    userId: string;
-    name: string;
-  } | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [raceGhostId, setRaceGhostId] = useState<string | null>(null);
 
-  // --- Real Backend Queries ---
   const squad = useQuery(
     api.squads.getSquad,
     squadId ? { squadId: squadId as Id<"squads"> } : "skip"
@@ -60,21 +59,6 @@ export default function SquadDetailScreen() {
   const copyCode = () => {
     if (squad?.joinCode) {
       Clipboard.setString(squad.joinCode);
-    }
-  };
-
-  const handleConfirmRace = () => {
-    if (confirmRace) {
-      // Configure run store for racing against the ghost
-      useRunStore.getState().configureRun({
-        mode: "social",
-        targetDistance: 5000, // Default to 5k or adapt based on selected opponent
-        opponentName: confirmRace.name,
-        opponentUserId: confirmRace.userId,
-      });
-
-      setConfirmRace(null);
-      router.push("/run/active");
     }
   };
 
@@ -140,7 +124,7 @@ export default function SquadDetailScreen() {
           ))}
         </View>
 
-        {/* Leaderboard / Members List */}
+        {/* Leaderboard */}
         <Text className="mb-3 px-4 font-bold text-lg text-white">
           Leaderboard
         </Text>
@@ -151,7 +135,6 @@ export default function SquadDetailScreen() {
           leaderboard.map((entry, index) => {
             const isMe = entry.userId === userId;
 
-            // Format the dynamic value based on the selected sort tab
             const mainValue =
               sortBy === "streak"
                 ? `${entry.streak} day${entry.streak !== 1 ? "s" : ""} 🔥`
@@ -170,7 +153,6 @@ export default function SquadDetailScreen() {
                     : "bg-neutral-900"
                 }`}
               >
-                {/* Rank */}
                 <Text className="w-6 text-center font-bold text-gray-400">
                   {index === 0
                     ? "🥇"
@@ -181,14 +163,12 @@ export default function SquadDetailScreen() {
                         : index + 1}
                 </Text>
 
-                {/* Avatar Placeholder */}
                 <View className="h-9 w-9 items-center justify-center rounded-full bg-neutral-700">
                   <Text className="font-bold text-sm text-white">
                     {entry.name.charAt(0).toUpperCase()}
                   </Text>
                 </View>
 
-                {/* Name & Subtext */}
                 <View className="flex-1">
                   <Text className="font-semibold text-sm text-white">
                     {entry.name} {isMe && "(You)"}
@@ -200,16 +180,15 @@ export default function SquadDetailScreen() {
                   )}
                 </View>
 
-                {/* Metric Value */}
-                <Text className="font-bold text-white mr-2">{mainValue}</Text>
+                <Text className="mr-2 font-bold text-white">{mainValue}</Text>
 
-                {/* Race Action (Hidden for self) */}
                 {!isMe && (
                   <TouchableOpacity
                     className="rounded-full bg-orange-500 p-2"
-                    onPress={() =>
-                      setConfirmRace({ userId: entry.userId, name: entry.name })
-                    }
+                    onPress={() => {
+                      setRaceGhostId(entry.userId);
+                      setModalOpen(true);
+                    }}
                   >
                     <Play color="white" size={14} fill="white" />
                   </TouchableOpacity>
@@ -220,42 +199,14 @@ export default function SquadDetailScreen() {
         )}
       </ScrollView>
 
-      {/* Race Confirmation Modal */}
-      <Modal
-        animationType="fade"
-        transparent
-        visible={confirmRace !== null}
-        onRequestClose={() => setConfirmRace(null)}
-      >
-        <View className="flex-1 items-center justify-center bg-black/80 px-8">
-          <View className="w-full rounded-3xl border border-neutral-800 bg-neutral-900 p-6">
-            <Text className="mb-4 font-bold text-white text-xl">
-              Confirm Race
-            </Text>
-            <Text className="mb-6 text-gray-300">
-              Do you want to race against{" "}
-              <Text className="font-bold text-orange-400">
-                {confirmRace?.name}
-              </Text>
-              's ghost?
-            </Text>
-            <View className="flex-row gap-3">
-              <TouchableOpacity
-                className="flex-1 items-center rounded-2xl bg-neutral-800 py-3"
-                onPress={() => setConfirmRace(null)}
-              >
-                <Text className="font-medium text-gray-300">Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                className="flex-1 items-center rounded-2xl bg-orange-500 py-3"
-                onPress={handleConfirmRace}
-              >
-                <Text className="font-bold text-white">Race Ghost</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
+      <RunConfigModal
+        initialGhostUserId={raceGhostId}
+        onClose={() => {
+          setModalOpen(false);
+          setRaceGhostId(null);
+        }}
+        visible={modalOpen}
+      />
     </SafeAreaView>
   );
 }

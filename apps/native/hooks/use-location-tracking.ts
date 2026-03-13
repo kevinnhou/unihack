@@ -84,7 +84,6 @@ export function useLocationTracking({
 
   const stopTracking = useCallback(() => {
     if (subscriptionRef.current) {
-      subscriptionRef.current.remove();
       subscriptionRef.current = null;
     }
     if (pingIntervalRef.current !== null) {

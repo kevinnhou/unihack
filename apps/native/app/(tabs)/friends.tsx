@@ -1,9 +1,11 @@
-// import { api } from "@unihack/backend/convex/_generated/api";
-// import { useQuery } from "convex/react";
-import { useRouter } from "expo-router";
+import { api } from "@unihack/backend/convex/_generated/api";
+import type { Id } from "@unihack/backend/convex/_generated/dataModel";
+import { useMutation, useQuery } from "convex/react";
+import { Redirect } from "expo-router";
 import { Play, UserPlus } from "lucide-react-native";
 import { useState } from "react";
 import {
+  ActivityIndicator,
   FlatList,
   Modal,
   Text,
@@ -12,62 +14,71 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useRunStore } from "@/stores/run-store";
+import { RunConfigModal } from "@/components/RunConfigModal";
+import { useAuthStore } from "@/stores/auth-store";
 
-// Mock data for friends
-const mockFriends = [
-  { id: "1", name: "Alice", wins: 5, losses: 2, currentStreak: 7 },
-  { id: "2", name: "Bob", wins: 3, losses: 4, currentStreak: 3 },
-  { id: "3", name: "Charlie", wins: 7, losses: 1, currentStreak: 12 },
-  { id: "4", name: "Diana", wins: 2, losses: 6, currentStreak: 0 },
-];
+function formatPace(secPerKm: number): string {
+  if (secPerKm <= 0) {
+    return "—";
+  }
+  const m = Math.floor(secPerKm / 60);
+  const s = Math.floor(secPerKm % 60);
+  return `${m}:${s.toString().padStart(2, "0")} /km`;
+}
 
 export default function FriendsScreen() {
-  const router = useRouter();
-  const [confirmFriend, setConfirmFriend] = useState<string | null>(null);
+  const { userId } = useAuthStore();
   const [showAddFriend, setShowAddFriend] = useState(false);
-  const [newFriendUsername, setNewFriendUsername] = useState("");
+  const [newFriendEmail, setNewFriendEmail] = useState("");
+  const [addLoading, setAddLoading] = useState(false);
+  const [addError, setAddError] = useState<string | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [raceGhostId, setRaceGhostId] = useState<string | null>(null);
 
-  // Commented convex implementation
-  // const friends = useQuery(api.friends.getFriends);
+  const friends = useQuery(
+    api.friends.getFriends,
+    userId ? { userId: userId as Id<"users"> } : "skip"
+  );
+  const addFriendMutation = useMutation(api.friends.addFriend);
 
-  const friends = mockFriends; // Using mock data
+  if (!userId) {
+    return <Redirect href="/(auth)/signin" />;
+  }
 
-  const handleRace = (friendName: string) => {
-    setConfirmFriend(friendName);
-  };
-
-  const handleConfirmRace = () => {
-    if (confirmFriend) {
-      // Configure run store for racing
-      useRunStore.getState().configureRun({
-        mode: "social",
-        targetDistance: 5000, // 5km default
-        opponentName: confirmFriend,
-        opponentUserId: `mock-${confirmFriend.toLowerCase()}`,
+  const handleAddFriend = async () => {
+    if (!newFriendEmail.trim()) {
+      return;
+    }
+    setAddLoading(true);
+    setAddError(null);
+    try {
+      const result = await addFriendMutation({
+        userId: userId as Id<"users">,
+        friendEmail: newFriendEmail.trim(),
       });
-
-      setConfirmFriend(null);
-      router.push("/run/active");
-    }
-  };
-
-  const handleAddFriend = () => {
-    if (newFriendUsername.trim()) {
-      // Mock adding friend - in real app this would call an API
-      console.log(`Adding friend: ${newFriendUsername}`);
-      setNewFriendUsername("");
+      if (!result.success) {
+        setAddError(result.reason);
+        return;
+      }
+      setNewFriendEmail("");
       setShowAddFriend(false);
+    } catch (e: unknown) {
+      setAddError(e instanceof Error ? e.message : "Something went wrong");
+    } finally {
+      setAddLoading(false);
     }
   };
 
-  const renderFriend = ({ item }: { item: (typeof mockFriends)[0] }) => (
+  type Friend = NonNullable<typeof friends>[number];
+
+  const renderFriend = ({ item }: { item: Friend }) => (
     <View className="mx-4 mb-3 rounded-2xl bg-neutral-900 p-4">
       <View className="flex-row items-center justify-between">
         <View className="flex-1">
           <Text className="font-semibold text-lg text-white">{item.name}</Text>
           <Text className="text-gray-400 text-sm">
-            {item.wins}W - {item.losses}L
+            {item.totalRuns} run{item.totalRuns !== 1 ? "s" : ""} ·{" "}
+            {formatPace(item.bestPace)}
           </Text>
           {item.currentStreak > 0 && (
             <Text className="text-orange-400 text-sm">
@@ -77,7 +88,10 @@ export default function FriendsScreen() {
         </View>
         <TouchableOpacity
           className="rounded-full bg-orange-500 p-3"
-          onPress={() => handleRace(item.name)}
+          onPress={() => {
+            setRaceGhostId(item.friendId);
+            setModalOpen(true);
+          }}
         >
           <Play color="white" size={20} />
         </TouchableOpacity>
@@ -89,8 +103,15 @@ export default function FriendsScreen() {
     <SafeAreaView className="flex-1 bg-black">
       <FlatList
         contentContainerStyle={{ paddingBottom: 40 }}
-        data={friends}
-        keyExtractor={(item) => item.id}
+        data={friends ?? []}
+        keyExtractor={(item) => item.friendId}
+        ListEmptyComponent={
+          <View className="mt-16 items-center px-8">
+            <Text className="text-center text-gray-500">
+              No friends yet. Add someone by email!
+            </Text>
+          </View>
+        }
         ListHeaderComponent={
           <View className="px-4 pt-4 pb-6">
             <View className="flex-row items-center justify-between">
@@ -110,39 +131,10 @@ export default function FriendsScreen() {
 
       <Modal
         animationType="fade"
-        onRequestClose={() => setConfirmFriend(null)}
-        transparent
-        visible={confirmFriend !== null}
-      >
-        <View className="flex-1 items-center justify-center bg-black/70 px-8">
-          <View className="w-full rounded-3xl bg-neutral-900 p-6">
-            <Text className="mb-4 font-bold text-white text-xl">
-              Confirm Race
-            </Text>
-            <Text className="mb-6 text-gray-300">
-              Do you want to race {confirmFriend}?
-            </Text>
-            <View className="flex-row gap-3">
-              <TouchableOpacity
-                className="flex-1 items-center rounded-2xl bg-neutral-800 py-3"
-                onPress={() => setConfirmFriend(null)}
-              >
-                <Text className="font-medium text-gray-300">Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                className="flex-1 items-center rounded-2xl bg-orange-500 py-3"
-                onPress={handleConfirmRace}
-              >
-                <Text className="font-bold text-white">Race</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
-
-      <Modal
-        animationType="fade"
-        onRequestClose={() => setShowAddFriend(false)}
+        onRequestClose={() => {
+          setShowAddFriend(false);
+          setAddError(null);
+        }}
         transparent
         visible={showAddFriend}
       >
@@ -152,37 +144,56 @@ export default function FriendsScreen() {
               Add Friend
             </Text>
             <Text className="mb-4 text-gray-300">
-              Enter the username of the friend you want to add:
+              Enter the email address of the friend you want to add:
             </Text>
             <TextInput
               autoCapitalize="none"
               autoCorrect={false}
-              className="mb-6 rounded-xl bg-neutral-800 px-4 py-3 text-white"
-              onChangeText={setNewFriendUsername}
-              placeholder="Username"
+              className="mb-3 rounded-xl bg-neutral-800 px-4 py-3 text-white"
+              keyboardType="email-address"
+              onChangeText={setNewFriendEmail}
+              placeholder="friend@example.com"
               placeholderTextColor="#6b7280"
-              value={newFriendUsername}
+              value={newFriendEmail}
             />
+            {addError ? (
+              <Text className="mb-3 text-red-400 text-sm">{addError}</Text>
+            ) : null}
             <View className="flex-row gap-3">
               <TouchableOpacity
                 className="flex-1 items-center rounded-2xl bg-neutral-800 py-3"
                 onPress={() => {
                   setShowAddFriend(false);
-                  setNewFriendUsername("");
+                  setNewFriendEmail("");
+                  setAddError(null);
                 }}
               >
                 <Text className="font-medium text-gray-300">Cancel</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 className="flex-1 items-center rounded-2xl bg-orange-500 py-3"
+                disabled={addLoading}
                 onPress={handleAddFriend}
               >
-                <Text className="font-bold text-white">Add Friend</Text>
+                {addLoading ? (
+                  <ActivityIndicator color="white" size="small" />
+                ) : (
+                  <Text className="font-bold text-white">Add Friend</Text>
+                )}
               </TouchableOpacity>
             </View>
           </View>
         </View>
       </Modal>
+
+      <RunConfigModal
+        initialGhostUserId={raceGhostId}
+        onClose={() => {
+          setModalOpen(false);
+          setRaceGhostId(null);
+        }}
+        visible={modalOpen}
+      />
     </SafeAreaView>
   );
 }

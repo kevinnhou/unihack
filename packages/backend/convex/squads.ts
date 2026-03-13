@@ -317,8 +317,12 @@ export const getSquadLeaderboard = query({
       if (sortBy === "distance") {
         return b.totalDistance - a.totalDistance;
       }
-      if (a.bestPace === 0) { return 1; }
-      if (b.bestPace === 0) { return -1; }
+      if (a.bestPace === 0) {
+        return 1;
+      }
+      if (b.bestPace === 0) {
+        return -1;
+      }
       return a.bestPace - b.bestPace;
     });
 
