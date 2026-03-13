@@ -1,0 +1,19 @@
+{
+  "$schema": "https://ui.components.com/schema.json",
+  "style": "new-york",
+  "rsc": true,
+  "tsx": true,
+  "tailwind": {
+    "config": "",
+    "css": "src/styles/globals.css",
+    "baseColor": "neutral",
+    "cssVariables": true
+  },
+  "iconLibrary": "lucide",
+  "aliases": {
+    "components": "@unihack/ui/components",
+    "utils": "@unihack/ui/lib/utils",
+    "hooks": "@unihack/ui/hooks",
+    "lib": "@unihack/ui/lib"
+  }
+}

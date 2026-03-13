@@ -1,0 +1,32 @@
+{
+  "$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
+  "linter": {
+    "rules": {
+      "style": {
+        "useConsistentTypeDefinitions": "off",
+        "noNestedTernary": "off",
+        "useFilenamingConvention": "off"
+      },
+      "performance": {
+        "useTopLevelRegex": "off"
+      }
+    }
+  },
+  "files": {
+    "ignoreUnknown": false,
+    "includes": [
+      "**",
+      "!**/.next",
+      "!**/dist",
+      "!**/.turbo",
+      "!**/dev-dist",
+      "!**/.vscode",
+      "!**/routeTree.gen.ts",
+      "!**/.source",
+      "!**/_generated",
+      "!packages/ui/src/components/*",
+      "!**/*.css"
+    ]
+  },
+  "extends": ["ultracite/core", "ultracite/next"]
+}
