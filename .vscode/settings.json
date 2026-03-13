@@ -3,7 +3,6 @@
     "**/.claude": true,
     "**/.codex": true,
     "**/.cursor": true,
-    "**/.husky": true,
 
     "**/node_modules": true,
     "**/.next": true,
