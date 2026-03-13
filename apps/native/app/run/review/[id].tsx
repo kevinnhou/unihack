@@ -1,11 +1,11 @@
 import { api } from "@unihack/backend/convex/_generated/api";
 import type { Id } from "@unihack/backend/convex/_generated/dataModel";
 import { useQuery } from "convex/react";
+import { AppleMaps } from "expo-maps";
+import { AppleMapsMapStyleEmphasis } from "expo-maps/src/apple/AppleMaps.types";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { ArrowLeft, CheckCircle, XCircle } from "lucide-react-native";
 import { ScrollView, Text, TouchableOpacity, View } from "react-native";
-import { AppleMaps } from "expo-maps";
-import { AppleMapsMapStyleEmphasis } from "expo-maps/src/apple/AppleMaps.types";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 function formatTime(s: number) {
@@ -98,7 +98,6 @@ function RouteMap({
   return (
     <View className="mx-4 overflow-hidden rounded-2xl">
       <AppleMaps.View
-        style={{ height: 280 }}
         cameraPosition={{
           coordinates: {
             latitude: initialRegion.latitude,
@@ -106,14 +105,15 @@ function RouteMap({
           },
           zoom: 14,
         }}
+        polylines={polylines}
         properties={{
           mapType: AppleMaps.MapType.STANDARD,
           emphasis: AppleMapsMapStyleEmphasis.MUTED,
         }}
+        style={{ height: 280 }}
         uiSettings={{
           compassEnabled: false,
         }}
-        polylines={polylines}
       />
     </View>
   );
