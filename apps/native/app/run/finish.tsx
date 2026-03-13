@@ -1,9 +1,9 @@
-// import { api } from "@unihack/backend/convex/_generated/api";
-// import type { Id } from "@unihack/backend/convex/_generated/dataModel";
-// import { useQuery } from "convex/react";
+import { api } from "@unihack/backend/convex/_generated/api";
+import type { Id } from "@unihack/backend/convex/_generated/dataModel";
+import { useMutation } from "convex/react";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { CheckCircle, XCircle } from "lucide-react-native";
-import { useEffect, useRef } from "react";
+import { CheckCircle } from "lucide-react-native";
+import { useEffect, useRef, useState } from "react";
 import { Animated, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRunStore } from "@/stores/run-store";
@@ -28,126 +28,107 @@ function distLabel(m: number): string {
   return m >= 1000 ? `${(m / 1000).toFixed(2)} km` : `${Math.round(m)} m`;
 }
 
-function ResultIcon({ isRanked, won }: { isRanked: boolean; won: boolean }) {
-  if (!isRanked) {
-    return <CheckCircle color="#FF4500" size={80} />;
-  }
-  return won ? (
-    <CheckCircle color="#22c55e" size={80} />
-  ) : (
-    <XCircle color="#ef4444" size={80} />
+function StatRow({ label, value }: { label: string; value: string }) {
+  return (
+    <View className="flex-row items-center justify-between rounded-2xl bg-neutral-900 px-5 py-4">
+      <Text className="font-medium text-gray-400">{label}</Text>
+      <Text className="font-bold text-lg text-white">{value}</Text>
+    </View>
   );
 }
 
-function resultTitle(isRanked: boolean, won: boolean): string {
-  if (!isRanked) {
-    return "Run Complete";
-  }
-  return won ? "Victory!" : "Defeat";
-}
-
-// Mock run data
-const mockRun = {
-  _id: "run1",
-  type: "ranked" as const,
-  distance: 5000,
-  durationSeconds: 1500,
-  eloDelta: 20,
-  win: true,
-};
-
 export default function FinishScreen() {
   const router = useRouter();
-  const { runId } = useLocalSearchParams<{ runId: string }>();
-  const eloAnim = useRef(new Animated.Value(0)).current;
-  const { reset } = useRunStore();
+  const store = useRunStore();
+  const { distance, duration, avgPace, runId } = useLocalSearchParams<{
+    distance: string;
+    duration: string;
+    avgPace: string;
+    runId: string;
+  }>();
 
-  // const run = useQuery(
-  //   api.runs.getRun,
-  //   runId ? { runId: runId as Id<"runs"> } : "skip"
-  // );
+  const distanceM = Number(distance ?? "0");
+  const durationSec = Number(duration ?? "0");
+  const runIdStr = runId ?? "";
 
-  const run = mockRun;
-
-  const isRanked = run?.type === "ranked";
-  const won = run?.win === true;
-  const eloDelta = run?.eloDelta;
+  const [uploaded, setUploaded] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const uploadTelemetryMutation = useMutation(api.runs.uploadRunTelemetry);
 
   useEffect(() => {
-    if (!isRanked || eloDelta === undefined) {
-      return;
-    }
-    Animated.spring(eloAnim, {
+    Animated.spring(fadeAnim, {
       toValue: 1,
       useNativeDriver: true,
-      delay: 600,
+      delay: 300,
     }).start();
-  }, [isRanked, eloDelta, eloAnim]);
+  }, [fadeAnim]);
+
+  const telemetryBuffer = store.telemetryBuffer;
+  const canUpload = !uploaded && telemetryBuffer.length > 0 && !!runIdStr;
+
+  const handleUpload = async () => {
+    if (!canUpload) {
+      return;
+    }
+    setUploading(true);
+    try {
+      await uploadTelemetryMutation({
+        runId: runIdStr as Id<"runs">,
+        telemetry: telemetryBuffer,
+      });
+      setUploaded(true);
+    } finally {
+      setUploading(false);
+    }
+  };
 
   const handleDone = () => {
-    reset();
-    router.replace("/index");
+    store.reset();
+    router.replace("/(tabs)");
   };
 
   const handleReview = () => {
-    router.push({ pathname: "/run/review/[id]", params: { id: runId ?? "" } });
+    router.push({ pathname: "/run/review/[id]", params: { id: runIdStr } });
   };
 
   return (
     <SafeAreaView className="flex-1 items-center justify-center bg-black px-6">
-      <ResultIcon isRanked={Boolean(isRanked)} won={won} />
-
-      <Text className="mt-4 font-black text-4xl text-white">
-        {resultTitle(Boolean(isRanked), won)}
-      </Text>
+      <Animated.View style={{ opacity: fadeAnim, alignItems: "center" }}>
+        <CheckCircle color="#FF4500" size={80} />
+        <Text className="mt-4 font-black text-4xl text-white">
+          Run Complete
+        </Text>
+      </Animated.View>
 
       <View className="mt-8 w-full gap-4">
-        <StatRow label="Distance" value={run ? distLabel(run.distance) : "—"} />
-        <StatRow
-          label="Time"
-          value={run ? formatTime(run.durationSeconds) : "—"}
-        />
-        {run ? (
-          <StatRow
-            label="Avg Pace"
-            value={paceLabel(run.distance, run.durationSeconds)}
-          />
-        ) : null}
+        <StatRow label="Distance" value={distLabel(distanceM)} />
+        <StatRow label="Time" value={formatTime(durationSec)} />
+        <StatRow label="Avg Pace" value={paceLabel(distanceM, durationSec)} />
       </View>
 
-      {eloDelta !== undefined && isRanked ? (
-        <Animated.View
-          className="mt-8"
-          style={{
-            opacity: eloAnim,
-            transform: [
-              {
-                scale: eloAnim.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: [0.6, 1],
-                }),
-              },
-            ],
-          }}
-        >
-          <View
-            className="items-center rounded-2xl px-8 py-4"
-            style={{ backgroundColor: eloDelta > 0 ? "#14532d" : "#7f1d1d" }}
+      <View className="mt-10 w-full gap-3">
+        {canUpload || uploading ? (
+          <TouchableOpacity
+            className="items-center rounded-2xl bg-neutral-800 py-4"
+            disabled={uploading}
+            onPress={handleUpload}
           >
-            <Text className="text-gray-300 text-sm">Elo Change</Text>
-            <Text
-              className="mt-1 font-black text-4xl"
-              style={{ color: eloDelta > 0 ? "#4ade80" : "#f87171" }}
-            >
-              {eloDelta > 0 ? "+" : ""}
-              {eloDelta}
+            <Text className="font-semibold text-base text-white">
+              {uploading
+                ? "Uploading…"
+                : `Upload GPS Trace (${telemetryBuffer.length} pts)`}
+            </Text>
+          </TouchableOpacity>
+        ) : null}
+        {uploaded ? (
+          <View className="items-center rounded-2xl bg-neutral-800 py-4">
+            <Text className="font-semibold text-base text-green-400">
+              GPS Trace Uploaded ✓
             </Text>
           </View>
-        </Animated.View>
-      ) : null}
-
-      <View className="mt-10 w-full gap-3">
-        {runId ? (
+        ) : null}
+        {runIdStr ? (
           <TouchableOpacity
             className="items-center rounded-2xl bg-neutral-800 py-4"
             onPress={handleReview}
@@ -165,14 +146,5 @@ export default function FinishScreen() {
         </TouchableOpacity>
       </View>
     </SafeAreaView>
-  );
-}
-
-function StatRow({ label, value }: { label: string; value: string }) {
-  return (
-    <View className="flex-row items-center justify-between rounded-2xl bg-neutral-900 px-5 py-4">
-      <Text className="font-medium text-gray-400">{label}</Text>
-      <Text className="font-bold text-lg text-white">{value}</Text>
-    </View>
   );
 }

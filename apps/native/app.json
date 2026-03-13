@@ -8,7 +8,16 @@
     },
     "name": "pinfire",
     "slug": "pinfire",
-    "plugins": ["expo-font"],
+    "plugins": [
+      "expo-font",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Pinfire needs your location to track your run.",
+          "locationAlwaysAndWhenInUsePermission": "Pinfire needs your location to track your run."
+        }
+      ]
+    ],
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true

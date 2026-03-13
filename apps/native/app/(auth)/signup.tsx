@@ -1,4 +1,5 @@
-// import { authClient } from "@/lib/auth-client";
+import { api } from "@unihack/backend/convex/_generated/api";
+import { useMutation } from "convex/react";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import {
@@ -11,6 +12,7 @@ import {
   TouchableOpacity,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useAuthStore } from "@/stores/auth-store";
 
 export default function SignUpScreen() {
   const router = useRouter();
@@ -19,6 +21,8 @@ export default function SignUpScreen() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const signIn = useAuthStore((state) => state.signIn);
+  const signUpMutation = useMutation(api.authpwd.signUp);
 
   const handleSignUp = async () => {
     if (!(name && email && password)) {
@@ -27,15 +31,12 @@ export default function SignUpScreen() {
     setLoading(true);
     setError(null);
     try {
-      // const result = await authClient.signUp.email({
-      //   email,
-      //   password,
-      //   name,
-      // });
-      // if (result.error) {
-      //   setError(result.error.message ?? "Sign up failed");
-      //   return;
-      // }
+      const result = await signUpMutation({ name, email, password });
+      if (!result.success) {
+        setError(result.reason);
+        return;
+      }
+      await signIn(result.userId, result.name, email);
       router.replace("/(tabs)");
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "Something went wrong");
