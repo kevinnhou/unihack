@@ -15,23 +15,23 @@
     "fumadocs-core": "16.2.3",
     "fumadocs-mdx": "14.1.0",
     "fumadocs-ui": "16.2.3",
-    "katex": "^0.16.22",
+    "katex": "^0.16.38",
     "lucide-react": "^0.552.0",
     "next": "16.1.5",
-    "react": "^19.2.0",
-    "react-dom": "^19.2.0",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
     "rehype-katex": "^7.0.1",
     "remark-math": "^6.0.0"
   },
   "devDependencies": {
-    "@tailwindcss/postcss": "^4.1.16",
+    "@tailwindcss/postcss": "^4.2.1",
     "@types/mdx": "^2.0.13",
-    "@types/node": "^24.10.0",
-    "@types/react": "^19.2.2",
-    "@types/react-dom": "^19.2.2",
-    "postcss": "^8.5.6",
+    "@types/node": "^24.12.0",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "postcss": "^8.5.8",
     "schema-dts": "^1.1.5",
-    "tailwindcss": "^4.1.16",
+    "tailwindcss": "^4.2.1",
     "typescript": "^5.9.3"
   }
 }
