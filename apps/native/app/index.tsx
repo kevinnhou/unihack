@@ -5,11 +5,7 @@ import { Redirect } from "expo-router";
 export default function Index() {
   const profile = useQuery(api.users.getMyProfile);
 
-  if (profile === undefined) {
-    return null;
-  }
-  if (profile === null) {
-    return <Redirect href="/(auth)/signin" />;
-  }
-  return <Redirect href="/(tabs)" />;
+  // Since we require authentication, always redirect to auth first
+  // The auth screens will handle checking if user is already logged in
+  return <Redirect href="/(auth)/signin" />;
 }

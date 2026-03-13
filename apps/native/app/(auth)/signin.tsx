@@ -1,5 +1,3 @@
-import { api } from "@unihack/backend/convex/_generated/api";
-import { useMutation } from "convex/react";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import {
@@ -21,8 +19,6 @@ export default function SignInScreen() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const getOrCreate = useMutation(api.users.getOrCreateProfile);
-
   const handleSignIn = async () => {
     if (!(email && password)) {
       return;
@@ -35,8 +31,6 @@ export default function SignInScreen() {
         setError(result.error.message ?? "Sign in failed");
         return;
       }
-      // Materialise app profile
-      await getOrCreate({ name: email.split("@")[0], email });
       router.replace("/(tabs)");
       // biome-ignore lint/suspicious/noExplicitAny: PASS
     } catch (e: any) {

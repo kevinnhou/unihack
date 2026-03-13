@@ -1,8 +1,6 @@
 import { api } from "@unihack/backend/convex/_generated/api";
 import type { Id } from "@unihack/backend/convex/_generated/dataModel";
 import { useQuery } from "convex/react";
-import { AppleMaps } from "expo-maps";
-import { AppleMapsMapStyleEmphasis } from "expo-maps/src/apple/AppleMaps.types";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { ArrowLeft, CheckCircle, XCircle } from "lucide-react-native";
 import { ScrollView, Text, TouchableOpacity, View } from "react-native";
@@ -86,18 +84,18 @@ function RouteMap({
     longitudeDelta: number;
   };
 }) {
-  const polylines: AppleMaps.MapProps["polylines"] = [];
+  // const polylines: AppleMaps.MapProps["polylines"] = [];
 
-  if (myCoords.length > 1) {
-    polylines.push({ coordinates: myCoords, color: "#FF4500", width: 4 });
-  }
-  if (opponentCoords.length > 1) {
-    polylines.push({ coordinates: opponentCoords, color: "#3b82f6", width: 4 });
-  }
+  // if (myCoords.length > 1) {
+  //   polylines.push({ coordinates: myCoords, color: "#FF4500", width: 4 });
+  // }
+  // if (opponentCoords.length > 1) {
+  //   polylines.push({ coordinates: opponentCoords, color: "#3b82f6", width: 4 });
+  // }
 
   return (
     <View className="mx-4 overflow-hidden rounded-2xl">
-      <AppleMaps.View
+      {/* <AppleMaps.View
         cameraPosition={{
           coordinates: {
             latitude: initialRegion.latitude,
@@ -114,7 +112,7 @@ function RouteMap({
         uiSettings={{
           compassEnabled: false,
         }}
-      />
+      /> */}
     </View>
   );
 }

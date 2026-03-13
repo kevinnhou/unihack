@@ -1,4 +1,5 @@
 import "@/global.css";
+import { ConvexBetterAuthProvider } from "@convex-dev/better-auth/react";
 import { ConvexProvider, ConvexReactClient } from "convex/react";
 import { Stack } from "expo-router";
 import { HeroUINativeProvider } from "heroui-native";
@@ -7,13 +8,14 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { KeyboardProvider } from "react-native-keyboard-controller";
 import { useUniwind } from "uniwind";
 
+import { authClient } from "@/lib/auth-client";
 import { convexUrl } from "@/lib/convex";
 import { useThemeStore } from "@/stores/theme-store";
 
 const convex = new ConvexReactClient(convexUrl);
 
 export const unstable_settings = {
-  initialRouteName: "(tabs)",
+  initialRouteName: "(auth)",
 };
 
 function ThemeSync() {
@@ -29,7 +31,7 @@ function ThemeSync() {
 
 export default function Layout() {
   return (
-    <ConvexProvider client={convex}>
+    <ConvexBetterAuthProvider authClient={authClient} client={convex}>
       <GestureHandlerRootView style={{ flex: 1 }}>
         <KeyboardProvider>
           <HeroUINativeProvider>
@@ -49,6 +51,6 @@ export default function Layout() {
           </HeroUINativeProvider>
         </KeyboardProvider>
       </GestureHandlerRootView>
-    </ConvexProvider>
+    </ConvexBetterAuthProvider>
   );
 }

@@ -65,13 +65,30 @@ export const getMyProfile = query({
   async handler(ctx) {
     const authUser = await authComponent.getAuthUser(ctx as any);
     if (!authUser) {
-      return null;
+      throw new Error("Not authenticated");
     }
 
-    return await ctx.db
+    let user = await ctx.db
       .query("users")
       .withIndex("by_authId", (q) => q.eq("authId", authUser._id))
       .unique();
+
+    if (!user) {
+      // Create profile if it doesn't exist
+      const userId = await ctx.db.insert("users", {
+        authId: authUser._id,
+        name: authUser.name ?? "User",
+        email: authUser.email ?? "",
+        totalElo: 1000,
+        winCount: 0,
+        lossCount: 0,
+        currentStreak: 0,
+        lastRunDate: undefined,
+      });
+      user = await ctx.db.get(userId);
+    }
+
+    return user;
   },
 });
 

@@ -1,8 +1,6 @@
 import { api } from "@unihack/backend/convex/_generated/api";
 import type { Id } from "@unihack/backend/convex/_generated/dataModel";
 import { useMutation } from "convex/react";
-import { AppleMaps } from "expo-maps";
-import { AppleMapsMapStyleEmphasis } from "expo-maps/src/apple/AppleMaps.types";
 import { useRouter } from "expo-router";
 import {
   type RefObject,
@@ -63,7 +61,7 @@ function ghostDeltaLabel(userDist: number, ghostDist: number): string {
 
 export default function ActiveRunScreen() {
   const router = useRouter();
-  const mapRef = useRef<AppleMaps.MapView>(null);
+  const mapRef = null;
   const tickRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const appStateRef = useRef(AppState.currentState);
   const [mapVisible, setMapVisible] = useState(true);
@@ -103,12 +101,19 @@ export default function ActiveRunScreen() {
         return;
       }
 
-      const id = await startRunMutation({
+      const args: any = {
         type: mode ?? "ranked",
         distance: targetDistance,
-        opponentRunId: opponentRunId as Id<"runs"> | undefined,
-        opponentUserId: opponentUserId as Id<"users"> | undefined,
-      });
+      };
+
+      if (opponentRunId) {
+        args.opponentRunId = opponentRunId;
+      }
+      if (opponentUserId) {
+        args.opponentUserId = opponentUserId;
+      }
+
+      const id = await startRunMutation(args);
       if (cancelled) {
         return;
       }
@@ -263,12 +268,12 @@ export default function ActiveRunScreen() {
         </View>
       ) : null}
 
-      <MapSection
+      {/* <MapSection
         coords={coords}
         location={currentLocation}
         mapRef={mapRef}
         visible={mapVisible}
-      />
+      /> */}
 
       {/* HUD */}
       <View className="gap-2 bg-black px-6 py-4">
@@ -326,7 +331,7 @@ function MapSection({
   visible: boolean;
   location: { latitude: number; longitude: number } | undefined;
   coords: { latitude: number; longitude: number }[];
-  mapRef: RefObject<AppleMaps.MapView | null>;
+  mapRef: RefObject<null>;
 }) {
   if (!(visible && location)) {
     return (
@@ -338,29 +343,29 @@ function MapSection({
     );
   }
 
-  return (
-    <AppleMaps.View
-      cameraPosition={{
-        coordinates: {
-          latitude: location.latitude,
-          longitude: location.longitude,
-        },
-        zoom: 15,
-      }}
-      polylines={
-        coords.length > 1
-          ? [{ coordinates: coords, color: "#FF4500", width: 4 }]
-          : []
-      }
-      properties={{
-        isMyLocationEnabled: true,
-        mapType: AppleMaps.MapType.STANDARD,
-        emphasis: AppleMapsMapStyleEmphasis.MUTED,
-      }}
-      ref={mapRef}
-      style={{ flex: 1 }}
-    />
-  );
+  // return (
+  //   <AppleMaps.View
+  //     cameraPosition={{
+  //       coordinates: {
+  //         latitude: location.latitude,
+  //         longitude: location.longitude,
+  //       },
+  //       zoom: 15,
+  //     }}
+  //     polylines={
+  //       coords.length > 1
+  //         ? [{ coordinates: coords, color: "#FF4500", width: 4 }]
+  //         : []
+  //     }
+  //     properties={{
+  //       isMyLocationEnabled: true,
+  //       mapType: AppleMaps.MapType.STANDARD,
+  //       emphasis: AppleMapsMapStyleEmphasis.MUTED,
+  //     }}
+  //     ref={mapRef}
+  //     style={{ flex: 1 }}
+  //   />
+  // );
 }
 
 function Stat({

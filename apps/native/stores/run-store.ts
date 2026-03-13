@@ -68,15 +68,28 @@ export const useRunStore = create<RunState>((set, get) => ({
   ...INITIAL,
 
   configureRun(cfg) {
-    set({
+    const update: Partial<RunState> = {
       mode: cfg.mode,
       targetDistance: cfg.targetDistance,
-      opponentRunId: cfg.opponentRunId ?? null,
-      opponentUserId: cfg.opponentUserId ?? null,
-      opponentName: cfg.opponentName ?? null,
-      opponentTelemetry: cfg.opponentTelemetry ?? null,
-      liveRoomId: cfg.liveRoomId ?? null,
-    });
+    };
+
+    if (cfg.opponentRunId !== undefined) {
+      update.opponentRunId = cfg.opponentRunId;
+    }
+    if (cfg.opponentUserId !== undefined) {
+      update.opponentUserId = cfg.opponentUserId;
+    }
+    if (cfg.opponentName !== undefined) {
+      update.opponentName = cfg.opponentName;
+    }
+    if (cfg.opponentTelemetry !== undefined) {
+      update.opponentTelemetry = cfg.opponentTelemetry;
+    }
+    if (cfg.liveRoomId !== undefined) {
+      update.liveRoomId = cfg.liveRoomId;
+    }
+
+    set(update);
   },
 
   setRunId(id) {

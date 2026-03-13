@@ -181,7 +181,7 @@ export const getMySquads = query({
   async handler(ctx) {
     const authUser = await authComponent.getAuthUser(ctx as any);
     if (!authUser) {
-      return [];
+      throw new Error("Not authenticated");
     }
 
     const user = await ctx.db
@@ -189,7 +189,7 @@ export const getMySquads = query({
       .withIndex("by_authId", (q) => q.eq("authId", authUser._id))
       .unique();
     if (!user) {
-      return [];
+      throw new Error("User profile not found");
     }
 
     const memberships = await ctx.db

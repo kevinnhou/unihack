@@ -52,13 +52,22 @@ export default function RunConfigModal({ visible, onClose }: Props) {
     }
     setLoading(true);
     try {
-      configureRun({
+      const runConfig: any = {
         mode: selectedMode,
         targetDistance: selectedDistance,
-        opponentRunId: opponent?.runId as Id<"runs"> | undefined,
-        opponentUserId: opponent?.opponentUserId as Id<"users"> | undefined,
-        opponentName: opponent?.opponentName ?? undefined,
-      });
+      };
+
+      if (opponent?.runId) {
+        runConfig.opponentRunId = opponent.runId;
+      }
+      if (opponent?.opponentUserId) {
+        runConfig.opponentUserId = opponent.opponentUserId;
+      }
+      if (opponent?.opponentName) {
+        runConfig.opponentName = opponent.opponentName;
+      }
+
+      configureRun(runConfig);
       onClose();
       router.push("/run/active");
     } finally {
@@ -90,7 +99,7 @@ export default function RunConfigModal({ visible, onClose }: Props) {
       handleIndicatorStyle={{ backgroundColor: "#444" }}
       onClose={onClose}
       ref={sheetRef}
-      snapPoints={["60%"]}
+      snapPoints={["80%"]}
     >
       <BottomSheetScrollView contentContainerStyle={{ padding: 24 }}>
         {step === 1 ? (

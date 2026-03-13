@@ -5,6 +5,7 @@
     "": {
       "name": "next-mono",
       "dependencies": {
+        "convex": "^1.33.0",
         "expo": "^55.0.6",
         "nativewind": "^4.2.2",
       },

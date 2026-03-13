@@ -90,27 +90,45 @@ export async function startTracking(
 ): Promise<void> {
   setLocationCallback(onUpdate);
 
-  await startLocationUpdatesAsync(BACKGROUND_LOCATION_TASK, {
-    accuracy: Accuracy.Balanced,
-    timeInterval: 3000,
-    distanceInterval: 5,
-    foregroundService: {
-      notificationTitle: "pinfire is tracking your run",
-      notificationBody: "Your run is in progress.",
-      notificationColor: "#FF4500",
-    },
-    showsBackgroundLocationIndicator: true,
-    pausesUpdatesAutomatically: false,
-  });
+  try {
+    await startLocationUpdatesAsync(BACKGROUND_LOCATION_TASK, {
+      accuracy: Accuracy.Balanced,
+      timeInterval: 3000,
+      distanceInterval: 5,
+      foregroundService: {
+        notificationTitle: "pinfire is tracking your run",
+        notificationBody: "Your run is in progress.",
+        notificationColor: "#FF4500",
+      },
+      showsBackgroundLocationIndicator: true,
+      pausesUpdatesAutomatically: false,
+    });
+  } catch (error) {
+    // Location APIs might not be available in web environment
+    console.warn("[Location] Could not start location updates:", error);
+    // For web, we could implement browser geolocation as fallback
+    // For now, just continue without location tracking
+  }
 }
 
 export async function stopTracking(): Promise<void> {
   setLocationCallback(null);
-  const isRunning = await hasStartedLocationUpdatesAsync(
-    BACKGROUND_LOCATION_TASK
-  );
-  if (isRunning) {
-    await stopLocationUpdatesAsync(BACKGROUND_LOCATION_TASK);
+  try {
+    const isRunning = await hasStartedLocationUpdatesAsync(
+      BACKGROUND_LOCATION_TASK
+    );
+    if (isRunning) {
+      await stopLocationUpdatesAsync(BACKGROUND_LOCATION_TASK);
+    }
+  } catch (error) {
+    // hasStartedLocationUpdatesAsync might not be available in web environment
+    console.warn("[Location] Could not check if location updates are running:", error);
+    // Try to stop anyway, it will fail silently if not running
+    try {
+      await stopLocationUpdatesAsync(BACKGROUND_LOCATION_TASK);
+    } catch {
+      // Ignore errors when stopping
+    }
   }
 }
 
