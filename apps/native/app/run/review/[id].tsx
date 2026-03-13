@@ -81,7 +81,7 @@ const mockRun: RunRecord = {
   win: true,
   telemetry: [
     { lat: 37.7749, lng: -122.4194, timestamp: Date.now(), speed: 3.5 },
-    { lat: 37.7750, lng: -122.4195, timestamp: Date.now() + 1000, speed: 3.6 },
+    { lat: 37.775, lng: -122.4195, timestamp: Date.now() + 1000, speed: 3.6 },
   ],
   opponentRunId: "opponentRun1",
 };
@@ -96,7 +96,7 @@ const mockOpponentRun: RunRecord = {
   win: false,
   telemetry: [
     { lat: 37.7749, lng: -122.4194, timestamp: Date.now(), speed: 3.0 },
-    { lat: 37.7750, lng: -122.4195, timestamp: Date.now() + 1000, speed: 3.1 },
+    { lat: 37.775, lng: -122.4195, timestamp: Date.now() + 1000, speed: 3.1 },
   ],
 };
 

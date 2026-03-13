@@ -16,13 +16,12 @@
 //   },
 // });
 
+import { useRouter } from "expo-router";
 // import { api } from "@unihack/backend/convex/_generated/api";
 // import { useQuery } from "convex/react";
-import { Play } from "lucide-react-native";
+import { ChevronRight, Play, Trophy } from "lucide-react-native";
 import { useState } from "react";
-import { useRouter } from "expo-router";
-import { ChevronRight, Settings, Trophy } from "lucide-react-native";
-import { FlatList, ScrollView, Image, Text, TouchableOpacity, View } from "react-native";
+import { ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import RunConfigModal from "@/components/RunConfigModal";
 
@@ -54,7 +53,7 @@ const mockRuns = [
     _id: "run1",
     distance: 5000,
     durationSeconds: 1500,
-    startedAt: Date.now() - 86400000, // 1 day ago
+    startedAt: Date.now() - 86_400_000, // 1 day ago
     type: "ranked" as const,
     eloDelta: 20,
   },
@@ -62,14 +61,14 @@ const mockRuns = [
     _id: "run2",
     distance: 3000,
     durationSeconds: 900,
-    startedAt: Date.now() - 172800000, // 2 days ago
+    startedAt: Date.now() - 172_800_000, // 2 days ago
     type: "social" as const,
   },
   {
     _id: "run3",
-    distance: 10000,
+    distance: 10_000,
     durationSeconds: 2400,
-    startedAt: Date.now() - 259200000, // 3 days ago
+    startedAt: Date.now() - 259_200_000, // 3 days ago
     type: "live" as const,
   },
 ];
@@ -99,20 +98,20 @@ export default function HomeScreen() {
   const myRuns = mockRuns;
 
   const winRate =
-      profile.winCount + profile.lossCount > 0
-        ? Math.round(
-            (profile.winCount / (profile.winCount + profile.lossCount)) * 100
-          )
-        : 0;
+    profile.winCount + profile.lossCount > 0
+      ? Math.round(
+          (profile.winCount / (profile.winCount + profile.lossCount)) * 100
+        )
+      : 0;
 
   return (
     <SafeAreaView className="flex-1 bg-black">
       <ScrollView contentContainerStyle={{ paddingBottom: 100 }}>
-      <View className="px-4 pt-4 pb-6">
+        <View className="px-4 pt-4 pb-6">
           <Text className="text-gray-400 text-sm">Welcome back,</Text>
           <Text className="font-black text-3xl text-white">{profile.name}</Text>
         </View>
-      
+
         {/* Elo card */}
         <View
           className="mx-4 mb-4 rounded-2xl bg-linear-to-r from-orange-600 to-red-600 p-5"
@@ -200,13 +199,12 @@ export default function HomeScreen() {
         ))}
       </ScrollView>
 
-
       {/* FAB Start Run */}
       <TouchableOpacity
         className="absolute right-6 bottom-8 h-16 w-16 items-center justify-center rounded-full bg-orange-500 shadow-lg"
         onPress={() => setModalOpen(true)}
         style={{ elevation: 8 }}
-        >
+      >
         <Play color="white" fill="white" size={28} />
       </TouchableOpacity>
 
@@ -215,21 +213,21 @@ export default function HomeScreen() {
   );
 
   function StatCard({
-  label,
-  value,
-  color,
-}: {
-  label: string;
-  value: string;
-  color: string;
-}) {
-  return (
-    <View className="flex-1 items-center rounded-2xl bg-neutral-900 p-4">
-      <Text className="font-black text-2xl" style={{ color }}>
-        {value}
-      </Text>
-      <Text className="mt-1 text-gray-400 text-xs">{label}</Text>
-    </View>
-  );
-}
+    label,
+    value,
+    color,
+  }: {
+    label: string;
+    value: string;
+    color: string;
+  }) {
+    return (
+      <View className="flex-1 items-center rounded-2xl bg-neutral-900 p-4">
+        <Text className="font-black text-2xl" style={{ color }}>
+          {value}
+        </Text>
+        <Text className="mt-1 text-gray-400 text-xs">{label}</Text>
+      </View>
+    );
+  }
 }

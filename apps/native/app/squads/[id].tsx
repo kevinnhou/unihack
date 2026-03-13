@@ -2,7 +2,7 @@
 // import type { Id } from "@unihack/backend/convex/_generated/dataModel";
 // import { useMutation, useQuery } from "convex/react";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { ArrowLeft, Copy, Plus, Zap, Play } from "lucide-react-native";
+import { ArrowLeft, Copy, Play } from "lucide-react-native";
 import { useState } from "react";
 import {
   ActivityIndicator,
@@ -40,7 +40,7 @@ const mockDetail = {
       name: "Alice",
       avatarUrl: null,
       role: "admin" as const,
-      weeklyDistance: 25000,
+      weeklyDistance: 25_000,
       currentStreak: 7,
     },
     {
@@ -48,7 +48,7 @@ const mockDetail = {
       name: "Bob",
       avatarUrl: null,
       role: "member" as const,
-      weeklyDistance: 20000,
+      weeklyDistance: 20_000,
       currentStreak: 5,
     },
   ],
@@ -66,8 +66,8 @@ const mockDetail = {
 
 // Mock leaderboard
 const mockLeaderboard = [
-  { userId: "user1", rank: 1, name: "Alice", weeklyDistance: 25000 },
-  { userId: "user2", rank: 2, name: "Bob", weeklyDistance: 20000 },
+  { userId: "user1", rank: 1, name: "Alice", weeklyDistance: 25_000 },
+  { userId: "user2", rank: 2, name: "Bob", weeklyDistance: 20_000 },
 ];
 
 // Mock friends list (for checking if squad members are friends)
@@ -247,11 +247,15 @@ export default function SquadDetailScreen() {
             >
               <View className="flex-row items-center gap-3">
                 <View className="h-9 w-9 items-center justify-center rounded-full bg-neutral-700">
-                  <Text className="font-bold text-white">{m.name.charAt(0)}</Text>
+                  <Text className="font-bold text-white">
+                    {m.name.charAt(0)}
+                  </Text>
                 </View>
                 <View className="flex-1">
                   <Text className="font-semibold text-white">{m.name}</Text>
-                  <Text className="text-gray-400 text-xs capitalize">{m.role}</Text>
+                  <Text className="text-gray-400 text-xs capitalize">
+                    {m.role}
+                  </Text>
                   {m.currentStreak > 0 && (
                     <Text className="text-orange-400 text-xs">
                       🔥 {m.currentStreak}d streak
@@ -261,15 +265,15 @@ export default function SquadDetailScreen() {
                 <View className="flex-row gap-2">
                   {!isFriend && (
                     <TouchableOpacity
+                      className="rounded-full bg-blue-500 p-2"
                       onPress={() => handleAddFriend(m.name)}
-                      className="bg-blue-500 p-2 rounded-full"
                     >
-                      <Text className="text-white text-xs font-bold">+</Text>
+                      <Text className="font-bold text-white text-xs">+</Text>
                     </TouchableOpacity>
                   )}
                   <TouchableOpacity
+                    className="rounded-full bg-orange-500 p-2"
                     onPress={() => handleRace(m.name)}
-                    className="bg-orange-500 p-2 rounded-full"
                   >
                     <Play color="white" size={16} />
                   </TouchableOpacity>
@@ -290,13 +294,15 @@ export default function SquadDetailScreen() {
 
       <Modal
         animationType="fade"
+        onRequestClose={() => setConfirmRace(null)}
         transparent
         visible={confirmRace !== null}
-        onRequestClose={() => setConfirmRace(null)}
       >
         <View className="flex-1 items-center justify-center bg-black/70 px-8">
           <View className="w-full rounded-3xl bg-neutral-900 p-6">
-            <Text className="mb-4 font-bold text-white text-xl">Confirm Race</Text>
+            <Text className="mb-4 font-bold text-white text-xl">
+              Confirm Race
+            </Text>
             <Text className="mb-6 text-gray-300">
               Do you want to race {confirmRace}?
             </Text>

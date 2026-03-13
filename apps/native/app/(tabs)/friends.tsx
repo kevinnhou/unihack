@@ -1,6 +1,7 @@
 // import { api } from "@unihack/backend/convex/_generated/api";
 // import { useQuery } from "convex/react";
 import { useRouter } from "expo-router";
+import { Play, UserPlus } from "lucide-react-native";
 import { useState } from "react";
 import {
   FlatList,
@@ -11,7 +12,6 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Play, UserPlus } from "lucide-react-native";
 import { useRunStore } from "@/stores/run-store";
 
 // Mock data for friends
@@ -61,11 +61,11 @@ export default function FriendsScreen() {
     }
   };
 
-  const renderFriend = ({ item }: { item: typeof mockFriends[0] }) => (
+  const renderFriend = ({ item }: { item: (typeof mockFriends)[0] }) => (
     <View className="mx-4 mb-3 rounded-2xl bg-neutral-900 p-4">
       <View className="flex-row items-center justify-between">
         <View className="flex-1">
-          <Text className="font-semibold text-white text-lg">{item.name}</Text>
+          <Text className="font-semibold text-lg text-white">{item.name}</Text>
           <Text className="text-gray-400 text-sm">
             {item.wins}W - {item.losses}L
           </Text>
@@ -76,8 +76,8 @@ export default function FriendsScreen() {
           )}
         </View>
         <TouchableOpacity
+          className="rounded-full bg-orange-500 p-3"
           onPress={() => handleRace(item.name)}
-          className="bg-orange-500 p-3 rounded-full"
         >
           <Play color="white" size={20} />
         </TouchableOpacity>
@@ -96,8 +96,8 @@ export default function FriendsScreen() {
             <View className="flex-row items-center justify-between">
               <Text className="font-black text-3xl text-white">Friends</Text>
               <TouchableOpacity
+                className="rounded-full bg-orange-500 p-2"
                 onPress={() => setShowAddFriend(true)}
-                className="bg-orange-500 p-2 rounded-full"
               >
                 <UserPlus color="white" size={20} />
               </TouchableOpacity>
@@ -110,13 +110,15 @@ export default function FriendsScreen() {
 
       <Modal
         animationType="fade"
+        onRequestClose={() => setConfirmFriend(null)}
         transparent
         visible={confirmFriend !== null}
-        onRequestClose={() => setConfirmFriend(null)}
       >
         <View className="flex-1 items-center justify-center bg-black/70 px-8">
           <View className="w-full rounded-3xl bg-neutral-900 p-6">
-            <Text className="mb-4 font-bold text-white text-xl">Confirm Race</Text>
+            <Text className="mb-4 font-bold text-white text-xl">
+              Confirm Race
+            </Text>
             <Text className="mb-6 text-gray-300">
               Do you want to race {confirmFriend}?
             </Text>
@@ -140,24 +142,26 @@ export default function FriendsScreen() {
 
       <Modal
         animationType="fade"
+        onRequestClose={() => setShowAddFriend(false)}
         transparent
         visible={showAddFriend}
-        onRequestClose={() => setShowAddFriend(false)}
       >
         <View className="flex-1 items-center justify-center bg-black/70 px-8">
           <View className="w-full rounded-3xl bg-neutral-900 p-6">
-            <Text className="mb-4 font-bold text-white text-xl">Add Friend</Text>
+            <Text className="mb-4 font-bold text-white text-xl">
+              Add Friend
+            </Text>
             <Text className="mb-4 text-gray-300">
               Enter the username of the friend you want to add:
             </Text>
             <TextInput
+              autoCapitalize="none"
+              autoCorrect={false}
               className="mb-6 rounded-xl bg-neutral-800 px-4 py-3 text-white"
+              onChangeText={setNewFriendUsername}
               placeholder="Username"
               placeholderTextColor="#6b7280"
               value={newFriendUsername}
-              onChangeText={setNewFriendUsername}
-              autoCapitalize="none"
-              autoCorrect={false}
             />
             <View className="flex-row gap-3">
               <TouchableOpacity

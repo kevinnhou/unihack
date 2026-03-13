@@ -103,8 +103,8 @@ export default function SquadsScreen() {
     try {
       // const id = await joinSquad({ inviteCode: joinCode.trim() });
       // if (id) {
-        setJoinCode("");
-        setShowJoin(false);
+      setJoinCode("");
+      setShowJoin(false);
       // } else {
       //   console.warn("Squad not found. Check the invite code.");
       // }

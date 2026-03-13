@@ -122,7 +122,10 @@ export async function stopTracking(): Promise<void> {
     }
   } catch (error) {
     // hasStartedLocationUpdatesAsync might not be available in web environment
-    console.warn("[Location] Could not check if location updates are running:", error);
+    console.warn(
+      "[Location] Could not check if location updates are running:",
+      error
+    );
     // Try to stop anyway, it will fail silently if not running
     try {
       await stopLocationUpdatesAsync(BACKGROUND_LOCATION_TASK);

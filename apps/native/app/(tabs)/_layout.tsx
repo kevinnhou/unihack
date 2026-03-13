@@ -20,13 +20,19 @@
 // }
 
 import { Tabs } from "expo-router";
-import { Activity, BarChart2, Shield, Settings, User, Users } from "lucide-react-native";
+import {
+  Activity,
+  BarChart2,
+  Settings,
+  Shield,
+  Users,
+} from "lucide-react-native";
 
 export default function TabsLayout() {
   return (
     <>
       <Tabs
-        initialRouteName="home"
+        initialRouteName="index"
         screenOptions={{
           headerShown: false,
           tabBarStyle: {
@@ -38,7 +44,7 @@ export default function TabsLayout() {
         }}
       >
         <Tabs.Screen
-          name="home"
+          name="index"
           options={{
             title: "Home",
             tabBarIcon: ({ color, size }) => (
@@ -77,7 +83,9 @@ export default function TabsLayout() {
           name="settings"
           options={{
             title: "Settings",
-            tabBarIcon: ({ color, size }) => <Settings color={color} size={size} />,
+            tabBarIcon: ({ color, size }) => (
+              <Settings color={color} size={size} />
+            ),
           }}
         />
       </Tabs>
