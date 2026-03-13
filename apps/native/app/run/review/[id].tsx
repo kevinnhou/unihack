@@ -4,7 +4,8 @@ import { useQuery } from "convex/react";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { ArrowLeft, CheckCircle, XCircle } from "lucide-react-native";
 import { ScrollView, Text, TouchableOpacity, View } from "react-native";
-import MapView, { Polyline } from "react-native-maps";
+import { AppleMaps } from "expo-maps";
+import { AppleMapsMapStyleEmphasis } from "expo-maps/src/apple/AppleMaps.types";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 function formatTime(s: number) {
@@ -85,31 +86,36 @@ function RouteMap({
     longitudeDelta: number;
   };
 }) {
+  const polylines: AppleMaps.MapProps["polylines"] = [];
+
+  if (myCoords.length > 1) {
+    polylines.push({ coordinates: myCoords, color: "#FF4500", width: 4 });
+  }
+  if (opponentCoords.length > 1) {
+    polylines.push({ coordinates: opponentCoords, color: "#3b82f6", width: 4 });
+  }
+
   return (
-    <MapView
-      className="mx-4 overflow-hidden rounded-2xl"
-      initialRegion={initialRegion}
-      mapType="mutedStandard"
-      scrollEnabled={false}
-      style={{ height: 280 }}
-      zoomEnabled={false}
-    >
-      {myCoords.length > 1 ? (
-        <Polyline
-          coordinates={myCoords}
-          strokeColor="#FF4500"
-          strokeWidth={4}
-        />
-      ) : null}
-      {opponentCoords.length > 1 ? (
-        <Polyline
-          coordinates={opponentCoords}
-          lineDashPattern={[10, 6]}
-          strokeColor="#3b82f6"
-          strokeWidth={4}
-        />
-      ) : null}
-    </MapView>
+    <View className="mx-4 overflow-hidden rounded-2xl">
+      <AppleMaps.View
+        style={{ height: 280 }}
+        cameraPosition={{
+          coordinates: {
+            latitude: initialRegion.latitude,
+            longitude: initialRegion.longitude,
+          },
+          zoom: 14,
+        }}
+        properties={{
+          mapType: AppleMaps.MapType.STANDARD,
+          emphasis: AppleMapsMapStyleEmphasis.MUTED,
+        }}
+        uiSettings={{
+          compassEnabled: false,
+        }}
+        polylines={polylines}
+      />
+    </View>
   );
 }
 

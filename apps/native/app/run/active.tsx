@@ -1,6 +1,8 @@
 import { api } from "@unihack/backend/convex/_generated/api";
 import type { Id } from "@unihack/backend/convex/_generated/dataModel";
 import { useMutation } from "convex/react";
+import { AppleMaps } from "expo-maps";
+import { AppleMapsMapStyleEmphasis } from "expo-maps/src/apple/AppleMaps.types";
 import { useRouter } from "expo-router";
 import {
   type RefObject,
@@ -16,7 +18,6 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import MapView, { Polyline } from "react-native-maps";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
   requestLocationPermissions,
@@ -62,7 +63,7 @@ function ghostDeltaLabel(userDist: number, ghostDist: number): string {
 
 export default function ActiveRunScreen() {
   const router = useRouter();
-  const mapRef = useRef<MapView>(null);
+  const mapRef = useRef<AppleMaps.MapView>(null);
   const tickRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const appStateRef = useRef(AppState.currentState);
   const [mapVisible, setMapVisible] = useState(true);
@@ -325,7 +326,7 @@ function MapSection({
   visible: boolean;
   location: { latitude: number; longitude: number } | undefined;
   coords: { latitude: number; longitude: number }[];
-  mapRef: RefObject<MapView | null>;
+  mapRef: RefObject<AppleMaps.MapView | null>;
 }) {
   if (!(visible && location)) {
     return (
@@ -338,23 +339,27 @@ function MapSection({
   }
 
   return (
-    <MapView
-      className="flex-1"
-      followsUserLocation
-      initialRegion={{
-        latitude: location.latitude,
-        longitude: location.longitude,
-        latitudeDelta: 0.01,
-        longitudeDelta: 0.01,
+    <AppleMaps.View
+      cameraPosition={{
+        coordinates: {
+          latitude: location.latitude,
+          longitude: location.longitude,
+        },
+        zoom: 15,
       }}
-      mapType="mutedStandard"
+      polylines={
+        coords.length > 1
+          ? [{ coordinates: coords, color: "#FF4500", width: 4 }]
+          : []
+      }
+      properties={{
+        isMyLocationEnabled: true,
+        mapType: AppleMaps.MapType.STANDARD,
+        emphasis: AppleMapsMapStyleEmphasis.MUTED,
+      }}
       ref={mapRef}
-      showsUserLocation
-    >
-      {coords.length > 1 ? (
-        <Polyline coordinates={coords} strokeColor="#FF4500" strokeWidth={4} />
-      ) : null}
-    </MapView>
+      style={{ flex: 1 }}
+    />
   );
 }
 

@@ -19,7 +19,8 @@
           "isIosBackgroundLocationEnabled": true,
           "isAndroidBackgroundLocationEnabled": true
         }
-      ]
+      ],
+      "expo-maps"
     ],
     "ios": {
       "infoPlist": {
