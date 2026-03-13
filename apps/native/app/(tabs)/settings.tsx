@@ -2,9 +2,10 @@
 // import type { Id } from "@unihack/backend/convex/_generated/dataModel";
 // import { useQuery } from "convex/react";
 import { useRouter } from "expo-router";
-import { ChevronRight, Settings, Trophy } from "lucide-react-native";
+import { ChevronRight, Settings } from "lucide-react-native";
 import { Image, ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+
 // import { authClient } from "@/lib/auth-client";
 
 function formatTime(s: number) {
@@ -35,7 +36,7 @@ const mockRuns = [
     _id: "run1",
     distance: 5000,
     durationSeconds: 1500,
-    startedAt: Date.now() - 86400000, // 1 day ago
+    startedAt: Date.now() - 86_400_000, // 1 day ago
     type: "ranked" as const,
     eloDelta: 20,
   },
@@ -43,14 +44,14 @@ const mockRuns = [
     _id: "run2",
     distance: 3000,
     durationSeconds: 900,
-    startedAt: Date.now() - 172800000, // 2 days ago
+    startedAt: Date.now() - 172_800_000, // 2 days ago
     type: "social" as const,
   },
   {
     _id: "run3",
-    distance: 10000,
+    distance: 10_000,
     durationSeconds: 2400,
-    startedAt: Date.now() - 259200000, // 3 days ago
+    startedAt: Date.now() - 259_200_000, // 3 days ago
     type: "live" as const,
   },
 ];

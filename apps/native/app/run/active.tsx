@@ -17,12 +17,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import {
-  requestLocationPermissions,
-  startTracking,
-  stopTracking,
-  type TelemetryPoint,
-} from "@/services/location";
+import type { TelemetryPoint } from "@/services/location";
 // import { enqueueUpload, flushQueue, isOnline } from "@/services/offline-queue";
 import { interpolateGhostDistance, useRunStore } from "@/stores/run-store";
 
@@ -126,7 +121,12 @@ export default function ActiveRunScreen() {
       storeStartRun();
 
       // Mock opponent data for testing
-      if (mode === "ranked" || mode === "social" || mode === "live" || opponentUserId) {
+      if (
+        mode === "ranked" ||
+        mode === "social" ||
+        mode === "live" ||
+        opponentUserId
+      ) {
         const mockOpponentTelemetry: TelemetryPoint[] = [];
         const totalTime = 600; // 10 minutes
         const totalDist = targetDistance;
@@ -330,7 +330,7 @@ export default function ActiveRunScreen() {
       {/* Centered HUD */}
       <View className="flex-1 justify-center px-6">
         {/* HUD */}
-        <View className="gap-4 bg-neutral-900 rounded-3xl px-6 py-8">
+        <View className="gap-4 rounded-3xl bg-neutral-900 px-6 py-8">
           {/* Stats row */}
           <View className="flex-row items-center justify-between">
             <Stat label="Distance" value={formatDistance(distanceMeters)} />
@@ -345,10 +345,11 @@ export default function ActiveRunScreen() {
           <View className="gap-4">
             {/* Your progress */}
             <View>
-              <View className="flex-row items-center justify-between mb-2">
-                <Text className="text-white text-sm font-medium">You</Text>
-                <Text className="text-white text-sm">
-                  {formatDistance(distanceMeters)} / {formatDistance(targetDistance)}
+              <View className="mb-2 flex-row items-center justify-between">
+                <Text className="font-medium text-sm text-white">You</Text>
+                <Text className="text-sm text-white">
+                  {formatDistance(distanceMeters)} /{" "}
+                  {formatDistance(targetDistance)}
                 </Text>
               </View>
               <View className="h-4 overflow-hidden rounded-full bg-neutral-700">
@@ -367,10 +368,13 @@ export default function ActiveRunScreen() {
             {/* Opponent progress */}
             {opponentName != null && ghostDistM !== null && (
               <View>
-                <View className="flex-row items-center justify-between mb-2">
-                  <Text className="text-white text-sm font-medium">{opponentName}</Text>
-                  <Text className="text-white text-sm">
-                    {formatDistance(ghostDistM)} / {formatDistance(targetDistance)}
+                <View className="mb-2 flex-row items-center justify-between">
+                  <Text className="font-medium text-sm text-white">
+                    {opponentName}
+                  </Text>
+                  <Text className="text-sm text-white">
+                    {formatDistance(ghostDistM)} /{" "}
+                    {formatDistance(targetDistance)}
                   </Text>
                 </View>
                 <View className="h-4 overflow-hidden rounded-full bg-neutral-700">
@@ -384,7 +388,7 @@ export default function ActiveRunScreen() {
                     }}
                   />
                 </View>
-                <Text className="text-center mt-3 font-bold text-base text-orange-400">
+                <Text className="mt-3 text-center font-bold text-base text-orange-400">
                   {ghostDeltaLabel(distanceMeters, ghostDistM)}
                 </Text>
               </View>

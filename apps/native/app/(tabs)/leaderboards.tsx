@@ -27,24 +27,82 @@ type Period = "daily" | "weekly" | "monthly";
 
 // Mock data for leaderboards
 const mockEloBoard = [
-  { userId: "1", rank: 1, name: "Alice", totalElo: 1500, winCount: 10, lossCount: 2 },
-  { userId: "2", rank: 2, name: "Bob", totalElo: 1450, winCount: 8, lossCount: 3 },
-  { userId: "3", rank: 3, name: "Charlie", totalElo: 1400, winCount: 7, lossCount: 4 },
-  { userId: "4", rank: 4, name: "Diana", totalElo: 1350, winCount: 6, lossCount: 5 },
+  {
+    userId: "1",
+    rank: 1,
+    name: "Alice",
+    totalElo: 1500,
+    winCount: 10,
+    lossCount: 2,
+  },
+  {
+    userId: "2",
+    rank: 2,
+    name: "Bob",
+    totalElo: 1450,
+    winCount: 8,
+    lossCount: 3,
+  },
+  {
+    userId: "3",
+    rank: 3,
+    name: "Charlie",
+    totalElo: 1400,
+    winCount: 7,
+    lossCount: 4,
+  },
+  {
+    userId: "4",
+    rank: 4,
+    name: "Diana",
+    totalElo: 1350,
+    winCount: 6,
+    lossCount: 5,
+  },
 ];
 
 const mockDistBoard = [
-  { userId: "1", rank: 1, name: "Alice", totalDistance: 50000, runCount: 20 },
-  { userId: "2", rank: 2, name: "Bob", totalDistance: 45000, runCount: 18 },
-  { userId: "3", rank: 3, name: "Charlie", totalDistance: 40000, runCount: 16 },
-  { userId: "4", rank: 4, name: "Diana", totalDistance: 35000, runCount: 14 },
+  { userId: "1", rank: 1, name: "Alice", totalDistance: 50_000, runCount: 20 },
+  { userId: "2", rank: 2, name: "Bob", totalDistance: 45_000, runCount: 18 },
+  {
+    userId: "3",
+    rank: 3,
+    name: "Charlie",
+    totalDistance: 40_000,
+    runCount: 16,
+  },
+  { userId: "4", rank: 4, name: "Diana", totalDistance: 35_000, runCount: 14 },
 ];
 
 const mockSpeedBoard = [
-  { userId: "1", rank: 1, name: "Alice", bestPaceSecondsPerKm: 240, distance: 5000 },
-  { userId: "2", rank: 2, name: "Bob", bestPaceSecondsPerKm: 250, distance: 5000 },
-  { userId: "3", rank: 3, name: "Charlie", bestPaceSecondsPerKm: 260, distance: 5000 },
-  { userId: "4", rank: 4, name: "Diana", bestPaceSecondsPerKm: 270, distance: 5000 },
+  {
+    userId: "1",
+    rank: 1,
+    name: "Alice",
+    bestPaceSecondsPerKm: 240,
+    distance: 5000,
+  },
+  {
+    userId: "2",
+    rank: 2,
+    name: "Bob",
+    bestPaceSecondsPerKm: 250,
+    distance: 5000,
+  },
+  {
+    userId: "3",
+    rank: 3,
+    name: "Charlie",
+    bestPaceSecondsPerKm: 260,
+    distance: 5000,
+  },
+  {
+    userId: "4",
+    rank: 4,
+    name: "Diana",
+    bestPaceSecondsPerKm: 270,
+    distance: 5000,
+  },
 ];
 
 function PaceLabel(secPerKm: number) {

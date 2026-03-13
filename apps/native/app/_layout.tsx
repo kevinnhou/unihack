@@ -9,7 +9,7 @@ import { useUniwind } from "uniwind";
 import { useThemeStore } from "@/stores/theme-store";
 
 export const unstable_settings = {
-  initialRouteName: "/home",
+  initialRouteName: "/index",
 };
 
 function ThemeSync() {
