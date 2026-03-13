@@ -1,4 +1,5 @@
 import "@/global.css";
+import { ConvexProvider, ConvexReactClient } from "convex/react";
 import { Stack } from "expo-router";
 import { HeroUINativeProvider } from "heroui-native";
 import { useEffect } from "react";
@@ -6,10 +7,13 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { KeyboardProvider } from "react-native-keyboard-controller";
 import { useUniwind } from "uniwind";
 
+import { convexUrl } from "@/lib/convex";
 import { useThemeStore } from "@/stores/theme-store";
 
+const convex = new ConvexReactClient(convexUrl);
+
 export const unstable_settings = {
-  initialRouteName: "/",
+  initialRouteName: "(tabs)",
 };
 
 function ThemeSync() {
@@ -25,15 +29,26 @@ function ThemeSync() {
 
 export default function Layout() {
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
-      <KeyboardProvider>
-        <HeroUINativeProvider>
-          <ThemeSync />
-          <Stack screenOptions={{ headerShown: false }}>
-            <Stack.Screen name="index" />
-          </Stack>
-        </HeroUINativeProvider>
-      </KeyboardProvider>
-    </GestureHandlerRootView>
+    <ConvexProvider client={convex}>
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <KeyboardProvider>
+          <HeroUINativeProvider>
+            <ThemeSync />
+            <Stack screenOptions={{ headerShown: false }}>
+              <Stack.Screen name="(tabs)" />
+              <Stack.Screen name="(auth)" />
+              <Stack.Screen
+                name="run/active"
+                options={{ gestureEnabled: false }}
+              />
+              <Stack.Screen name="run/finish" />
+              <Stack.Screen name="run/review/[id]" />
+              <Stack.Screen name="squads/[id]" />
+              <Stack.Screen name="+not-found" />
+            </Stack>
+          </HeroUINativeProvider>
+        </KeyboardProvider>
+      </GestureHandlerRootView>
+    </ConvexProvider>
   );
 }

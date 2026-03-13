@@ -9,7 +9,14 @@
  */
 
 import type * as auth from "../auth.js";
+import type * as crons from "../crons.js";
 import type * as http from "../http.js";
+import type * as leaderboards from "../leaderboards.js";
+import type * as live from "../live.js";
+import type * as runs from "../runs.js";
+import type * as squads from "../squads.js";
+import type * as streaks from "../streaks.js";
+import type * as users from "../users.js";
 
 import type {
   ApiFromModules,
@@ -19,7 +26,14 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   auth: typeof auth;
+  crons: typeof crons;
   http: typeof http;
+  leaderboards: typeof leaderboards;
+  live: typeof live;
+  runs: typeof runs;
+  squads: typeof squads;
+  streaks: typeof streaks;
+  users: typeof users;
 }>;
 
 /**
