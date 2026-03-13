@@ -30,7 +30,7 @@ export default function Layout() {
         <HeroUINativeProvider>
           <ThemeSync />
           <Stack screenOptions={{ headerShown: false }}>
-            <Stack.Screen name="index" />
+            <Stack.Screen name="(tabs)" />
           </Stack>
         </HeroUINativeProvider>
       </KeyboardProvider>
