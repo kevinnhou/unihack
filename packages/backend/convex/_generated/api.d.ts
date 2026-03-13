@@ -9,8 +9,12 @@
  */
 
 import type * as auth from "../auth.js";
+import type * as authpwd from "../authpwd.js";
 import type * as http from "../http.js";
+import type * as live from "../live.js";
 import type * as runs from "../runs.js";
+import type * as squads from "../squads.js";
+import type * as users from "../users.js";
 
 import type {
   ApiFromModules,
@@ -20,8 +24,12 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   auth: typeof auth;
+  authpwd: typeof authpwd;
   http: typeof http;
+  live: typeof live;
   runs: typeof runs;
+  squads: typeof squads;
+  users: typeof users;
 }>;
 
 /**
