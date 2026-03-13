@@ -45,7 +45,9 @@
     "tailwindcss": "^4.1.18",
     "uniwind": "^1.2.2",
     "zod": "catalog:",
-    "zustand": "^5.0.11"
+    "zustand": "^5.0.11",
+    "convex": "catalog:",
+    "expo-location": "~18.0.7"
   },
   "devDependencies": {
     "@types/node": "^24.10.0",
