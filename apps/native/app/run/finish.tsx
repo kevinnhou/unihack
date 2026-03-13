@@ -86,7 +86,7 @@ export default function FinishScreen() {
 
   const handleDone = () => {
     reset();
-    router.replace("/index");
+    router.replace("/");
   };
 
   const handleReview = () => {

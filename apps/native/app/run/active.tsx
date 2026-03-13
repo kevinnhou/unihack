@@ -41,19 +41,6 @@ function formatPace(distM: number, durationSec: number) {
   return `${mins}:${secs.toString().padStart(2, "0")} /km`;
 }
 
-function ghostDeltaLabel(userDist: number, ghostDist: number): string {
-  const diff = userDist - ghostDist;
-  if (Math.abs(diff) < 10) {
-    return "Even";
-  }
-  const ahead = diff > 0;
-  const distStr =
-    Math.abs(diff) >= 1000
-      ? `${(Math.abs(diff) / 1000).toFixed(1)} km`
-      : `${Math.round(Math.abs(diff))} m`;
-  // return `${ahead ? "+" : "-"}${distStr} ${ahead ? "ahead" : "behind"}`;
-}
-
 export default function ActiveRunScreen() {
   const router = useRouter();
   // FIX 1: was `const mapRef = null` — must be a ref so it persists across renders
@@ -137,7 +124,7 @@ export default function ActiveRunScreen() {
             lat: 37.7749 + Math.random() * 0.01,
             lng: -122.4194 + Math.random() * 0.01,
             timestamp: Date.now() - (totalTime - i) * 1000,
-            accuracy: 5,
+            speed: 3 + Math.random() * 2,
           });
         }
         useRunStore.getState().configureRun({
@@ -164,7 +151,7 @@ export default function ActiveRunScreen() {
           lat: 37.7749 + Math.random() * 0.001,
           lng: -122.4194 + Math.random() * 0.001,
           timestamp: Date.now(),
-          accuracy: 5,
+          speed: 3 + Math.random() * 2,
         };
         addPoint(mockPoint);
       }, 1000);
@@ -388,9 +375,6 @@ export default function ActiveRunScreen() {
                     }}
                   />
                 </View>
-                <Text className="mt-3 text-center font-bold text-base text-orange-400">
-                  {ghostDeltaLabel(distanceMeters, ghostDistM)}
-                </Text>
               </View>
             )}
           </View>
