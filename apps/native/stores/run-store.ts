@@ -1,203 +1,88 @@
 import { create } from "zustand";
-import { haversineDistance, type TelemetryPoint } from "@/services/location";
 
-export type RunMode = "ranked" | "social" | "live";
+export type TelemetryPoint = {
+  timestamp: number;
+  lat: number;
+  lng: number;
+  speed: number;
+};
+
+export type RunSummary = {
+  distance: number;
+  elapsedSeconds: number;
+  avgPace: number;
+};
 
 type RunState = {
-  // Config
-  mode: RunMode | null;
-  targetDistance: number;
-  opponentRunId: string | null;
-  opponentUserId: string | null;
-  opponentName: string | null;
-  opponentTelemetry: TelemetryPoint[] | null;
-  liveRoomId: string | null;
-
-  // Active run
   runId: string | null;
+  mode: "ranked" | "social";
   isRunning: boolean;
-  startedAt: number | null;
-  telemetry: TelemetryPoint[];
-  distanceMeters: number;
-  durationSeconds: number;
-
-  // Actions
-  configureRun: (cfg: {
-    mode: RunMode;
-    targetDistance: number;
-    opponentRunId?: string;
-    opponentUserId?: string;
-    opponentName?: string;
-    opponentTelemetry?: TelemetryPoint[];
-    liveRoomId?: string;
-  }) => void;
-  setRunId: (id: string) => void;
-  startRun: () => void;
-  addPoint: (point: TelemetryPoint) => void;
-  tick: () => void;
-  finishRun: () => void;
+  startTime: number | null;
+  distance: number;
+  currentPace: number;
+  elapsedSeconds: number;
+  telemetryBuffer: TelemetryPoint[];
+  startRun: (runId: string, mode: "ranked" | "social") => void;
+  addTelemetryPoint: (
+    point: TelemetryPoint,
+    newDistance: number,
+    pace: number
+  ) => void;
+  tickElapsed: () => void;
+  endRun: () => RunSummary;
   reset: () => void;
 };
 
-const INITIAL: Omit<
-  RunState,
-  | "configureRun"
-  | "setRunId"
-  | "startRun"
-  | "addPoint"
-  | "tick"
-  | "finishRun"
-  | "reset"
-> = {
-  mode: null,
-  targetDistance: 5000,
-  opponentRunId: null,
-  opponentUserId: null,
-  opponentName: null,
-  opponentTelemetry: null,
-  liveRoomId: null,
+const initialState = {
   runId: null,
+  mode: "social" as const,
   isRunning: false,
-  startedAt: null,
-  telemetry: [],
-  distanceMeters: 0,
-  durationSeconds: 0,
+  startTime: null,
+  distance: 0,
+  currentPace: 0,
+  elapsedSeconds: 0,
+  telemetryBuffer: [],
 };
 
 export const useRunStore = create<RunState>((set, get) => ({
-  ...INITIAL,
+  ...initialState,
 
-  configureRun(cfg) {
-    const update: Partial<RunState> = {
-      mode: cfg.mode,
-      targetDistance: cfg.targetDistance,
-    };
-
-    if (cfg.opponentRunId !== undefined) {
-      update.opponentRunId = cfg.opponentRunId;
-    }
-    if (cfg.opponentUserId !== undefined) {
-      update.opponentUserId = cfg.opponentUserId;
-    }
-    if (cfg.opponentName !== undefined) {
-      update.opponentName = cfg.opponentName;
-    }
-    if (cfg.opponentTelemetry !== undefined) {
-      update.opponentTelemetry = cfg.opponentTelemetry;
-    }
-    if (cfg.liveRoomId !== undefined) {
-      update.liveRoomId = cfg.liveRoomId;
-    }
-
-    set(update);
-  },
-
-  setRunId(id) {
-    set({ runId: id });
-  },
-
-  startRun() {
+  startRun: (runId, mode) => {
     set({
+      runId,
+      mode,
       isRunning: true,
-      startedAt: Date.now(),
-      telemetry: [],
-      distanceMeters: 0,
-      durationSeconds: 0,
+      startTime: Date.now(),
+      distance: 0,
+      currentPace: 0,
+      elapsedSeconds: 0,
+      telemetryBuffer: [],
     });
   },
 
-  addPoint(point) {
-    const { telemetry } = get();
-    const last = telemetry.at(-1);
-    const added = last
-      ? haversineDistance(last.lat, last.lng, point.lat, point.lng)
-      : 0;
-
-    set({
-      telemetry: [...telemetry, point],
-      distanceMeters: get().distanceMeters + added,
-    });
+  addTelemetryPoint: (point, newDistance, pace) => {
+    set((state) => ({
+      telemetryBuffer: [...state.telemetryBuffer, point],
+      distance: newDistance,
+      currentPace: pace,
+    }));
   },
 
-  tick() {
-    const { startedAt, isRunning } = get();
-    if (!(isRunning && startedAt)) {
+  tickElapsed: () => {
+    const { startTime } = get();
+    if (startTime === null) {
       return;
     }
-    set({ durationSeconds: Math.floor((Date.now() - startedAt) / 1000) });
+    set({ elapsedSeconds: Math.floor((Date.now() - startTime) / 1000) });
   },
 
-  finishRun() {
-    set({ isRunning: false });
+  endRun: () => {
+    const { distance, elapsedSeconds } = get();
+    const avgPace = distance > 0 ? elapsedSeconds / (distance / 1000) : 0;
+    return { distance, elapsedSeconds, avgPace };
   },
 
-  reset() {
-    set(INITIAL);
+  reset: () => {
+    set(initialState);
   },
 }));
-
-// ---------------------------------------------------------------------------
-// Ghost HUD helpers
-// ---------------------------------------------------------------------------
-
-/**
- * Given the ghost's telemetry array and the current elapsed duration,
- * interpolate the ghost's distance at that moment.
- */
-export function interpolateGhostDistance(
-  ghostTelemetry: TelemetryPoint[],
-  ghostStartTimestamp: number,
-  elapsedMs: number
-): number {
-  if (!ghostTelemetry.length) {
-    return 0;
-  }
-
-  const targetTs = ghostStartTimestamp + elapsedMs;
-
-  // Find bracketing points
-  let prev = ghostTelemetry[0];
-  // ghostTelemetry.length > 0 was verified above; cast is safe
-  let next = (ghostTelemetry.at(-1) ?? ghostTelemetry.at(0)) as TelemetryPoint;
-
-  for (let i = 0; i < ghostTelemetry.length - 1; i++) {
-    if (
-      ghostTelemetry[i].timestamp <= targetTs &&
-      ghostTelemetry[i + 1].timestamp >= targetTs
-    ) {
-      prev = ghostTelemetry[i];
-      next = ghostTelemetry[i + 1];
-      break;
-    }
-  }
-
-  const range = next.timestamp - prev.timestamp;
-  if (range === 0) {
-    // Compute cumulative distance up to prev
-    return cumulativeDistance(ghostTelemetry, prev);
-  }
-
-  const t = (targetTs - prev.timestamp) / range;
-  const dPrev = cumulativeDistance(ghostTelemetry, prev);
-  const dNext = cumulativeDistance(ghostTelemetry, next);
-  return dPrev + t * (dNext - dPrev);
-}
-
-function cumulativeDistance(
-  points: TelemetryPoint[],
-  upTo: TelemetryPoint
-): number {
-  let dist = 0;
-  for (let i = 1; i < points.length; i++) {
-    dist += haversineDistance(
-      points[i - 1].lat,
-      points[i - 1].lng,
-      points[i].lat,
-      points[i].lng
-    );
-    if (points[i] === upTo) {
-      break;
-    }
-  }
-  return dist;
-}
