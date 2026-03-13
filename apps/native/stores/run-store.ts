@@ -13,6 +13,13 @@ export type RunSummary = {
   avgPace: number;
 };
 
+export type GhostInfo = {
+  userId: string;
+  name: string;
+  avgPace: number;
+  totalDistance: number;
+};
+
 type RunState = {
   runId: string | null;
   mode: "ranked" | "social";
@@ -22,7 +29,10 @@ type RunState = {
   currentPace: number;
   elapsedSeconds: number;
   telemetryBuffer: TelemetryPoint[];
-  startRun: (runId: string, mode: "ranked" | "social") => void;
+  ghostRun: GhostInfo | null;
+  liveRoomId: string | null;
+  userId: string | null;
+  startRun: (runId: string, mode: "ranked" | "social", userId?: string) => void;
   addTelemetryPoint: (
     point: TelemetryPoint,
     newDistance: number,
@@ -30,24 +40,29 @@ type RunState = {
   ) => void;
   tickElapsed: () => void;
   endRun: () => RunSummary;
+  setGhostRun: (ghost: GhostInfo | null) => void;
+  setLiveRoomId: (id: string | null) => void;
   reset: () => void;
 };
 
 const initialState = {
-  runId: null,
+  runId: null as string | null,
   mode: "social" as const,
   isRunning: false,
-  startTime: null,
+  startTime: null as number | null,
   distance: 0,
   currentPace: 0,
   elapsedSeconds: 0,
-  telemetryBuffer: [],
+  telemetryBuffer: [] as TelemetryPoint[],
+  ghostRun: null as GhostInfo | null,
+  liveRoomId: null as string | null,
+  userId: null as string | null,
 };
 
 export const useRunStore = create<RunState>((set, get) => ({
   ...initialState,
 
-  startRun: (runId, mode) => {
+  startRun: (runId, mode, userId) => {
     set({
       runId,
       mode,
@@ -57,6 +72,9 @@ export const useRunStore = create<RunState>((set, get) => ({
       currentPace: 0,
       elapsedSeconds: 0,
       telemetryBuffer: [],
+      ghostRun: null,
+      liveRoomId: null,
+      userId: userId ?? null,
     });
   },
 
@@ -79,7 +97,16 @@ export const useRunStore = create<RunState>((set, get) => ({
   endRun: () => {
     const { distance, elapsedSeconds } = get();
     const avgPace = distance > 0 ? elapsedSeconds / (distance / 1000) : 0;
+    set({ isRunning: false });
     return { distance, elapsedSeconds, avgPace };
+  },
+
+  setGhostRun: (ghost) => {
+    set({ ghostRun: ghost });
+  },
+
+  setLiveRoomId: (id) => {
+    set({ liveRoomId: id });
   },
 
   reset: () => {

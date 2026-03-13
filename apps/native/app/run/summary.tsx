@@ -1,6 +1,11 @@
+import { api } from "@unihack/backend/convex/_generated/api";
+import type { Id } from "@unihack/backend/convex/_generated/dataModel";
+import { useMutation } from "convex/react";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Button } from "heroui-native";
+import { useState } from "react";
 import { Text, View } from "react-native";
+import { useRunStore } from "@/stores/run-store";
 
 function formatPace(secPerKm: number): string {
   if (secPerKm <= 0 || !Number.isFinite(secPerKm)) {
@@ -23,15 +28,49 @@ function formatTime(totalSeconds: number): string {
 
 export default function Summary() {
   const router = useRouter();
-  const { distance, duration, avgPace } = useLocalSearchParams<{
+  const store = useRunStore();
+  const { distance, duration, avgPace, runId } = useLocalSearchParams<{
     distance: string;
     duration: string;
     avgPace: string;
+    runId: string;
   }>();
+
+  const uploadTelemetryMutation = useMutation(api.runs.uploadRunTelemetry);
+  const [uploading, setUploading] = useState(false);
+  const [uploaded, setUploaded] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
 
   const distanceMeters = Number(distance ?? "0");
   const durationSeconds = Number(duration ?? "0");
   const avgPaceVal = Number(avgPace ?? "0");
+
+  const telemetryBuffer = store.telemetryBuffer;
+  const canUpload = !uploaded && telemetryBuffer.length > 0 && !!runId;
+
+  const handleUpload = async () => {
+    if (!canUpload) {
+      return;
+    }
+    setUploading(true);
+    setUploadError(null);
+    try {
+      await uploadTelemetryMutation({
+        runId: runId as Id<"runs">,
+        telemetry: telemetryBuffer,
+      });
+      setUploaded(true);
+    } catch {
+      setUploadError("Upload failed — please try again");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleDone = () => {
+    store.reset();
+    router.replace("/");
+  };
 
   return (
     <View className="flex-1 bg-background px-6 pt-16">
@@ -67,9 +106,33 @@ export default function Summary() {
         </Text>
       </View>
 
+      {uploadError && (
+        <Text className="mb-3 text-center text-danger text-sm">
+          {uploadError}
+        </Text>
+      )}
+
+      {(canUpload || uploaded) && (
+        <Button
+          className="mb-3 w-full"
+          isDisabled={uploading || uploaded}
+          onPress={handleUpload}
+          size="lg"
+          variant="secondary"
+        >
+          <Text className="font-bold text-base">
+            {uploaded
+              ? "GPS Uploaded ✓"
+              : uploading
+                ? "Uploading..."
+                : `Upload GPS Trace (${telemetryBuffer.length} pts)`}
+          </Text>
+        </Button>
+      )}
+
       <Button
         className="w-full"
-        onPress={() => router.replace("/")}
+        onPress={handleDone}
         size="lg"
         variant="primary"
       >

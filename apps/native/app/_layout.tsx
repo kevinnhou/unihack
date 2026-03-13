@@ -3,10 +3,11 @@ import { Slot } from "expo-router";
 import { ConvexProvider, ConvexReactClient } from "convex/react";
 import { HeroUINativeProvider } from "heroui-native";
 import { useEffect } from "react";
+import { View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { KeyboardProvider } from "react-native-keyboard-controller";
 import { useUniwind } from "uniwind";
-
+import { useAuthStore } from "@/stores/auth-store";
 import { useThemeStore } from "@/stores/theme-store";
 
 const CONVEX_URL = process.env.EXPO_PUBLIC_CONVEX_URL ?? "";
@@ -29,6 +30,25 @@ function ThemeSync() {
 }
 
 export default function Layout() {
+  const { isLoading, loadFromStorage } = useAuthStore();
+
+  useEffect(() => {
+    loadFromStorage();
+  }, [loadFromStorage]);
+
+  // Blank splash while loading persisted session
+  if (isLoading) {
+    return (
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <ConvexProvider client={convex}>
+          <HeroUINativeProvider>
+            <View className="flex-1 bg-background" />
+          </HeroUINativeProvider>
+        </ConvexProvider>
+      </GestureHandlerRootView>
+    );
+  }
+
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <ConvexProvider client={convex}>
