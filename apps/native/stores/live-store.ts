@@ -6,11 +6,16 @@ type LiveState = {
   isHost: boolean;
   targetDistanceMeters: number;
   joinError: string | null;
+  requestedFriendIds: string[];
   setRoom: (
     roomId: string,
     code: string,
     isHost: boolean,
     targetDistanceMeters?: number
+  ) => void;
+  markFriendRequested: (friendId: string) => void;
+  setRequestedFriendIds: (
+    friendIdsOrUpdater: string[] | ((friendIds: string[]) => string[])
   ) => void;
   setTargetDistanceMeters: (meters: number) => void;
   setJoinError: (err: string | null) => void;
@@ -23,6 +28,7 @@ const initialState = {
   isHost: false,
   targetDistanceMeters: 5000,
   joinError: null as string | null,
+  requestedFriendIds: [] as string[],
 };
 
 export const useLiveStore = create<LiveState>((set) => ({
@@ -35,7 +41,26 @@ export const useLiveStore = create<LiveState>((set) => ({
       isHost,
       targetDistanceMeters: targetDistanceMeters ?? 5000,
       joinError: null,
+      requestedFriendIds: [],
     });
+  },
+
+  markFriendRequested: (friendId) => {
+    set((state) => ({
+      requestedFriendIds: state.requestedFriendIds.includes(friendId)
+        ? state.requestedFriendIds
+        : [...state.requestedFriendIds, friendId],
+    }));
+  },
+
+  setRequestedFriendIds: (requestedFriendIdsOrUpdater) => {
+    if (typeof requestedFriendIdsOrUpdater === "function") {
+      set((state) => ({
+        requestedFriendIds: requestedFriendIdsOrUpdater(state.requestedFriendIds),
+      }));
+      return;
+    }
+    set({ requestedFriendIds: requestedFriendIdsOrUpdater });
   },
 
   setTargetDistanceMeters: (targetDistanceMeters) => {

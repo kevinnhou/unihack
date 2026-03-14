@@ -126,6 +126,14 @@ export const startLiveRoom = mutation({
     if (room.createdBy !== hostUserId) {
       throw new Error("Only the host can start the race");
     }
+    if (room.status === "running") {
+      if (room.startedAt) {
+        return { startedAt: room.startedAt };
+      }
+      const startedAt = Date.now();
+      await ctx.db.patch(roomId, { startedAt });
+      return { startedAt };
+    }
     if (room.status !== "lobby") {
       throw new Error("Room is not in lobby state");
     }

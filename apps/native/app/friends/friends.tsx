@@ -122,7 +122,7 @@ export default function FriendsScreen() {
               >
                 <Text className="flex flex-row font-medium text-orange-500">
                   <ChevronLeft
-                    color="currentColor"
+                    color="#f97316"
                     size={18}
                     style={{ marginRight: 0 }}
                   />{" "}
@@ -184,7 +184,7 @@ export default function FriendsScreen() {
               >
                 <View className="flex flex-row items-center text-orange-500">
                   <ChevronLeft
-                    color="currentColor"
+                    color="#f97316"
                     size={18}
                     style={{ marginRight: 8 }}
                   />

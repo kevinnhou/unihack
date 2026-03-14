@@ -1,11 +1,10 @@
 /** biome-ignore-all lint/nursery/noLeakedRender: <explanation> */
-import { Ionicons } from "@expo/vector-icons";
 import { api } from "@unihack/backend/convex/_generated/api";
 import type { Id } from "@unihack/backend/convex/_generated/dataModel";
 import { useMutation, useQuery } from "convex/react";
 import { Redirect, useRouter } from "expo-router";
+import { ArrowLeft } from "lucide-react-native";
 import { useEffect } from "react";
-import { useState } from "react";
 import { ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { useAuthStore } from "@/stores/auth-store";
 import { useLiveStore } from "@/stores/live-store";
@@ -18,7 +17,6 @@ export default function LiveLobbyScreen() {
   const { userId } = useAuthStore();
   const startRoomMutation = useMutation(api.live.startLiveRoom);
   const requestLiveInviteMutation = useMutation((api as any).live.requestLiveInvite);
-  const [requestedFriendIds, setRequestedFriendIds] = useState<string[]>([]);
 
   const liveData = useQuery(
     api.live.getLiveRoom,
@@ -77,15 +75,14 @@ export default function LiveLobbyScreen() {
   const isHost = liveStore.isHost;
   const canStart = isHost && participants.length >= 2;
   const joinedIds = new Set(participants.map((p) => p.userId));
+  const requestedFriendIds = liveStore.requestedFriendIds;
 
   const handleRequestFriend = async (friendId: string, friendName: string) => {
     if (!(liveStore.roomId && userId)) {
       return;
     }
 
-    setRequestedFriendIds((prev) =>
-      prev.includes(friendId) ? prev : [...prev, friendId]
-    );
+    liveStore.markFriendRequested(friendId);
 
     try {
       const result = await requestLiveInviteMutation({
@@ -96,10 +93,14 @@ export default function LiveLobbyScreen() {
       });
 
       if (!result.success) {
-        setRequestedFriendIds((prev) => prev.filter((id) => id !== friendId));
+        liveStore.setRequestedFriendIds((prev) =>
+          prev.filter((id) => id !== friendId)
+        );
       }
     } catch {
-      setRequestedFriendIds((prev) => prev.filter((id) => id !== friendId));
+      liveStore.setRequestedFriendIds((prev) =>
+        prev.filter((id) => id !== friendId)
+      );
     }
   };
 
@@ -113,7 +114,7 @@ export default function LiveLobbyScreen() {
             router.back();
           }}
         >
-          <Ionicons color="#9ca3af" name="arrow-back" size={24} />
+          <ArrowLeft color="#9ca3af" size={24} />
         </TouchableOpacity>
         <Text className="font-bold text-2xl text-white">
           Live Race Lobby

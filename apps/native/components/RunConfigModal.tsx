@@ -111,6 +111,8 @@ export function RunConfigModal({
         userId: userId as Id<"users">,
       });
 
+      const requestedOnCreate: string[] = [];
+
       if (initialLiveInviteUserId && initialLiveInviteUserId !== userId) {
         const inviteResult = await requestLiveInviteMutation({
           roomId,
@@ -119,12 +121,17 @@ export function RunConfigModal({
           targetDistanceMeters,
         });
 
-        if (!inviteResult.success) {
+        if (inviteResult.success) {
+          requestedOnCreate.push(initialLiveInviteUserId);
+        } else {
           setCreateError(inviteResult.reason);
         }
       }
 
       liveStore.setRoom(roomId, code, true, targetDistanceMeters);
+      if (requestedOnCreate.length > 0) {
+        liveStore.setRequestedFriendIds(requestedOnCreate);
+      }
       onClose();
       router.push("/live/lobby");
     } finally {
@@ -213,7 +220,7 @@ export function RunConfigModal({
     <Modal
       animationType="slide"
       onRequestClose={onClose}
-      presentationStyle="pageSheet"
+      presentationStyle="fullScreen"
       visible={visible}
     >
       <View className="flex-1 bg-black">

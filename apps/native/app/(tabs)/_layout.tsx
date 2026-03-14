@@ -29,6 +29,9 @@ export default function TabsLayout() {
         initialRouteName="index"
         screenOptions={{
           headerShown: false,
+          sceneStyle: {
+            backgroundColor: "#000000",
+          },
           tabBarStyle: {
             backgroundColor: "#0a0a0a",
             borderTopColor: "#1f1f1f",

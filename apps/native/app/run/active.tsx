@@ -3,7 +3,7 @@ import type { Id } from "@unihack/backend/convex/_generated/dataModel";
 import { useMutation, useQuery } from "convex/react";
 import { useRouter } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Text, TouchableOpacity, View } from "react-native";
+import { Linking, ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useLivePing } from "@/hooks/use-live-ping";
 import { useLocationTracking } from "@/hooks/use-location-tracking";
@@ -92,6 +92,7 @@ export default function ActiveRunScreen() {
   const currentPace = useRunStore((s) => s.currentPace);
   const ghostRun = useRunStore((s) => s.ghostRun);
   const targetDistanceStore = useRunStore((s) => s.targetDistance);
+  const isRunning = useRunStore((s) => s.isRunning);
   const mode = useRunStore((s) => s.mode);
   const endRunStore = useRunStore((s) => s.endRun);
   const setLiveRoomId = useRunStore((s) => s.setLiveRoomId);
@@ -106,7 +107,9 @@ export default function ActiveRunScreen() {
   const tickRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [isEnding, setIsEnding] = useState(false);
 
-  const { startTracking, stopTracking } = useLocationTracking({ runId });
+  const { startTracking, stopTracking, permissionDenied } = useLocationTracking({
+    runId,
+  });
 
   // Optional Live Ping integration if this happens to be a social/live run
   const { startPinging, stopPinging } = useLivePing({
@@ -118,8 +121,16 @@ export default function ActiveRunScreen() {
   // Boot up Real GPS Tracking and Timers
   // ---------------------------------------------------------------------------
   useEffect(() => {
+    if (!isRunning) {
+      return;
+    }
+
     startTracking();
     startPinging();
+
+    if (tickRef.current !== null) {
+      clearInterval(tickRef.current);
+    }
 
     tickRef.current = setInterval(() => {
       useRunStore.getState().tickElapsed();
@@ -131,7 +142,7 @@ export default function ActiveRunScreen() {
         tickRef.current = null;
       }
     };
-  }, [startTracking, startPinging]);
+  }, [isRunning, startTracking, startPinging]);
 
   // ---------------------------------------------------------------------------
   // Finish Logic
@@ -230,21 +241,25 @@ export default function ActiveRunScreen() {
   );
 
   const barColors = [
-    "bg-orange-500",
-    "bg-blue-500",
-    "bg-emerald-500",
-    "bg-pink-500",
-    "bg-yellow-500",
-    "bg-cyan-500",
-    "bg-violet-500",
-    "bg-rose-500",
+    "#f97316",
+    "#3b82f6",
+    "#10b981",
+    "#ec4899",
+    "#eab308",
+    "#06b6d4",
+    "#8b5cf6",
+    "#f43f5e",
   ] as const;
+
+  if (!isRunning || !runId) {
+    return <SafeAreaView className="flex-1 bg-black" />;
+  }
 
   return (
     <SafeAreaView className="flex-1 bg-black">
-      {/* Centered HUD */}
-      <View className="flex-1 justify-center px-6">
-        <View className="gap-8 rounded-3xl bg-neutral-900 px-6 py-8">
+      <ScrollView contentContainerStyle={{ flexGrow: 1, paddingVertical: 24 }}>
+        <View className="flex-1 justify-center px-6">
+          <View className="gap-8 rounded-3xl bg-neutral-900 px-6 py-8">
           {/* Stats row */}
           <View className="flex-row items-center justify-between">
             <Stat label="Distance" value={formatDistance(distance)} />
@@ -252,15 +267,31 @@ export default function ActiveRunScreen() {
             <Stat label="Pace" value={formatPace(currentPace)} />
           </View>
 
+          {permissionDenied && (
+            <View className="rounded-2xl border border-red-500/40 bg-red-500/10 px-4 py-3">
+              <Text className="font-semibold text-red-300 text-sm">
+                Location permission is required for live distance tracking.
+              </Text>
+              <TouchableOpacity
+                className="mt-2 self-start rounded-lg bg-red-500 px-3 py-2"
+                onPress={() => {
+                  Linking.openSettings().catch(() => {
+                    // ignore settings open failures
+                  });
+                }}
+              >
+                <Text className="font-semibold text-white text-xs">Open Settings</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+
           {/* Progress bars */}
           <View className="gap-5">
             {liveRoomId && liveParticipants.length > 0 ? (
               liveParticipants.map((participant, index) => {
                 const isMe = participant.userId === userId;
                 const participantLabel = isMe ? "You" : participant.name;
-                const barColorClass = isMe
-                  ? "bg-orange-500"
-                  : barColors[index % barColors.length];
+                const barColor = isMe ? "#f97316" : barColors[index % barColors.length];
 
                 return (
                   <View key={participant.userId}>
@@ -274,8 +305,9 @@ export default function ActiveRunScreen() {
                     </View>
                     <View className="h-4 overflow-hidden rounded-full bg-neutral-700">
                       <View
-                        className={`h-full rounded-full ${barColorClass}`}
+                        className="h-full rounded-full"
                         style={{
+                          backgroundColor: barColor,
                           width: `${progressPercent(participant.distance, targetDistance)}%`,
                         }}
                       />
@@ -295,8 +327,9 @@ export default function ActiveRunScreen() {
                   </View>
                   <View className="h-4 overflow-hidden rounded-full bg-neutral-700">
                     <View
-                      className="h-full rounded-full bg-orange-500"
+                      className="h-full rounded-full"
                       style={{
+                        backgroundColor: "#f97316",
                         width: `${progressPercent(distance, targetDistance)}%`,
                       }}
                     />
@@ -318,8 +351,9 @@ export default function ActiveRunScreen() {
                     </View>
                     <View className="h-4 overflow-hidden rounded-full bg-neutral-700">
                       <View
-                        className="h-full rounded-full bg-blue-500"
+                        className="h-full rounded-full"
                         style={{
+                          backgroundColor: "#3b82f6",
                           width: `${progressPercent(ghostDistM, targetDistance)}%`,
                         }}
                       />
@@ -344,7 +378,8 @@ export default function ActiveRunScreen() {
             </Text>
           </TouchableOpacity>
         </View>
-      </View>
+        </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }

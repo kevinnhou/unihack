@@ -1,8 +1,8 @@
-import { Ionicons } from "@expo/vector-icons";
 import { api } from "@unihack/backend/convex/_generated/api";
 import type { Id } from "@unihack/backend/convex/_generated/dataModel";
 import { useQuery } from "convex/react";
 import { Redirect, useLocalSearchParams, useRouter } from "expo-router";
+import { ArrowLeft } from "lucide-react-native";
 import { Text, TouchableOpacity, View } from "react-native";
 import { useAuthStore } from "@/stores/auth-store";
 
@@ -46,7 +46,7 @@ export default function LiveResultsScreen() {
           accessibilityRole="button"
           onPress={() => router.replace("/")}
         >
-          <Ionicons color="#9ca3af" name="arrow-back" size={24} />
+          <ArrowLeft color="#9ca3af" size={24} />
         </TouchableOpacity>
         <Text className="font-bold text-2xl text-white">Race Results</Text>
       </View>
