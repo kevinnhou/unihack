@@ -1,7 +1,7 @@
 import "@/global.css";
 import { ConvexProvider, ConvexReactClient } from "convex/react";
-import { StatusBar } from "expo-status-bar";
 import { Stack } from "expo-router";
+import { StatusBar } from "expo-status-bar";
 import { HeroUINativeProvider } from "heroui-native";
 import { useEffect } from "react";
 import { View } from "react-native";

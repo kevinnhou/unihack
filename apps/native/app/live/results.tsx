@@ -62,7 +62,9 @@ export default function LiveResultsScreen() {
             return (
               <View
                 className={`mb-3 flex-row items-center justify-between rounded-xl border p-4 ${
-                  isMe ? "border-orange-500 bg-orange-500/10" : "border-neutral-700 bg-neutral-900"
+                  isMe
+                    ? "border-orange-500 bg-orange-500/10"
+                    : "border-neutral-700 bg-neutral-900"
                 }`}
                 key={p.userId}
               >
@@ -81,7 +83,7 @@ export default function LiveResultsScreen() {
                     </Text>
                   </View>
                 </View>
-                <Text className="font-bold text-white text-lg">
+                <Text className="font-bold text-lg text-white">
                   {(p.distance / 1000).toFixed(2)} km
                 </Text>
               </View>

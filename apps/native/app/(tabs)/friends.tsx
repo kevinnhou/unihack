@@ -49,7 +49,9 @@ export default function FriendsTabScreen() {
   const [searchTerm, setSearchTerm] = useState("");
   const [actioningId, setActioningId] = useState<Id<"users"> | null>(null);
   const [challengeUserId, setChallengeUserId] = useState<string | null>(null);
-  const [challengeUserName, setChallengeUserName] = useState<string | null>(null);
+  const [challengeUserName, setChallengeUserName] = useState<string | null>(
+    null
+  );
   const [modalOpen, setModalOpen] = useState(false);
 
   const friends = useQuery(
@@ -64,10 +66,6 @@ export default function FriendsTabScreen() {
 
   const acceptFriendRequest = useMutation(api.friends.acceptFriendRequest);
 
-  if (!userId) {
-    return <Redirect href="/(auth)/signin" />;
-  }
-
   const filteredFriends = useMemo(() => {
     const q = searchTerm.trim().toLowerCase();
     if (!q) {
@@ -77,6 +75,10 @@ export default function FriendsTabScreen() {
       friend.name.toLowerCase().includes(q)
     );
   }, [friends, searchTerm]);
+
+  if (!userId) {
+    return <Redirect href="/(auth)/signin" />;
+  }
 
   const handleAccept = async (senderId: Id<"users">) => {
     if (!userId) {
@@ -102,6 +104,15 @@ export default function FriendsTabScreen() {
         contentContainerStyle={{ paddingBottom: 40 }}
         data={filteredFriends}
         keyExtractor={(item) => item.friendId}
+        ListEmptyComponent={
+          <View className="mt-12 items-center px-8">
+            <Text className="text-center text-gray-500">
+              {searchTerm.trim()
+                ? "No friends match your search."
+                : "No friends yet. Tap + to add someone."}
+            </Text>
+          </View>
+        }
         ListHeaderComponent={
           <View className="px-4 pt-4 pb-4">
             <View className="mb-3 flex-row items-center justify-between">
@@ -135,7 +146,9 @@ export default function FriendsTabScreen() {
               <View className="mt-4 rounded-2xl border border-orange-500/30 bg-neutral-900 p-4">
                 <View className="mb-2 flex-row items-center gap-2">
                   <Bell color="#f97316" size={16} />
-                  <Text className="font-semibold text-orange-400">Friend Requests</Text>
+                  <Text className="font-semibold text-orange-400">
+                    Friend Requests
+                  </Text>
                 </View>
 
                 {(incomingRequests ?? []).map((request) => {
@@ -148,7 +161,9 @@ export default function FriendsTabScreen() {
                       key={request.userId}
                     >
                       <View className="mr-3 flex-1">
-                        <Text className="font-semibold text-white">{request.displayName}</Text>
+                        <Text className="font-semibold text-white">
+                          {request.displayName}
+                        </Text>
                         <Text className="text-gray-400 text-xs">
                           {request.mutualFriendsCount} mutual friend
                           {request.mutualFriendsCount === 1 ? "" : "s"}
@@ -162,7 +177,9 @@ export default function FriendsTabScreen() {
                         {isLoading ? (
                           <ActivityIndicator color="white" size="small" />
                         ) : (
-                          <Text className="font-semibold text-white text-xs">Accept</Text>
+                          <Text className="font-semibold text-white text-xs">
+                            Accept
+                          </Text>
                         )}
                       </TouchableOpacity>
                     </View>
@@ -172,22 +189,16 @@ export default function FriendsTabScreen() {
             )}
           </View>
         }
-        ListEmptyComponent={
-          <View className="mt-12 items-center px-8">
-            <Text className="text-center text-gray-500">
-              {searchTerm.trim()
-                ? "No friends match your search."
-                : "No friends yet. Tap + to add someone."}
-            </Text>
-          </View>
-        }
         renderItem={({ item }) => (
           <View className="mx-4 mb-3 rounded-2xl bg-neutral-900 p-4">
             <View className="flex-row items-center justify-between">
               <View className="flex-1">
-                <Text className="font-semibold text-lg text-white">{item.name}</Text>
+                <Text className="font-semibold text-lg text-white">
+                  {item.name}
+                </Text>
                 <Text className="text-gray-400 text-sm">
-                  {item.totalRuns} run{item.totalRuns === 1 ? "" : "s"} · {formatPace(item.bestPace)}
+                  {item.totalRuns} run{item.totalRuns === 1 ? "" : "s"} ·{" "}
+                  {formatPace(item.bestPace)}
                 </Text>
                 {item.currentStreak > 0 && (
                   <Text className="text-orange-400 text-xs">

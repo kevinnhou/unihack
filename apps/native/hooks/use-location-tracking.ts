@@ -1,37 +1,21 @@
 import { api } from "@unihack/backend/convex/_generated/api";
 import type { Id } from "@unihack/backend/convex/_generated/dataModel";
 import { useMutation } from "convex/react";
-import type { LocationSubscription } from "expo-location";
-import {
-  Accuracy,
-  requestForegroundPermissionsAsync,
-  watchPositionAsync,
-} from "expo-location";
 import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  DEFAULT_LIVE_PING_INTERVAL_MS,
+  DEFAULT_PING_INTERVAL_MS,
+  MIN_PACE_DISTANCE_M,
+  PACE_WINDOW_MS,
+} from "@/constants";
+import { useLivePing } from "@/hooks/use-live-ping";
+import {
+  requestLocationPermissions,
+  startTracking as serviceStartTracking,
+  stopTracking as serviceStopTracking,
+} from "@/services/location";
 import { useRunStore } from "@/stores/run-store";
-
-/** Ignore movement below this speed (GPS noise floor). */
-const MIN_MOVE_SPEED_MS = 0.3; // m/s ≈ 1 km/h
-/** Rolling window for pace computation. */
-const PACE_WINDOW_MS = 20_000;
-/** Minimum distance moved in window before emitting a valid pace. */
-const MIN_PACE_DISTANCE_M = 5;
-
-function haversineMeters(
-  lat1: number,
-  lng1: number,
-  lat2: number,
-  lng2: number
-): number {
-  const R = 6_371_000;
-  const toRad = (deg: number) => (deg * Math.PI) / 180;
-  const dLat = toRad(lat2 - lat1);
-  const dLng = toRad(lng2 - lng1);
-  const a =
-    Math.sin(dLat / 2) ** 2 +
-    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2;
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-}
+import type { TelemetryPoint } from "@/types";
 
 type PacePoint = { timestamp: number; distance: number };
 
@@ -49,110 +33,110 @@ function computePaceFromWindow(win: PacePoint[]): number {
   return 0;
 }
 
+function haversineMeters(
+  lat1: number,
+  lng1: number,
+  lat2: number,
+  lng2: number
+): number {
+  const R = 6_371_000;
+  const toRad = (deg: number) => (deg * Math.PI) / 180;
+  const dLat = toRad(lat2 - lat1);
+  const dLng = toRad(lng2 - lng1);
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
 function computeDistanceDelta(
   prev: { lat: number; lng: number } | null,
   lat: number,
-  lng: number,
-  speed: number
+  lng: number
 ): number {
   if (prev === null) {
     return 0;
   }
-  const rawDelta = haversineMeters(prev.lat, prev.lng, lat, lng);
-  const effectiveSpeed = Math.max(speed, 0);
-  return effectiveSpeed >= MIN_MOVE_SPEED_MS ? rawDelta : 0;
+  return haversineMeters(prev.lat, prev.lng, lat, lng);
 }
 
 type UseLocationTrackingOptions = {
   runId: string | null;
   pingIntervalMs?: number;
-  gpsIntervalMs?: number;
+  roomId?: string | null;
+  userId?: string | null;
 };
 
 export function useLocationTracking({
   runId,
-  pingIntervalMs = 5000,
-  gpsIntervalMs = 2000,
+  pingIntervalMs = DEFAULT_PING_INTERVAL_MS,
+  roomId = null,
+  userId = null,
 }: UseLocationTrackingOptions) {
   const pingMutation = useMutation(api.runs.updateTelemetry);
-  // Keep mutable values in refs so callbacks always see the latest without
-  // causing startTracking to be recreated on every render.
   const pingMutationRef = useRef(pingMutation);
   const runIdRef = useRef(runId);
   const pingIntervalMsRef = useRef(pingIntervalMs);
-  const gpsIntervalMsRef = useRef(gpsIntervalMs);
   pingMutationRef.current = pingMutation;
   runIdRef.current = runId;
   pingIntervalMsRef.current = pingIntervalMs;
-  gpsIntervalMsRef.current = gpsIntervalMs;
 
-  const subscriptionRef = useRef<LocationSubscription | null>(null);
   const pingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const prevCoordRef = useRef<{ lat: number; lng: number } | null>(null);
-  /** Lightweight ring-buffer for distance/time based pace computation. */
   const paceWindowRef = useRef<PacePoint[]>([]);
   const [permissionDenied, setPermissionDenied] = useState(false);
 
+  const { startPinging, stopPinging } = useLivePing({
+    roomId,
+    userId,
+    pingIntervalMs: DEFAULT_LIVE_PING_INTERVAL_MS,
+  });
+
   const stopTracking = useCallback(() => {
-    if (subscriptionRef.current) {
-      subscriptionRef.current.remove();
-      subscriptionRef.current = null;
-    }
+    serviceStopTracking();
     if (pingIntervalRef.current !== null) {
       clearInterval(pingIntervalRef.current);
       pingIntervalRef.current = null;
     }
+    stopPinging();
     prevCoordRef.current = null;
     paceWindowRef.current = [];
-  }, []);
+  }, [stopPinging]);
 
   const startTracking = useCallback(async () => {
     stopTracking();
 
-    const { status } = await requestForegroundPermissionsAsync();
-    if (status !== "granted") {
+    const granted = await requestLocationPermissions();
+    if (!granted) {
       setPermissionDenied(true);
       return;
     }
     setPermissionDenied(false);
 
-    subscriptionRef.current = await watchPositionAsync(
-      {
-        accuracy: Accuracy.Highest,
-        timeInterval: gpsIntervalMsRef.current,
-        distanceInterval: 1,
-      },
-      (location) => {
-        const { latitude, longitude, speed } = location.coords;
-        const safeSpeed = Math.max(speed ?? 0, 0);
-        const state = useRunStore.getState();
+    const locationHandler = (point: TelemetryPoint) => {
+      const state = useRunStore.getState();
 
-        const delta = computeDistanceDelta(
-          prevCoordRef.current,
-          latitude,
-          longitude,
-          safeSpeed
-        );
-        prevCoordRef.current = { lat: latitude, lng: longitude };
+      const delta = computeDistanceDelta(
+        prevCoordRef.current,
+        point.lat,
+        point.lng
+      );
+      prevCoordRef.current = { lat: point.lat, lng: point.lng };
 
-        const newDistance = state.distance + delta;
-        const now = location.timestamp;
+      const newDistance = state.distance + delta;
+      const now = point.timestamp;
 
-        paceWindowRef.current.push({ timestamp: now, distance: newDistance });
-        paceWindowRef.current = paceWindowRef.current.filter(
-          (p) => p.timestamp >= now - PACE_WINDOW_MS
-        );
+      paceWindowRef.current.push({ timestamp: now, distance: newDistance });
+      paceWindowRef.current = paceWindowRef.current.filter(
+        (p) => p.timestamp >= now - PACE_WINDOW_MS
+      );
 
-        const pace = computePaceFromWindow(paceWindowRef.current);
-        const point = {
-          timestamp: now,
-          lat: latitude,
-          lng: longitude,
-          speed: safeSpeed,
-        };
-        state.addTelemetryPoint(point, newDistance, pace);
-      }
-    );
+      const pace = computePaceFromWindow(paceWindowRef.current);
+      state.addTelemetryPoint(point, newDistance, pace);
+    };
+
+    await serviceStartTracking(locationHandler);
+    startPinging();
 
     const currentRunId = runIdRef.current;
     if (currentRunId) {
@@ -161,7 +145,6 @@ export function useLocationTracking({
         if (!state.isRunning) {
           return;
         }
-        // Lightweight ping — no GPS coordinates sent to server
         pingMutationRef
           .current({
             runId: currentRunId as Id<"runs">,
@@ -174,7 +157,7 @@ export function useLocationTracking({
           });
       }, pingIntervalMsRef.current);
     }
-  }, [stopTracking]);
+  }, [stopTracking, startPinging]);
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: cleanup only on unmount
   useEffect(() => () => stopTracking(), []);

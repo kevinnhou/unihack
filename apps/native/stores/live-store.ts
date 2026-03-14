@@ -56,7 +56,9 @@ export const useLiveStore = create<LiveState>((set) => ({
   setRequestedFriendIds: (requestedFriendIdsOrUpdater) => {
     if (typeof requestedFriendIdsOrUpdater === "function") {
       set((state) => ({
-        requestedFriendIds: requestedFriendIdsOrUpdater(state.requestedFriendIds),
+        requestedFriendIds: requestedFriendIdsOrUpdater(
+          state.requestedFriendIds
+        ),
       }));
       return;
     }

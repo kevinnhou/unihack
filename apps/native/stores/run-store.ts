@@ -1,24 +1,7 @@
 import { create } from "zustand";
+import type { GhostInfo, RunSummary, TelemetryPoint } from "@/types";
 
-export type TelemetryPoint = {
-  timestamp: number;
-  lat: number;
-  lng: number;
-  speed: number;
-};
-
-export type RunSummary = {
-  distance: number;
-  elapsedSeconds: number;
-  avgPace: number;
-};
-
-export type GhostInfo = {
-  userId: string;
-  name: string;
-  avgPace: number;
-  totalDistance: number;
-};
+export type { GhostInfo, RunSummary, TelemetryPoint };
 
 type RunState = {
   runId: string | null;

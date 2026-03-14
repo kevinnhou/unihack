@@ -9,27 +9,27 @@
 /* Begin PBXBuildFile section */
 		13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB51A68108700A75B9A /* Images.xcassets */; };
 		3E461D99554A48A4959DE609 /* SplashScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */; };
-		809B966F8C1CA5C275C1D902 /* ExpoModulesProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 17A5868B308611864BB5BDEA /* ExpoModulesProvider.swift */; };
+		56BAC22F16D9094B5CAE268A /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 742B1254FBBE5A60A017D03E /* PrivacyInfo.xcprivacy */; };
 		BB2F792D24A3F905000567C9 /* Expo.plist in Resources */ = {isa = PBXBuildFile; fileRef = BB2F792C24A3F905000567C9 /* Expo.plist */; };
+		BE9E3E98EDD5EBAA8E9CEA24 /* ExpoModulesProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1769C10E95C201165832458 /* ExpoModulesProvider.swift */; };
 		F11748422D0307B40044C1D9 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = F11748412D0307B40044C1D9 /* AppDelegate.swift */; };
-		F42746CF84DFDE5C24F2A35C /* libPods-pinfire.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 8D74B012DA08441B10EF53DD /* libPods-pinfire.a */; };
-		F9D0D72C5E0A10546D0B418D /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 129FAA9A1764303096A9998C /* PrivacyInfo.xcprivacy */; };
+		F37515A257A6A3EDDA608CF0 /* libPods-agon.a in Frameworks */ = {isa = PBXBuildFile; fileRef = DC63A7CFEBCB2CBEB16D61F6 /* libPods-agon.a */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		129FAA9A1764303096A9998C /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; name = PrivacyInfo.xcprivacy; path = pinfire/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
-		13B07F961A680F5B00A75B9A /* pinfire.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = pinfire.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		13B07FB51A68108700A75B9A /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Images.xcassets; path = pinfire/Images.xcassets; sourceTree = "<group>"; };
-		13B07FB61A68108700A75B9A /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = pinfire/Info.plist; sourceTree = "<group>"; };
-		17A5868B308611864BB5BDEA /* ExpoModulesProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ExpoModulesProvider.swift; path = "Pods/Target Support Files/Pods-pinfire/ExpoModulesProvider.swift"; sourceTree = "<group>"; };
-		490F19F24880EE7F638E07B1 /* Pods-pinfire.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-pinfire.debug.xcconfig"; path = "Target Support Files/Pods-pinfire/Pods-pinfire.debug.xcconfig"; sourceTree = "<group>"; };
-		8D74B012DA08441B10EF53DD /* libPods-pinfire.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-pinfire.a"; sourceTree = BUILT_PRODUCTS_DIR; };
-		AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = SplashScreen.storyboard; path = pinfire/SplashScreen.storyboard; sourceTree = "<group>"; };
+		13B07F961A680F5B00A75B9A /* agon.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = agon.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		13B07FB51A68108700A75B9A /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Images.xcassets; path = agon/Images.xcassets; sourceTree = "<group>"; };
+		13B07FB61A68108700A75B9A /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = agon/Info.plist; sourceTree = "<group>"; };
+		742B1254FBBE5A60A017D03E /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; name = PrivacyInfo.xcprivacy; path = agon/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = SplashScreen.storyboard; path = agon/SplashScreen.storyboard; sourceTree = "<group>"; };
+		B8FE470B9E6366FD3B7CC83B /* Pods-agon.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-agon.debug.xcconfig"; path = "Target Support Files/Pods-agon/Pods-agon.debug.xcconfig"; sourceTree = "<group>"; };
 		BB2F792C24A3F905000567C9 /* Expo.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Expo.plist; sourceTree = "<group>"; };
-		C6A381BE4B4AD6D8BB53130F /* Pods-pinfire.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-pinfire.release.xcconfig"; path = "Target Support Files/Pods-pinfire/Pods-pinfire.release.xcconfig"; sourceTree = "<group>"; };
+		DC63A7CFEBCB2CBEB16D61F6 /* libPods-agon.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-agon.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		E1769C10E95C201165832458 /* ExpoModulesProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ExpoModulesProvider.swift; path = "Pods/Target Support Files/Pods-agon/ExpoModulesProvider.swift"; sourceTree = "<group>"; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
-		F11748412D0307B40044C1D9 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppDelegate.swift; path = pinfire/AppDelegate.swift; sourceTree = "<group>"; };
-		F11748442D0722820044C1D9 /* pinfire-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = "pinfire-Bridging-Header.h"; path = "pinfire/pinfire-Bridging-Header.h"; sourceTree = "<group>"; };
+		F11748412D0307B40044C1D9 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppDelegate.swift; path = agon/AppDelegate.swift; sourceTree = "<group>"; };
+		F11748442D0722820044C1D9 /* agon-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = "agon-Bridging-Header.h"; path = "agon/agon-Bridging-Header.h"; sourceTree = "<group>"; };
+		F32EC2F40BACA385CBF1D503 /* Pods-agon.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-agon.release.xcconfig"; path = "Target Support Files/Pods-agon/Pods-agon.release.xcconfig"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -37,42 +37,52 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				F42746CF84DFDE5C24F2A35C /* libPods-pinfire.a in Frameworks */,
+				F37515A257A6A3EDDA608CF0 /* libPods-agon.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		0D46CFDCEF4AA4BAEC9E79C0 /* ExpoModulesProviders */ = {
-			isa = PBXGroup;
-			children = (
-				EF1BBCF1D2B0F361E48285B4 /* pinfire */,
-			);
-			name = ExpoModulesProviders;
-			sourceTree = "<group>";
-		};
-		13B07FAE1A68108700A75B9A /* pinfire */ = {
+		13B07FAE1A68108700A75B9A /* agon */ = {
 			isa = PBXGroup;
 			children = (
 				F11748412D0307B40044C1D9 /* AppDelegate.swift */,
-				F11748442D0722820044C1D9 /* pinfire-Bridging-Header.h */,
+				F11748442D0722820044C1D9 /* agon-Bridging-Header.h */,
 				BB2F792B24A3F905000567C9 /* Supporting */,
 				13B07FB51A68108700A75B9A /* Images.xcassets */,
 				13B07FB61A68108700A75B9A /* Info.plist */,
 				AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */,
-				129FAA9A1764303096A9998C /* PrivacyInfo.xcprivacy */,
+				742B1254FBBE5A60A017D03E /* PrivacyInfo.xcprivacy */,
 			);
-			name = pinfire;
+			name = agon;
 			sourceTree = "<group>";
 		};
 		2D16E6871FA4F8E400B85C8A /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
 				ED297162215061F000B7C4FE /* JavaScriptCore.framework */,
-				8D74B012DA08441B10EF53DD /* libPods-pinfire.a */,
+				DC63A7CFEBCB2CBEB16D61F6 /* libPods-agon.a */,
 			);
 			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		4A667FA6BCC44941B63627F2 /* Pods */ = {
+			isa = PBXGroup;
+			children = (
+				B8FE470B9E6366FD3B7CC83B /* Pods-agon.debug.xcconfig */,
+				F32EC2F40BACA385CBF1D503 /* Pods-agon.release.xcconfig */,
+			);
+			name = Pods;
+			path = Pods;
+			sourceTree = "<group>";
+		};
+		4ADA6FC494F0937583EF9901 /* ExpoModulesProviders */ = {
+			isa = PBXGroup;
+			children = (
+				B3EE515A641414F426B802DC /* agon */,
+			);
+			name = ExpoModulesProviders;
 			sourceTree = "<group>";
 		};
 		832341AE1AAA6A7D00B99B32 /* Libraries */ = {
@@ -85,12 +95,12 @@
 		83CBB9F61A601CBA00E9B192 = {
 			isa = PBXGroup;
 			children = (
-				13B07FAE1A68108700A75B9A /* pinfire */,
+				13B07FAE1A68108700A75B9A /* agon */,
 				832341AE1AAA6A7D00B99B32 /* Libraries */,
 				83CBBA001A601CBA00E9B192 /* Products */,
 				2D16E6871FA4F8E400B85C8A /* Frameworks */,
-				874037247CB991CD2D52D767 /* Pods */,
-				0D46CFDCEF4AA4BAEC9E79C0 /* ExpoModulesProviders */,
+				4A667FA6BCC44941B63627F2 /* Pods */,
+				4ADA6FC494F0937583EF9901 /* ExpoModulesProviders */,
 			);
 			indentWidth = 2;
 			sourceTree = "<group>";
@@ -100,19 +110,17 @@
 		83CBBA001A601CBA00E9B192 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				13B07F961A680F5B00A75B9A /* pinfire.app */,
+				13B07F961A680F5B00A75B9A /* agon.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
 		};
-		874037247CB991CD2D52D767 /* Pods */ = {
+		B3EE515A641414F426B802DC /* agon */ = {
 			isa = PBXGroup;
 			children = (
-				490F19F24880EE7F638E07B1 /* Pods-pinfire.debug.xcconfig */,
-				C6A381BE4B4AD6D8BB53130F /* Pods-pinfire.release.xcconfig */,
+				E1769C10E95C201165832458 /* ExpoModulesProvider.swift */,
 			);
-			name = Pods;
-			path = Pods;
+			name = agon;
 			sourceTree = "<group>";
 		};
 		BB2F792B24A3F905000567C9 /* Supporting */ = {
@@ -121,40 +129,32 @@
 				BB2F792C24A3F905000567C9 /* Expo.plist */,
 			);
 			name = Supporting;
-			path = pinfire/Supporting;
-			sourceTree = "<group>";
-		};
-		EF1BBCF1D2B0F361E48285B4 /* pinfire */ = {
-			isa = PBXGroup;
-			children = (
-				17A5868B308611864BB5BDEA /* ExpoModulesProvider.swift */,
-			);
-			name = pinfire;
+			path = agon/Supporting;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		13B07F861A680F5B00A75B9A /* pinfire */ = {
+		13B07F861A680F5B00A75B9A /* agon */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 13B07F931A680F5B00A75B9A /* Build configuration list for PBXNativeTarget "pinfire" */;
+			buildConfigurationList = 13B07F931A680F5B00A75B9A /* Build configuration list for PBXNativeTarget "agon" */;
 			buildPhases = (
 				08A4A3CD28434E44B6B9DE2E /* [CP] Check Pods Manifest.lock */,
-				3223CA15DBA43AA1E2B2E038 /* [Expo] Configure project */,
+				B07AF8CE50B386F1A82210C7 /* [Expo] Configure project */,
 				13B07F871A680F5B00A75B9A /* Sources */,
 				13B07F8C1A680F5B00A75B9A /* Frameworks */,
 				13B07F8E1A680F5B00A75B9A /* Resources */,
 				00DD1BFF1BD5951E006B06BC /* Bundle React Native code and images */,
 				800E24972A6A228C8D4807E9 /* [CP] Copy Pods Resources */,
-				0B3C15CCF11BBA7518EE73EF /* [CP] Embed Pods Frameworks */,
+				827CF7F658616FA238F231B8 /* [CP] Embed Pods Frameworks */,
 			);
 			buildRules = (
 			);
 			dependencies = (
 			);
-			name = pinfire;
-			productName = pinfire;
-			productReference = 13B07F961A680F5B00A75B9A /* pinfire.app */;
+			name = agon;
+			productName = agon;
+			productReference = 13B07F961A680F5B00A75B9A /* agon.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -170,7 +170,7 @@
 					};
 				};
 			};
-			buildConfigurationList = 83CBB9FA1A601CBA00E9B192 /* Build configuration list for PBXProject "pinfire" */;
+			buildConfigurationList = 83CBB9FA1A601CBA00E9B192 /* Build configuration list for PBXProject "agon" */;
 			compatibilityVersion = "Xcode 3.2";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
@@ -183,7 +183,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				13B07F861A680F5B00A75B9A /* pinfire */,
+				13B07F861A680F5B00A75B9A /* agon */,
 			);
 		};
 /* End PBXProject section */
@@ -196,7 +196,7 @@
 				BB2F792D24A3F905000567C9 /* Expo.plist in Resources */,
 				13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */,
 				3E461D99554A48A4959DE609 /* SplashScreen.storyboard in Resources */,
-				F9D0D72C5E0A10546D0B418D /* PrivacyInfo.xcprivacy in Resources */,
+				56BAC22F16D9094B5CAE268A /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -235,58 +235,12 @@
 			outputFileListPaths = (
 			);
 			outputPaths = (
-				"$(DERIVED_FILE_DIR)/Pods-pinfire-checkManifestLockResult.txt",
+				"$(DERIVED_FILE_DIR)/Pods-agon-checkManifestLockResult.txt",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
 			showEnvVarsInLog = 0;
-		};
-		0B3C15CCF11BBA7518EE73EF /* [CP] Embed Pods Frameworks */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-pinfire/Pods-pinfire-frameworks.sh",
-				"${PODS_XCFRAMEWORKS_BUILD_DIR}/React-Core-prebuilt/React.framework/React",
-				"${PODS_XCFRAMEWORKS_BUILD_DIR}/ReactNativeDependencies/ReactNativeDependencies.framework/ReactNativeDependencies",
-				"${PODS_XCFRAMEWORKS_BUILD_DIR}/hermes-engine/Pre-built/hermesvm.framework/hermesvm",
-			);
-			name = "[CP] Embed Pods Frameworks";
-			outputPaths = (
-				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/React.framework",
-				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/ReactNativeDependencies.framework",
-				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/hermesvm.framework",
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-pinfire/Pods-pinfire-frameworks.sh\"\n";
-			showEnvVarsInLog = 0;
-		};
-		3223CA15DBA43AA1E2B2E038 /* [Expo] Configure project */ = {
-			isa = PBXShellScriptBuildPhase;
-			alwaysOutOfDate = 1;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-			);
-			inputPaths = (
-				"$(SRCROOT)/.xcode.env",
-				"$(SRCROOT)/.xcode.env.local",
-				"$(SRCROOT)/pinfire/pinfire.entitlements",
-				"$(SRCROOT)/Pods/Target Support Files/Pods-pinfire/expo-configure-project.sh",
-			);
-			name = "[Expo] Configure project";
-			outputFileListPaths = (
-			);
-			outputPaths = (
-				"$(SRCROOT)/Pods/Target Support Files/Pods-pinfire/ExpoModulesProvider.swift",
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "# This script configures Expo modules and generates the modules provider file.\nbash -l -c \"./Pods/Target\\ Support\\ Files/Pods-pinfire/expo-configure-project.sh\"\n";
 		};
 		800E24972A6A228C8D4807E9 /* [CP] Copy Pods Resources */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -294,7 +248,7 @@
 			files = (
 			);
 			inputPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-pinfire/Pods-pinfire-resources.sh",
+				"${PODS_ROOT}/Target Support Files/Pods-agon/Pods-agon-resources.sh",
 				"${PODS_CONFIGURATION_BUILD_DIR}/EXConstants/EXConstants.bundle",
 				"${PODS_CONFIGURATION_BUILD_DIR}/EXConstants/ExpoConstants_privacy.bundle",
 				"${PODS_CONFIGURATION_BUILD_DIR}/ExpoFileSystem/ExpoFileSystem_privacy.bundle",
@@ -315,8 +269,54 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-pinfire/Pods-pinfire-resources.sh\"\n";
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-agon/Pods-agon-resources.sh\"\n";
 			showEnvVarsInLog = 0;
+		};
+		827CF7F658616FA238F231B8 /* [CP] Embed Pods Frameworks */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+				"${PODS_ROOT}/Target Support Files/Pods-agon/Pods-agon-frameworks.sh",
+				"${PODS_XCFRAMEWORKS_BUILD_DIR}/React-Core-prebuilt/React.framework/React",
+				"${PODS_XCFRAMEWORKS_BUILD_DIR}/ReactNativeDependencies/ReactNativeDependencies.framework/ReactNativeDependencies",
+				"${PODS_XCFRAMEWORKS_BUILD_DIR}/hermes-engine/Pre-built/hermesvm.framework/hermesvm",
+			);
+			name = "[CP] Embed Pods Frameworks";
+			outputPaths = (
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/React.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/ReactNativeDependencies.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/hermesvm.framework",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-agon/Pods-agon-frameworks.sh\"\n";
+			showEnvVarsInLog = 0;
+		};
+		B07AF8CE50B386F1A82210C7 /* [Expo] Configure project */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"$(SRCROOT)/.xcode.env",
+				"$(SRCROOT)/.xcode.env.local",
+				"$(SRCROOT)/agon/agon.entitlements",
+				"$(SRCROOT)/Pods/Target Support Files/Pods-agon/expo-configure-project.sh",
+			);
+			name = "[Expo] Configure project";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(SRCROOT)/Pods/Target Support Files/Pods-agon/ExpoModulesProvider.swift",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "# This script configures Expo modules and generates the modules provider file.\nbash -l -c \"./Pods/Target\\ Support\\ Files/Pods-agon/expo-configure-project.sh\"\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 
@@ -326,7 +326,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				F11748422D0307B40044C1D9 /* AppDelegate.swift in Sources */,
-				809B966F8C1CA5C275C1D902 /* ExpoModulesProvider.swift in Sources */,
+				BE9E3E98EDD5EBAA8E9CEA24 /* ExpoModulesProvider.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -335,18 +335,18 @@
 /* Begin XCBuildConfiguration section */
 		13B07F941A680F5B00A75B9A /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 490F19F24880EE7F638E07B1 /* Pods-pinfire.debug.xcconfig */;
+			baseConfigurationReference = B8FE470B9E6366FD3B7CC83B /* Pods-agon.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
-				CODE_SIGN_ENTITLEMENTS = pinfire/pinfire.entitlements;
+				CODE_SIGN_ENTITLEMENTS = agon/agon.entitlements;
 				CURRENT_PROJECT_VERSION = 1;
 				ENABLE_BITCODE = NO;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"$(inherited)",
 					"FB_SONARKIT_ENABLED=1",
 				);
-				INFOPLIST_FILE = pinfire/Info.plist;
+				INFOPLIST_FILE = agon/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 15.1;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -359,9 +359,9 @@
 					"-lc++",
 				);
 				OTHER_SWIFT_FLAGS = "$(inherited) -D EXPO_CONFIGURATION_DEBUG";
-				PRODUCT_BUNDLE_IDENTIFIER = com.anonymous.pinfire;
-				PRODUCT_NAME = "pinfire";
-				SWIFT_OBJC_BRIDGING_HEADER = "pinfire/pinfire-Bridging-Header.h";
+				PRODUCT_BUNDLE_IDENTIFIER = com.agon.app;
+				PRODUCT_NAME = "agon";
+				SWIFT_OBJC_BRIDGING_HEADER = "agon/agon-Bridging-Header.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1";
@@ -371,13 +371,13 @@
 		};
 		13B07F951A680F5B00A75B9A /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = C6A381BE4B4AD6D8BB53130F /* Pods-pinfire.release.xcconfig */;
+			baseConfigurationReference = F32EC2F40BACA385CBF1D503 /* Pods-agon.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
-				CODE_SIGN_ENTITLEMENTS = pinfire/pinfire.entitlements;
+				CODE_SIGN_ENTITLEMENTS = agon/agon.entitlements;
 				CURRENT_PROJECT_VERSION = 1;
-				INFOPLIST_FILE = pinfire/Info.plist;
+				INFOPLIST_FILE = agon/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 15.1;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -390,9 +390,9 @@
 					"-lc++",
 				);
 				OTHER_SWIFT_FLAGS = "$(inherited) -D EXPO_CONFIGURATION_RELEASE";
-				PRODUCT_BUNDLE_IDENTIFIER = com.anonymous.pinfire;
-				PRODUCT_NAME = "pinfire";
-				SWIFT_OBJC_BRIDGING_HEADER = "pinfire/pinfire-Bridging-Header.h";
+				PRODUCT_BUNDLE_IDENTIFIER = com.agon.app;
+				PRODUCT_NAME = "agon";
+				SWIFT_OBJC_BRIDGING_HEADER = "agon/agon-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1";
 				VERSIONING_SYSTEM = "apple-generic";
@@ -524,7 +524,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		13B07F931A680F5B00A75B9A /* Build configuration list for PBXNativeTarget "pinfire" */ = {
+		13B07F931A680F5B00A75B9A /* Build configuration list for PBXNativeTarget "agon" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				13B07F941A680F5B00A75B9A /* Debug */,
@@ -533,7 +533,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		83CBB9FA1A601CBA00E9B192 /* Build configuration list for PBXProject "pinfire" */ = {
+		83CBB9FA1A601CBA00E9B192 /* Build configuration list for PBXProject "agon" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				83CBBA201A601CBA00E9B192 /* Debug */,

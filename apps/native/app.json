@@ -1,20 +1,19 @@
 {
   "expo": {
-    "scheme": "pinfire",
+    "scheme": "agon",
     "userInterfaceStyle": "dark",
     "orientation": "default",
     "web": {
       "bundler": "metro"
     },
-    "name": "pinfire",
-    "slug": "pinfire",
+    "name": "agon",
+    "slug": "agon",
     "plugins": [
       "expo-font",
       [
         "expo-location",
         {
-          "locationWhenInUsePermission": "Pinfire needs your location to track your run.",
-          "locationAlwaysAndWhenInUsePermission": "Pinfire needs your location to track your run."
+          "locationWhenInUsePermission": "Agon needs your location to track your run."
         }
       ]
     ],
@@ -27,10 +26,10 @@
         "android.permission.ACCESS_COARSE_LOCATION",
         "android.permission.ACCESS_FINE_LOCATION"
       ],
-      "package": "com.anonymous.pinfire"
+      "package": "com.agon.app"
     },
     "ios": {
-      "bundleIdentifier": "com.anonymous.pinfire"
+      "bundleIdentifier": "com.agon.app"
     }
   }
 }

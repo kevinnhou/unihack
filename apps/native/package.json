@@ -12,18 +12,20 @@
     "web": "expo start --web"
   },
   "dependencies": {
-    "@unihack/backend": "workspace:*",
     "@expo/metro-runtime": "~55.0.6",
     "@expo/vector-icons": "^15.0.3",
     "@gorhom/bottom-sheet": "^5",
     "@react-navigation/drawer": "^7.3.9",
     "@react-navigation/elements": "^2.8.1",
+    "@unihack/backend": "workspace:*",
+    "convex": "catalog:",
     "dotenv": "17.2.3",
     "expo": "^55.0.0",
     "expo-constants": "~55.0.7",
     "expo-font": "~55.0.4",
     "expo-haptics": "~55.0.8",
     "expo-linking": "~55.0.7",
+    "expo-location": "~55.1.2",
     "expo-network": "~55.0.8",
     "expo-router": "^55.0.5",
     "expo-secure-store": "~55.0.8",
@@ -35,6 +37,7 @@
     "react-native": "0.83.2",
     "react-native-gesture-handler": "^2.28.0",
     "react-native-keyboard-controller": "1.20.7",
+    "react-native-maps": "1.26.20",
     "react-native-reanimated": "4.2.1",
     "react-native-safe-area-context": "~5.6.0",
     "react-native-screens": "~4.23.0",
@@ -46,9 +49,7 @@
     "tailwindcss": "^4.1.18",
     "uniwind": "^1.2.2",
     "zod": "catalog:",
-    "zustand": "^5.0.11",
-    "convex": "catalog:",
-    "expo-location": "~55.1.2"
+    "zustand": "^5.0.11"
   },
   "devDependencies": {
     "@types/node": "^24.10.0",

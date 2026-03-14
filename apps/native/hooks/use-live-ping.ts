@@ -2,14 +2,13 @@ import { api } from "@unihack/backend/convex/_generated/api";
 import type { Id } from "@unihack/backend/convex/_generated/dataModel";
 import { useMutation } from "convex/react";
 import { useCallback, useEffect, useRef } from "react";
+import { DEFAULT_LIVE_PING_INTERVAL_MS } from "@/constants";
 import { useRunStore } from "@/stores/run-store";
-
-const DEFAULT_PING_INTERVAL_MS = 3000;
 
 export function useLivePing({
   roomId,
   userId,
-  pingIntervalMs = DEFAULT_PING_INTERVAL_MS,
+  pingIntervalMs = DEFAULT_LIVE_PING_INTERVAL_MS,
 }: {
   roomId: string | null;
   userId: string | null;
