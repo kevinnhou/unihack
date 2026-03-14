@@ -13,9 +13,7 @@
       [
         "expo-location",
         {
-          "locationWhenInUsePermission": "Agon needs your location to track your run.",
-          "locationAlwaysAndWhenInUsePermission": "Agon needs your location to track your run.",
-          "isIosBackgroundLocationEnabled": true
+          "locationWhenInUsePermission": "Agon needs your location to track your run."
         }
       ]
     ],
@@ -26,8 +24,7 @@
     "android": {
       "permissions": [
         "android.permission.ACCESS_COARSE_LOCATION",
-        "android.permission.ACCESS_FINE_LOCATION",
-        "android.permission.ACCESS_BACKGROUND_LOCATION"
+        "android.permission.ACCESS_FINE_LOCATION"
       ],
       "package": "com.agon.app"
     },

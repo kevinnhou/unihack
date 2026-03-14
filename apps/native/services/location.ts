@@ -1,146 +1,76 @@
 import {
   Accuracy,
-  getBackgroundPermissionsAsync,
   getForegroundPermissionsAsync,
-  hasStartedLocationUpdatesAsync,
   type LocationObject,
-  requestBackgroundPermissionsAsync,
+  type LocationSubscription,
   requestForegroundPermissionsAsync,
-  startLocationUpdatesAsync,
-  stopLocationUpdatesAsync,
+  watchPositionAsync,
 } from "expo-location";
-import type { TaskManagerTaskBody } from "expo-task-manager";
-import { defineTask } from "expo-task-manager";
 import {
-  BACKGROUND_LOCATION_TASK,
   BG_LOCATION_DISTANCE_INTERVAL_M,
   BG_LOCATION_TIME_INTERVAL_MS,
-  FOREGROUND_SERVICE_COLOR,
 } from "@/constants";
 import type { TelemetryPoint } from "@/types";
 
-export { BACKGROUND_LOCATION_TASK };
 export type { TelemetryPoint };
 
-type BackgroundLocationCallback = (point: TelemetryPoint) => void;
+type LocationCallback = (point: TelemetryPoint) => void;
 
-let _onLocationUpdate: BackgroundLocationCallback | null = null;
+let _onLocationUpdate: LocationCallback | null = null;
+let _subscription: LocationSubscription | null = null;
 
-export function setLocationCallback(cb: BackgroundLocationCallback | null) {
+export function setLocationCallback(cb: LocationCallback | null) {
   _onLocationUpdate = cb;
 }
-
-/** Define the background task — must be called at module level. */
-defineTask(BACKGROUND_LOCATION_TASK, (({
-  data,
-  error,
-}: TaskManagerTaskBody<{ locations: LocationObject[] }>) => {
-  if (error) {
-    console.warn("[Location] Background task error:", error);
-    return;
-  }
-  if (!data?.locations?.length) {
-    return;
-  }
-
-  const loc = data.locations.at(-1);
-  if (!loc) {
-    return;
-  }
-
-  const point: TelemetryPoint = {
-    timestamp: loc.timestamp,
-    lat: loc.coords.latitude,
-    lng: loc.coords.longitude,
-    speed: Math.max(0, loc.coords.speed ?? 0),
-  };
-
-  _onLocationUpdate?.(point);
-  // biome-ignore lint/suspicious/noExplicitAny: TaskManager callback typing mismatch at runtime
-}) as any);
 
 // ---------------------------------------------------------------------------
 // Permission helpers
 // ---------------------------------------------------------------------------
 
-/**
- * Returns true if foreground permission is granted (minimum to start tracking).
- * Background permission is requested as well but a denial only logs a warning —
- * startLocationUpdatesAsync will degrade gracefully on devices where "Always"
- * is unavailable.
- */
 export async function requestLocationPermissions(): Promise<boolean> {
-  const { status: fg } = await requestForegroundPermissionsAsync();
-  if (fg !== "granted") {
-    return false;
-  }
-
-  const { status: bg } = await requestBackgroundPermissionsAsync();
-  if (bg !== "granted") {
-    console.warn(
-      "[Location] Background permission not granted — tracking foreground only"
-    );
-  }
-  return true;
+  const { status } = await requestForegroundPermissionsAsync();
+  return status === "granted";
 }
 
 export async function hasLocationPermissions(): Promise<boolean> {
-  const { status: fg } = await getForegroundPermissionsAsync();
-  if (fg !== "granted") {
-    return false;
-  }
-  const { status: bg } = await getBackgroundPermissionsAsync();
-  return bg === "granted";
+  const { status } = await getForegroundPermissionsAsync();
+  return status === "granted";
 }
 
 // ---------------------------------------------------------------------------
 // Tracking lifecycle
 // ---------------------------------------------------------------------------
 
-export async function startTracking(
-  onUpdate: BackgroundLocationCallback
-): Promise<void> {
+export async function startTracking(onUpdate: LocationCallback): Promise<void> {
   setLocationCallback(onUpdate);
 
   try {
-    await startLocationUpdatesAsync(BACKGROUND_LOCATION_TASK, {
-      accuracy: Accuracy.Balanced,
-      timeInterval: BG_LOCATION_TIME_INTERVAL_MS,
-      distanceInterval: BG_LOCATION_DISTANCE_INTERVAL_M,
-      foregroundService: {
-        notificationTitle: "agon is tracking your run",
-        notificationBody: "Your run is in progress.",
-        notificationColor: FOREGROUND_SERVICE_COLOR,
+    _subscription = await watchPositionAsync(
+      {
+        accuracy: Accuracy.Highest,
+        timeInterval: BG_LOCATION_TIME_INTERVAL_MS,
+        distanceInterval: BG_LOCATION_DISTANCE_INTERVAL_M,
       },
-      showsBackgroundLocationIndicator: true,
-      pausesUpdatesAutomatically: false,
-    });
+      (loc: LocationObject) => {
+        const point: TelemetryPoint = {
+          timestamp: loc.timestamp,
+          lat: loc.coords.latitude,
+          lng: loc.coords.longitude,
+          speed: Math.max(0, loc.coords.speed ?? 0),
+        };
+        _onLocationUpdate?.(point);
+      }
+    );
   } catch (error) {
     // Location APIs might not be available in web environment
-    console.warn("[Location] Could not start location updates:", error);
+    throw new Error(`[Location] Could not start location updates: ${error}`);
   }
 }
 
 export async function stopTracking(): Promise<void> {
   setLocationCallback(null);
-  try {
-    const isRunning = await hasStartedLocationUpdatesAsync(
-      BACKGROUND_LOCATION_TASK
-    );
-    if (isRunning) {
-      await stopLocationUpdatesAsync(BACKGROUND_LOCATION_TASK);
-    }
-  } catch (error) {
-    console.warn(
-      "[Location] Could not check if location updates are running:",
-      error
-    );
-    try {
-      await stopLocationUpdatesAsync(BACKGROUND_LOCATION_TASK);
-    } catch {
-      // Ignore errors when stopping
-    }
-  }
+  _subscription?.remove();
+  _subscription = null;
 }
 
 // ---------------------------------------------------------------------------

@@ -5,7 +5,6 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import {
   DEFAULT_LIVE_PING_INTERVAL_MS,
   DEFAULT_PING_INTERVAL_MS,
-  MIN_MOVE_SPEED_MS,
   MIN_PACE_DISTANCE_M,
   PACE_WINDOW_MS,
 } from "@/constants";
@@ -53,15 +52,12 @@ function haversineMeters(
 function computeDistanceDelta(
   prev: { lat: number; lng: number } | null,
   lat: number,
-  lng: number,
-  speed: number
+  lng: number
 ): number {
   if (prev === null) {
     return 0;
   }
-  const rawDelta = haversineMeters(prev.lat, prev.lng, lat, lng);
-  const effectiveSpeed = Math.max(speed, 0);
-  return effectiveSpeed >= MIN_MOVE_SPEED_MS ? rawDelta : 0;
+  return haversineMeters(prev.lat, prev.lng, lat, lng);
 }
 
 type UseLocationTrackingOptions = {
@@ -118,14 +114,12 @@ export function useLocationTracking({
     setPermissionDenied(false);
 
     const locationHandler = (point: TelemetryPoint) => {
-      const safeSpeed = Math.max(point.speed, 0);
       const state = useRunStore.getState();
 
       const delta = computeDistanceDelta(
         prevCoordRef.current,
         point.lat,
-        point.lng,
-        safeSpeed
+        point.lng
       );
       prevCoordRef.current = { lat: point.lat, lng: point.lng };
 
