@@ -19,7 +19,7 @@ export function Container({
 
   return (
     <AnimatedView
-      className={cn("flex-1 bg-background", className)}
+      className={cn("flex-1 bg-black", className)}
       style={{
         paddingBottom: insets.bottom,
       }}

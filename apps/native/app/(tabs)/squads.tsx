@@ -29,6 +29,7 @@ export default function SquadsScreen() {
   const { userId } = useAuthStore();
   const [showCreate, setShowCreate] = useState(false);
   const [newName, setNewName] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(false);
 
   const allSquads = useQuery(
@@ -37,6 +38,16 @@ export default function SquadsScreen() {
   );
   const createSquadMutation = useMutation(api.squads.createSquad);
   const joinSquadByIdMutation = useMutation(api.squads.joinSquadById);
+
+  const filteredSquads = (allSquads ?? []).filter((squad) => {
+    const query = searchTerm.trim().toLowerCase();
+    if (!query) {
+      return true;
+    }
+    const name = squad.name.toLowerCase();
+    const description = squad.description?.toLowerCase() ?? "";
+    return name.includes(query) || description.includes(query);
+  });
 
   if (!userId) {
     return <Redirect href="/(auth)/signin" />;
@@ -74,26 +85,37 @@ export default function SquadsScreen() {
     <SafeAreaView className="flex-1 bg-black">
       <FlatList
         contentContainerStyle={{ paddingBottom: 40 }}
-        data={allSquads ?? []}
+        data={filteredSquads}
         keyExtractor={(item) => item.squadId}
         ListEmptyComponent={
           <View className="mt-20 items-center px-8">
             <Shield color="#374151" size={56} />
             <Text className="mt-4 text-center text-base text-gray-400">
-              No squads yet. Create the first one!
+              {searchTerm.trim()
+                ? "No squads match your search."
+                : "No squads yet. Create the first one!"}
             </Text>
           </View>
         }
         ListHeaderComponent={
-          <View className="flex-row items-center justify-between px-4 pt-4 pb-4">
-            <Text className="font-black text-2xl text-white">Squads</Text>
-            <TouchableOpacity
-              className="flex-row items-center gap-1 rounded-xl bg-orange-500 px-3 py-2"
-              onPress={() => setShowCreate(true)}
-            >
-              <Plus color="white" size={16} />
-              <Text className="font-semibold text-sm text-white">Create</Text>
-            </TouchableOpacity>
+          <View className="px-4 pt-4 pb-4">
+            <View className="mb-3 flex-row items-center justify-between">
+              <Text className="font-black text-2xl text-white">Squads</Text>
+              <TouchableOpacity
+                className="flex-row items-center gap-1 rounded-xl bg-orange-500 px-3 py-2"
+                onPress={() => setShowCreate(true)}
+              >
+                <Plus color="white" size={16} />
+                <Text className="font-semibold text-sm text-white">Create</Text>
+              </TouchableOpacity>
+            </View>
+            <TextInput
+              className="rounded-xl bg-neutral-900 px-4 py-3 text-white"
+              onChangeText={setSearchTerm}
+              placeholder="Search squads..."
+              placeholderTextColor="#6b7280"
+              value={searchTerm}
+            />
           </View>
         }
         renderItem={({ item }) => (

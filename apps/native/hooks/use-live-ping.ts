@@ -41,6 +41,12 @@ export function useLivePing({
     if (!(currentRoomId && currentUserId)) {
       return;
     }
+
+    if (intervalRef.current !== null) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+
     intervalRef.current = setInterval(() => {
       const { distance, elapsedSeconds, currentPace, isRunning } =
         useRunStore.getState();

@@ -1,8 +1,8 @@
-import { Ionicons } from "@expo/vector-icons";
 import { api } from "@unihack/backend/convex/_generated/api";
 import type { Id } from "@unihack/backend/convex/_generated/dataModel";
 import { useQuery } from "convex/react";
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { Redirect, useLocalSearchParams, useRouter } from "expo-router";
+import { ArrowLeft } from "lucide-react-native";
 import { Text, TouchableOpacity, View } from "react-native";
 import { useAuthStore } from "@/stores/auth-store";
 
@@ -20,6 +20,14 @@ export default function LiveResultsScreen() {
   const { roomId } = useLocalSearchParams<{ roomId: string }>();
   const { userId } = useAuthStore();
 
+  if (!userId) {
+    return <Redirect href="/(auth)/signin" />;
+  }
+
+  if (!roomId) {
+    return <Redirect href="/" />;
+  }
+
   const liveData = useQuery(
     api.live.getLiveRoom,
     roomId ? { roomId: roomId as Id<"liveRooms"> } : "skip"
@@ -32,21 +40,21 @@ export default function LiveResultsScreen() {
   const medals = ["🥇", "🥈", "🥉"];
 
   return (
-    <View className="flex-1 bg-background px-6 pt-16">
+    <View className="flex-1 bg-black px-6 pt-16">
       <View className="mb-8 flex-row items-center gap-3">
         <TouchableOpacity
           accessibilityRole="button"
           onPress={() => router.replace("/")}
         >
-          <Ionicons color="#a1a1aa" name="arrow-back" size={24} />
+          <ArrowLeft color="#9ca3af" size={24} />
         </TouchableOpacity>
-        <Text className="font-bold text-2xl text-foreground">Race Results</Text>
+        <Text className="font-bold text-2xl text-white">Race Results</Text>
       </View>
 
       {liveData === undefined ? (
-        <Text className="text-default-400">Loading results...</Text>
+        <Text className="text-gray-400">Loading results...</Text>
       ) : sorted.length === 0 ? (
-        <Text className="text-default-400">No participants found.</Text>
+        <Text className="text-gray-400">No participants found.</Text>
       ) : (
         <>
           {sorted.map((p, i) => {
@@ -54,7 +62,7 @@ export default function LiveResultsScreen() {
             return (
               <View
                 className={`mb-3 flex-row items-center justify-between rounded-xl border p-4 ${
-                  isMe ? "border-primary bg-primary/10" : "border-default-200"
+                  isMe ? "border-orange-500 bg-orange-500/10" : "border-neutral-700 bg-neutral-900"
                 }`}
                 key={p.userId}
               >
@@ -64,16 +72,16 @@ export default function LiveResultsScreen() {
                   </Text>
                   <View>
                     <Text
-                      className={`font-semibold text-base ${isMe ? "text-primary" : "text-foreground"}`}
+                      className={`font-semibold text-base ${isMe ? "text-orange-500" : "text-white"}`}
                     >
                       {p.name}
                     </Text>
-                    <Text className="text-default-400 text-xs">
+                    <Text className="text-gray-400 text-xs">
                       {formatPace(p.avgPace)} /km
                     </Text>
                   </View>
                 </View>
-                <Text className="font-bold text-foreground text-lg">
+                <Text className="font-bold text-white text-lg">
                   {(p.distance / 1000).toFixed(2)} km
                 </Text>
               </View>
@@ -82,7 +90,7 @@ export default function LiveResultsScreen() {
 
           <TouchableOpacity
             accessibilityRole="button"
-            className="mt-6 items-center rounded-xl bg-primary py-4"
+            className="mt-6 items-center rounded-xl bg-orange-500 py-4"
             onPress={() => router.replace("/")}
           >
             <Text className="font-bold text-lg text-white">Done</Text>

@@ -44,7 +44,8 @@ export default function SquadDetailScreen() {
   const { userId } = useAuthStore();
   const [sortBy, setSortBy] = useState<SortBy>("distance");
   const [modalOpen, setModalOpen] = useState(false);
-  const [raceGhostId, setRaceGhostId] = useState<string | null>(null);
+  const [challengeUserId, setChallengeUserId] = useState<string | null>(null);
+  const [challengeUserName, setChallengeUserName] = useState<string | null>(null);
 
   const squad = useQuery(
     api.squads.getSquad,
@@ -186,7 +187,8 @@ export default function SquadDetailScreen() {
                   <TouchableOpacity
                     className="rounded-full bg-orange-500 p-2"
                     onPress={() => {
-                      setRaceGhostId(entry.userId);
+                      setChallengeUserId(entry.userId);
+                      setChallengeUserName(entry.name);
                       setModalOpen(true);
                     }}
                   >
@@ -200,10 +202,12 @@ export default function SquadDetailScreen() {
       </ScrollView>
 
       <RunConfigModal
-        initialGhostUserId={raceGhostId}
+        initialLiveInviteName={challengeUserName}
+        initialLiveInviteUserId={challengeUserId}
         onClose={() => {
           setModalOpen(false);
-          setRaceGhostId(null);
+          setChallengeUserId(null);
+          setChallengeUserName(null);
         }}
         visible={modalOpen}
       />
