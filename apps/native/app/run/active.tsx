@@ -5,7 +5,6 @@ import { useRouter } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Linking, ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useLivePing } from "@/hooks/use-live-ping";
 import { useLocationTracking } from "@/hooks/use-location-tracking";
 import { type GhostInfo, useRunStore } from "@/stores/run-store";
 
@@ -82,8 +81,6 @@ function Stat({
 
 export default function ActiveRunScreen() {
   const router = useRouter();
-  // Granular selectors — avoids re-rendering (and re-running effects) on every
-  // GPS tick or timer tick when reading the whole store at once.
   const runId = useRunStore((s) => s.runId) ?? "";
   const liveRoomId = useRunStore((s) => s.liveRoomId);
   const userId = useRunStore((s) => s.userId);
@@ -128,10 +125,6 @@ export default function ActiveRunScreen() {
     startTracking();
     startPinging();
 
-    if (tickRef.current !== null) {
-      clearInterval(tickRef.current);
-    }
-
     tickRef.current = setInterval(() => {
       useRunStore.getState().tickElapsed();
     }, 1000);
@@ -142,7 +135,7 @@ export default function ActiveRunScreen() {
         tickRef.current = null;
       }
     };
-  }, [isRunning, startTracking, startPinging]);
+  }, [startTracking, startPinging]);
 
   // ---------------------------------------------------------------------------
   // Finish Logic
@@ -154,9 +147,7 @@ export default function ActiveRunScreen() {
     }
     setIsEnding(true);
 
-    // Stop real tracking intervals
     stopTracking();
-    stopPinging();
     if (tickRef.current) {
       clearInterval(tickRef.current);
     }
@@ -210,7 +201,6 @@ export default function ActiveRunScreen() {
   }, [
     isEnding,
     stopTracking,
-    stopPinging,
     endRunStore,
     liveRoomId,
     userId,
