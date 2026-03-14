@@ -131,7 +131,9 @@ export default function AddFriendsScreen() {
           return (
             <View className="mx-4 mb-3 flex-row items-center justify-between rounded-2xl bg-neutral-900 p-4">
               <View className="mr-3 flex-1">
-                <Text className="font-semibold text-white text-lg">{item.displayName}</Text>
+                <Text className="font-semibold text-lg text-white">
+                  {item.displayName}
+                </Text>
                 <Text className="text-gray-400 text-xs">
                   {item.mutualFriendsCount} mutual friend
                   {item.mutualFriendsCount === 1 ? "" : "s"}
@@ -140,7 +142,9 @@ export default function AddFriendsScreen() {
 
               <TouchableOpacity
                 className={`rounded-lg px-3 py-2 ${
-                  isAlreadyRequestedByMe ? "border border-orange-500" : "bg-orange-500"
+                  isAlreadyRequestedByMe
+                    ? "border border-orange-500"
+                    : "bg-orange-500"
                 }`}
                 disabled={isAdding || isAlreadyRequestedByMe}
                 onPress={() =>
@@ -152,13 +156,19 @@ export default function AddFriendsScreen() {
                 {isAdding ? (
                   <ActivityIndicator color="white" size="small" />
                 ) : isIncomingRequest ? (
-                  <Text className="font-semibold text-white text-xs">Accept</Text>
+                  <Text className="font-semibold text-white text-xs">
+                    Accept
+                  </Text>
                 ) : isAlreadyRequestedByMe ? (
-                  <Text className="font-semibold text-orange-500 text-xs">Requested</Text>
+                  <Text className="font-semibold text-orange-500 text-xs">
+                    Requested
+                  </Text>
                 ) : (
                   <View className="flex-row items-center gap-1">
                     <UserPlus color="white" size={13} />
-                    <Text className="font-semibold text-white text-xs">Request</Text>
+                    <Text className="font-semibold text-white text-xs">
+                      Request
+                    </Text>
                   </View>
                 )}
               </TouchableOpacity>

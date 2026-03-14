@@ -96,7 +96,9 @@ export const joinLiveRoom = mutation({
       return { success: true as const, roomId: room._id };
     }
 
-    const activeParticipantCount = participants.filter((p) => !isPendingInvite(p)).length;
+    const activeParticipantCount = participants.filter(
+      (p) => !isPendingInvite(p)
+    ).length;
     if (activeParticipantCount >= room.maxParticipants) {
       return { success: false as const, reason: "Room is full" };
     }
@@ -264,17 +266,17 @@ export const getLiveRoom = query({
       participants
         .filter((p) => !isPendingInvite(p))
         .map(async (p) => {
-        const user = await ctx.db.get(p.userId);
-        return {
-          userId: p.userId,
-          name: user?.name ?? "Unknown",
-          runId: p.runId,
-          status: p.status,
-          distance: p.distance,
-          duration: p.duration,
-          avgPace: p.avgPace,
-          finishedAt: p.finishedAt,
-        };
+          const user = await ctx.db.get(p.userId);
+          return {
+            userId: p.userId,
+            name: user?.name ?? "Unknown",
+            runId: p.runId,
+            status: p.status,
+            distance: p.distance,
+            duration: p.duration,
+            avgPace: p.avgPace,
+            finishedAt: p.finishedAt,
+          };
         })
     );
 
@@ -401,7 +403,13 @@ export const getLiveInvites = query({
         )
         .first();
 
-      if (!(participant && participant.status === "abandoned" && participant.avgPace === -1)) {
+      if (
+        !(
+          participant &&
+          participant.status === "abandoned" &&
+          participant.avgPace === -1
+        )
+      ) {
         continue;
       }
 
@@ -446,10 +454,18 @@ export const acceptLiveInvite = mutation({
 
     const participant = await ctx.db
       .query("liveParticipants")
-      .withIndex("by_room_user", (q) => q.eq("roomId", roomId).eq("userId", userId))
+      .withIndex("by_room_user", (q) =>
+        q.eq("roomId", roomId).eq("userId", userId)
+      )
       .first();
 
-    if (!(participant && participant.status === "abandoned" && participant.avgPace === -1)) {
+    if (
+      !(
+        participant &&
+        participant.status === "abandoned" &&
+        participant.avgPace === -1
+      )
+    ) {
       return { success: false as const, reason: "Invite not found" };
     }
 
@@ -504,10 +520,16 @@ export const dismissLiveInvite = mutation({
   handler: async (ctx, { roomId, userId }) => {
     const participant = await ctx.db
       .query("liveParticipants")
-      .withIndex("by_room_user", (q) => q.eq("roomId", roomId).eq("userId", userId))
+      .withIndex("by_room_user", (q) =>
+        q.eq("roomId", roomId).eq("userId", userId)
+      )
       .first();
 
-    if (participant && participant.status === "abandoned" && participant.avgPace === -1) {
+    if (
+      participant &&
+      participant.status === "abandoned" &&
+      participant.avgPace === -1
+    ) {
       await ctx.db.delete(participant._id);
     }
 

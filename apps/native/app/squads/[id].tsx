@@ -45,7 +45,9 @@ export default function SquadDetailScreen() {
   const [sortBy, setSortBy] = useState<SortBy>("distance");
   const [modalOpen, setModalOpen] = useState(false);
   const [challengeUserId, setChallengeUserId] = useState<string | null>(null);
-  const [challengeUserName, setChallengeUserName] = useState<string | null>(null);
+  const [challengeUserName, setChallengeUserName] = useState<string | null>(
+    null
+  );
 
   const squad = useQuery(
     api.squads.getSquad,

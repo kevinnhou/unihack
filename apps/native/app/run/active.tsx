@@ -3,9 +3,10 @@ import type { Id } from "@unihack/backend/convex/_generated/dataModel";
 import { useMutation, useQuery } from "convex/react";
 import { useRouter } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Text, TouchableOpacity, View } from "react-native";
+import { Linking, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { RunMap } from "@/components/run-map";
+import { useLivePing } from "@/hooks/use-live-ping";
 import { useLocationTracking } from "@/hooks/use-location-tracking";
 import { type GhostInfo, useRunStore } from "@/stores/run-store";
 
@@ -52,7 +53,12 @@ function ghostDeltaLabel(userDist: number, ghostDist: number): string {
   return diff > 0 ? `+${distStr} ahead` : `-${distStr} behind`;
 }
 
-function progressPercent(distanceMeters: number, targetDistanceMeters: number): number {
+const barColors = ["#3b82f6", "#22c55e", "#a855f7", "#eab308"];
+
+function progressPercent(
+  distanceMeters: number,
+  targetDistanceMeters: number
+): number {
   const safeTarget = Math.max(1, targetDistanceMeters);
   return Math.min(100, (distanceMeters / safeTarget) * 100);
 }
@@ -106,9 +112,11 @@ export default function ActiveRunScreen() {
   const tickRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [isEnding, setIsEnding] = useState(false);
 
-  const { startTracking, stopTracking, permissionDenied } = useLocationTracking({
-    runId,
-  });
+  const { startTracking, stopTracking, permissionDenied } = useLocationTracking(
+    {
+      runId,
+    }
+  );
 
   // Optional Live Ping integration if this happens to be a social/live run
   const { startPinging, stopPinging } = useLivePing({
@@ -137,7 +145,7 @@ export default function ActiveRunScreen() {
         tickRef.current = null;
       }
     };
-  }, [startTracking, startPinging]);
+  }, [startTracking, startPinging, isRunning]);
 
   // ---------------------------------------------------------------------------
   // Finish Logic
@@ -150,6 +158,7 @@ export default function ActiveRunScreen() {
     setIsEnding(true);
 
     stopTracking();
+    stopPinging();
     if (tickRef.current) {
       clearInterval(tickRef.current);
     }
@@ -203,6 +212,7 @@ export default function ActiveRunScreen() {
   }, [
     isEnding,
     stopTracking,
+    stopPinging,
     endRunStore,
     liveRoomId,
     userId,
@@ -219,6 +229,8 @@ export default function ActiveRunScreen() {
   // ---------------------------------------------------------------------------
   // Render Computations
   // ---------------------------------------------------------------------------
+  const liveParticipants = liveRoom?.participants ?? [];
+
   const ghostDistM = ghostRun
     ? ghostDistanceAtTime(ghostRun, elapsedSeconds)
     : null;
@@ -257,6 +269,7 @@ export default function ActiveRunScreen() {
             <Stat label="Pace" value={formatPace(currentPace)} />
           </View>
 
+          {/** biome-ignore lint/nursery/noLeakedRender: permissionDenied is boolean */}
           {permissionDenied && (
             <View className="rounded-2xl border border-red-500/40 bg-red-500/10 px-4 py-3">
               <Text className="font-semibold text-red-300 text-sm">
@@ -270,18 +283,23 @@ export default function ActiveRunScreen() {
                   });
                 }}
               >
-                <Text className="font-semibold text-white text-xs">Open Settings</Text>
+                <Text className="font-semibold text-white text-xs">
+                  Open Settings
+                </Text>
               </TouchableOpacity>
             </View>
           )}
 
           {/* Progress bars */}
           <View className="gap-5">
+            {/** biome-ignore lint/nursery/noLeakedRender: liveRoomId is a valid ID string or null, never empty string */}
             {liveRoomId && liveParticipants.length > 0 ? (
               liveParticipants.map((participant, index) => {
                 const isMe = participant.userId === userId;
                 const participantLabel = isMe ? "You" : participant.name;
-                const barColor = isMe ? "#f97316" : barColors[index % barColors.length];
+                const barColor = isMe
+                  ? "#f97316"
+                  : barColors[index % barColors.length];
 
                 return (
                   <View key={participant.userId}>
@@ -290,7 +308,8 @@ export default function ActiveRunScreen() {
                         {participantLabel}
                       </Text>
                       <Text className="text-sm text-white">
-                        {formatDistance(participant.distance)} / {formatDistance(targetDistance)}
+                        {formatDistance(participant.distance)} /{" "}
+                        {formatDistance(targetDistance)}
                       </Text>
                     </View>
                     <View className="h-4 overflow-hidden rounded-full bg-neutral-700">
@@ -312,7 +331,8 @@ export default function ActiveRunScreen() {
                   <View className="mb-2 flex-row items-center justify-between">
                     <Text className="font-medium text-sm text-white">You</Text>
                     <Text className="text-sm text-white">
-                      {formatDistance(distance)} / {formatDistance(targetDistance)}
+                      {formatDistance(distance)} /{" "}
+                      {formatDistance(targetDistance)}
                     </Text>
                   </View>
                   <View className="h-4 overflow-hidden rounded-full bg-neutral-700">
@@ -368,8 +388,7 @@ export default function ActiveRunScreen() {
             </Text>
           </TouchableOpacity>
         </View>
-        </View>
-      </ScrollView>
+      </View>
     </SafeAreaView>
   );
 }
