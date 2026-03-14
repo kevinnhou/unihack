@@ -10,6 +10,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import MapView, { Polyline } from "react-native-maps";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useAuthStore } from "@/stores/auth-store";
 
@@ -51,9 +52,14 @@ export default function ReviewRaceScreen() {
     userId ? { userId: userId as Id<"users"> } : "skip"
   );
 
+  const fullRun = useQuery(
+    api.runs.getRunById,
+    id ? { runId: id as Id<"runs"> } : "skip"
+  );
+
   const run = runs?.find((r) => r._id === id);
 
-  if (runs === undefined) {
+  if (runs === undefined || fullRun === undefined) {
     return (
       <SafeAreaView className="flex-1 items-center justify-center bg-black">
         <ActivityIndicator color="#FF4500" size="large" />
@@ -81,6 +87,30 @@ export default function ReviewRaceScreen() {
   const durationSec =
     run.avgPace > 0 ? Math.round(run.avgPace * (run.distance / 1000)) : 0;
 
+  const telemetry = fullRun?.telemetry ?? [];
+  const mapCoords = telemetry.map((p) => ({
+    latitude: p.lat,
+    longitude: p.lng,
+  }));
+
+  const initialRegion =
+    mapCoords.length > 0
+      ? (() => {
+          const lats = mapCoords.map((c) => c.latitude);
+          const lngs = mapCoords.map((c) => c.longitude);
+          const minLat = Math.min(...lats);
+          const maxLat = Math.max(...lats);
+          const minLng = Math.min(...lngs);
+          const maxLng = Math.max(...lngs);
+          return {
+            latitude: (minLat + maxLat) / 2,
+            longitude: (minLng + maxLng) / 2,
+            latitudeDelta: Math.max(maxLat - minLat, 0.002) * 1.3,
+            longitudeDelta: Math.max(maxLng - minLng, 0.002) * 1.3,
+          };
+        })()
+      : undefined;
+
   return (
     <SafeAreaView className="flex-1 bg-black">
       <ScrollView>
@@ -90,6 +120,26 @@ export default function ReviewRaceScreen() {
           </TouchableOpacity>
           <Text className="font-bold text-white text-xl">Race Review</Text>
         </View>
+
+        {/* GPS trace map */}
+        {initialRegion ? (
+          <MapView
+            initialRegion={initialRegion}
+            scrollEnabled={false}
+            style={{ width: "100%", height: 220 }}
+            zoomEnabled={false}
+          >
+            <Polyline
+              coordinates={mapCoords}
+              strokeColor="#FF4500"
+              strokeWidth={3}
+            />
+          </MapView>
+        ) : (
+          <View className="mx-4 h-[220px] items-center justify-center rounded-2xl bg-neutral-900">
+            <Text className="text-gray-500">No GPS trace recorded</Text>
+          </View>
+        )}
 
         <View className="mt-4 gap-3 px-4 pb-10">
           <Text className="mb-1 text-gray-400 text-xs uppercase tracking-widest">

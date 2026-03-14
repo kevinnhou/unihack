@@ -3,7 +3,8 @@ import type { Id } from "@unihack/backend/convex/_generated/dataModel";
 import { useMutation, useQuery } from "convex/react";
 import { useRouter } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Linking, ScrollView, Text, TouchableOpacity, View } from "react-native";
+import { Text, TouchableOpacity, View } from "react-native";
+import MapView, { Marker, Polyline } from "react-native-maps";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocationTracking } from "@/hooks/use-location-tracking";
 import { type GhostInfo, useRunStore } from "@/stores/run-store";
@@ -94,6 +95,7 @@ export default function ActiveRunScreen() {
   const endRunStore = useRunStore((s) => s.endRun);
   const setLiveRoomId = useRunStore((s) => s.setLiveRoomId);
   const resetStore = useRunStore((s) => s.reset);
+  const telemetryBuffer = useRunStore((s) => s.telemetryBuffer);
   const endRunMutation = useMutation(api.runs.endRun);
   const finishLiveParticipant = useMutation(api.live.finishLiveParticipant);
   const liveRoom = useQuery(
@@ -226,30 +228,45 @@ export default function ActiveRunScreen() {
       ? targetDistanceStore
       : (ghostRun?.totalDistance ?? Math.max(distance, 1000));
 
-  const liveParticipants = [...(liveRoom?.participants ?? [])].sort(
-    (a, b) => b.distance - a.distance
-  );
-
-  const barColors = [
-    "#f97316",
-    "#3b82f6",
-    "#10b981",
-    "#ec4899",
-    "#eab308",
-    "#06b6d4",
-    "#8b5cf6",
-    "#f43f5e",
-  ] as const;
-
-  if (!isRunning || !runId) {
-    return <SafeAreaView className="flex-1 bg-black" />;
-  }
+  const lastPoint = telemetryBuffer.at(-1);
+  const mapCoords = telemetryBuffer.map((p) => ({
+    latitude: p.lat,
+    longitude: p.lng,
+  }));
+  const mapRegion = lastPoint
+    ? {
+        latitude: lastPoint.lat,
+        longitude: lastPoint.lng,
+        latitudeDelta: 0.002,
+        longitudeDelta: 0.002,
+      }
+    : undefined;
 
   return (
     <SafeAreaView className="flex-1 bg-black">
-      <ScrollView contentContainerStyle={{ flexGrow: 1, paddingVertical: 24 }}>
-        <View className="flex-1 justify-center px-6">
-          <View className="gap-8 rounded-3xl bg-neutral-900 px-6 py-8">
+      {/* Live map */}
+      {/** biome-ignore lint/nursery/noLeakedRender: mapRegion is always an object, never 0 */}
+      {mapRegion && (
+        <MapView
+          region={mapRegion}
+          scrollEnabled={false}
+          style={{ width: "100%", height: 220 }}
+          zoomEnabled={false}
+        >
+          {mapCoords.length > 1 && (
+            <Polyline
+              coordinates={mapCoords}
+              strokeColor="#FF4500"
+              strokeWidth={3}
+            />
+          )}
+          <Marker coordinate={mapCoords.at(-1) ?? mapCoords[0]} />
+        </MapView>
+      )}
+
+      {/* Centered HUD */}
+      <View className="flex-1 justify-center px-6">
+        <View className="gap-8 rounded-3xl bg-neutral-900 px-6 py-8">
           {/* Stats row */}
           <View className="flex-row items-center justify-between">
             <Stat label="Distance" value={formatDistance(distance)} />

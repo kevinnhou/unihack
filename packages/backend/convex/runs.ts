@@ -134,6 +134,11 @@ type GhostEntry = {
   isSelf: boolean;
 };
 
+export const getRunById = query({
+  args: { runId: v.id("runs") },
+  handler: async (ctx, { runId }) => ctx.db.get(runId),
+});
+
 /** All available ghosts including current user's own best run. */
 export const getAllAvailableGhosts = query({
   args: { currentUserId: v.id("users") },
