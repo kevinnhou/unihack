@@ -62,6 +62,7 @@ export default defineSchema({
     joinCode: v.string(),
     createdBy: v.id("users"),
     createdAt: v.number(),
+    private: v.boolean(),
     memberCount: v.number(),
   })
     .index("by_join_code", ["joinCode"])
@@ -98,9 +99,12 @@ export default defineSchema({
   friends: defineTable({
     userId: v.id("users"),
     friendId: v.id("users"),
+    requested: v.boolean(),
+    sender: v.id("users"),
     createdAt: v.number(),
   })
     .index("by_user", ["userId"])
+    .index("by_friend", ["friendId"])
     .index("by_user_friend", ["userId", "friendId"]),
 
   liveParticipants: defineTable({

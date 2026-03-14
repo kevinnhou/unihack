@@ -41,6 +41,7 @@ export const createSquad = mutation({
       createdBy: userId,
       createdAt: Date.now(),
       memberCount: 1,
+      private: true,
     });
 
     await ctx.db.insert("squadMemberships", {

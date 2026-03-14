@@ -33,6 +33,81 @@ function computeCurrentStreak(dates: Set<string>): number {
   return current;
 }
 
+export const sendFriendRequest = mutation({
+  args: {
+    userId: v.id("users"),
+    friendId: v.id("users"),
+  },
+  returns: v.union(
+    v.object({ success: v.literal(true), friendId: v.id("users") }),
+    v.object({ success: v.literal(false), reason: v.string() })
+  ),
+  handler: async (ctx, { userId, friendId }) => {
+    if (userId === friendId) {
+      return { success: false as const, reason: "Cannot add yourself" };
+    }
+
+    const targetUser = await ctx.db.get(friendId);
+    if (!targetUser) {
+      return { success: false as const, reason: "User not found" };
+    }
+
+    const existing = await ctx.db
+      .query("friends")
+      .withIndex("by_user_friend", (q) =>
+        q.eq("userId", userId).eq("friendId", friendId)
+      )
+      .first();
+    if (existing) {
+      return { success: true as const, friendId };
+    }
+
+    await ctx.db.insert("friends", {
+      userId,
+      friendId,
+      requested: true,
+      sender: userId,
+      createdAt: Date.now(),
+    });
+
+    return { success: true as const, friendId };
+  },
+});
+
+export const acceptFriendRequest = mutation({
+  args: {
+    userId: v.id("users"),
+    senderId: v.id("users"),
+  },
+  returns: v.union(
+    v.object({ success: v.literal(true) }),
+    v.object({ success: v.literal(false), reason: v.string() })
+  ),
+  handler: async (ctx, { userId, senderId }) => {
+    const request = await ctx.db
+      .query("friends")
+      .withIndex("by_user_friend", (q) =>
+        q.eq("userId", senderId).eq("friendId", userId)
+      )
+      .first();
+
+    if (!(request && request.requested)) {
+      return { success: false as const, reason: "Request not found" };
+    }
+
+    await ctx.db.patch(request._id, { requested: false });
+    await ctx.db.insert("friends", {
+      userId,
+      friendId: senderId,
+      requested: false,
+      sender: senderId,
+      createdAt: Date.now(),
+    });
+
+    return { success: true as const };
+  },
+});
+
 export const addFriend = mutation({
   args: {
     userId: v.id("users"),
@@ -70,6 +145,8 @@ export const addFriend = mutation({
     await ctx.db.insert("friends", {
       userId,
       friendId: friend._id,
+      requested: false,
+      sender: userId,
       createdAt: Date.now(),
     });
 
@@ -115,6 +192,8 @@ export const getFriends = query({
       .withIndex("by_user", (q) => q.eq("userId", userId))
       .collect();
 
+    const acceptedFriendships = friendships.filter((f) => !f.requested);
+
     const results: {
       friendId: Id<"users">;
       name: string;
@@ -124,7 +203,7 @@ export const getFriends = query({
       totalDistance: number;
     }[] = [];
 
-    for (const friendship of friendships) {
+    for (const friendship of acceptedFriendships) {
       const friend = await ctx.db.get(friendship.friendId);
       if (!friend) {
         continue;
