@@ -1,6 +1,6 @@
 import { api } from "@unihack/backend/convex/_generated/api";
 import type { Id } from "@unihack/backend/convex/_generated/dataModel";
-import { useMutation } from "convex/react";
+import { useMutation, useQuery } from "convex/react";
 import { useRouter } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Text, TouchableOpacity, View } from "react-native";
@@ -52,6 +52,11 @@ function ghostDeltaLabel(userDist: number, ghostDist: number): string {
   return diff > 0 ? `+${distStr} ahead` : `-${distStr} behind`;
 }
 
+function progressPercent(distanceMeters: number, targetDistanceMeters: number): number {
+  const safeTarget = Math.max(1, targetDistanceMeters);
+  return Math.min(100, (distanceMeters / safeTarget) * 100);
+}
+
 function Stat({
   label,
   value,
@@ -93,6 +98,10 @@ export default function ActiveRunScreen() {
   const resetStore = useRunStore((s) => s.reset);
   const endRunMutation = useMutation(api.runs.endRun);
   const finishLiveParticipant = useMutation(api.live.finishLiveParticipant);
+  const liveRoom = useQuery(
+    api.live.getLiveRoom,
+    liveRoomId ? { roomId: liveRoomId as Id<"liveRooms"> } : "skip"
+  );
 
   const tickRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [isEnding, setIsEnding] = useState(false);
@@ -216,6 +225,21 @@ export default function ActiveRunScreen() {
       ? targetDistanceStore
       : (ghostRun?.totalDistance ?? Math.max(distance, 1000));
 
+  const liveParticipants = [...(liveRoom?.participants ?? [])].sort(
+    (a, b) => b.distance - a.distance
+  );
+
+  const barColors = [
+    "bg-orange-500",
+    "bg-blue-500",
+    "bg-emerald-500",
+    "bg-pink-500",
+    "bg-yellow-500",
+    "bg-cyan-500",
+    "bg-violet-500",
+    "bg-rose-500",
+  ] as const;
+
   return (
     <SafeAreaView className="flex-1 bg-black">
       {/* Centered HUD */}
@@ -230,49 +254,82 @@ export default function ActiveRunScreen() {
 
           {/* Progress bars */}
           <View className="gap-5">
-            {/* Your progress */}
-            <View>
-              <View className="mb-2 flex-row items-center justify-between">
-                <Text className="font-medium text-sm text-white">You</Text>
-                <Text className="text-sm text-white">
-                  {formatDistance(distance)} / {formatDistance(targetDistance)}
-                </Text>
-              </View>
-              <View className="h-4 overflow-hidden rounded-full bg-neutral-700">
-                <View
-                  className="h-full rounded-full bg-orange-500"
-                  style={{
-                    width: `${Math.min(100, (distance / targetDistance) * 100)}%`,
-                  }}
-                />
-              </View>
-            </View>
+            {liveRoomId && liveParticipants.length > 0 ? (
+              liveParticipants.map((participant, index) => {
+                const isMe = participant.userId === userId;
+                const participantLabel = isMe ? "You" : participant.name;
+                const barColorClass = isMe
+                  ? "bg-orange-500"
+                  : barColors[index % barColors.length];
 
-            {/* Opponent progress */}
-            {/** biome-ignore lint/nursery/noLeakedRender: PASS */}
-            {ghostRun && ghostDistM !== null && (
-              <View>
-                <View className="mb-2 flex-row items-center justify-between">
-                  <Text className="font-medium text-sm text-white">
-                    {ghostRun.name}
-                  </Text>
-                  <Text className="text-sm text-white">
-                    {formatDistance(ghostDistM)} /{" "}
-                    {formatDistance(targetDistance)}
-                  </Text>
+                return (
+                  <View key={participant.userId}>
+                    <View className="mb-2 flex-row items-center justify-between">
+                      <Text className="font-medium text-sm text-white">
+                        {participantLabel}
+                      </Text>
+                      <Text className="text-sm text-white">
+                        {formatDistance(participant.distance)} / {formatDistance(targetDistance)}
+                      </Text>
+                    </View>
+                    <View className="h-4 overflow-hidden rounded-full bg-neutral-700">
+                      <View
+                        className={`h-full rounded-full ${barColorClass}`}
+                        style={{
+                          width: `${progressPercent(participant.distance, targetDistance)}%`,
+                        }}
+                      />
+                    </View>
+                  </View>
+                );
+              })
+            ) : (
+              <>
+                {/* Your progress */}
+                <View>
+                  <View className="mb-2 flex-row items-center justify-between">
+                    <Text className="font-medium text-sm text-white">You</Text>
+                    <Text className="text-sm text-white">
+                      {formatDistance(distance)} / {formatDistance(targetDistance)}
+                    </Text>
+                  </View>
+                  <View className="h-4 overflow-hidden rounded-full bg-neutral-700">
+                    <View
+                      className="h-full rounded-full bg-orange-500"
+                      style={{
+                        width: `${progressPercent(distance, targetDistance)}%`,
+                      }}
+                    />
+                  </View>
                 </View>
-                <View className="h-4 overflow-hidden rounded-full bg-neutral-700">
-                  <View
-                    className="h-full rounded-full bg-blue-500"
-                    style={{
-                      width: `${Math.min(100, (ghostDistM / targetDistance) * 100)}%`,
-                    }}
-                  />
-                </View>
-                <Text className="mt-3 text-center font-bold text-base text-orange-400">
-                  {ghostDeltaLabel(distance, ghostDistM)}
-                </Text>
-              </View>
+
+                {/* Opponent progress */}
+                {/** biome-ignore lint/nursery/noLeakedRender: PASS */}
+                {ghostRun && ghostDistM !== null && (
+                  <View>
+                    <View className="mb-2 flex-row items-center justify-between">
+                      <Text className="font-medium text-sm text-white">
+                        {ghostRun.name}
+                      </Text>
+                      <Text className="text-sm text-white">
+                        {formatDistance(ghostDistM)} /{" "}
+                        {formatDistance(targetDistance)}
+                      </Text>
+                    </View>
+                    <View className="h-4 overflow-hidden rounded-full bg-neutral-700">
+                      <View
+                        className="h-full rounded-full bg-blue-500"
+                        style={{
+                          width: `${progressPercent(ghostDistM, targetDistance)}%`,
+                        }}
+                      />
+                    </View>
+                    <Text className="mt-3 text-center font-bold text-base text-orange-400">
+                      {ghostDeltaLabel(distance, ghostDistM)}
+                    </Text>
+                  </View>
+                )}
+              </>
             )}
           </View>
 

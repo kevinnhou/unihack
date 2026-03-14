@@ -5,7 +5,8 @@ import type { Id } from "@unihack/backend/convex/_generated/dataModel";
 import { useMutation, useQuery } from "convex/react";
 import { Redirect, useRouter } from "expo-router";
 import { useEffect } from "react";
-import { Text, TouchableOpacity, View } from "react-native";
+import { useState } from "react";
+import { ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { useAuthStore } from "@/stores/auth-store";
 import { useLiveStore } from "@/stores/live-store";
 import { useRunStore } from "@/stores/run-store";
@@ -16,10 +17,16 @@ export default function LiveLobbyScreen() {
   const runStore = useRunStore();
   const { userId } = useAuthStore();
   const startRoomMutation = useMutation(api.live.startLiveRoom);
+  const requestLiveInviteMutation = useMutation((api as any).live.requestLiveInvite);
+  const [requestedFriendIds, setRequestedFriendIds] = useState<string[]>([]);
 
   const liveData = useQuery(
     api.live.getLiveRoom,
     liveStore.roomId ? { roomId: liveStore.roomId as Id<"liveRooms"> } : "skip"
+  );
+  const friends = useQuery(
+    api.friends.getFriends,
+    userId ? { userId: userId as Id<"users"> } : "skip"
   );
 
   // Navigate to active run when room starts
@@ -36,6 +43,7 @@ export default function LiveLobbyScreen() {
     }
     runStore.startRun(myParticipant.runId, "social", userId);
     runStore.setLiveRoomId(currentRoomId);
+    runStore.setTargetDistance(liveStore.targetDistanceMeters);
     router.replace("/run/active");
   }, [
     liveData?.room.status,
@@ -43,11 +51,16 @@ export default function LiveLobbyScreen() {
     userId,
     runStore,
     liveStore.roomId,
+    liveStore.targetDistanceMeters,
     router,
   ]);
 
   if (!userId) {
-    return <Redirect href="/auth/sign-in" />;
+    return <Redirect href="/(auth)/signin" />;
+  }
+
+  if (!liveStore.roomId) {
+    return <Redirect href="/live" />;
   }
 
   const handleStart = async () => {
@@ -63,9 +76,35 @@ export default function LiveLobbyScreen() {
   const participants = liveData?.participants ?? [];
   const isHost = liveStore.isHost;
   const canStart = isHost && participants.length >= 2;
+  const joinedIds = new Set(participants.map((p) => p.userId));
+
+  const handleRequestFriend = async (friendId: string, friendName: string) => {
+    if (!(liveStore.roomId && userId)) {
+      return;
+    }
+
+    setRequestedFriendIds((prev) =>
+      prev.includes(friendId) ? prev : [...prev, friendId]
+    );
+
+    try {
+      const result = await requestLiveInviteMutation({
+        roomId: liveStore.roomId as Id<"liveRooms">,
+        hostUserId: userId as Id<"users">,
+        targetUserId: friendId as Id<"users">,
+        targetDistanceMeters: liveStore.targetDistanceMeters,
+      });
+
+      if (!result.success) {
+        setRequestedFriendIds((prev) => prev.filter((id) => id !== friendId));
+      }
+    } catch {
+      setRequestedFriendIds((prev) => prev.filter((id) => id !== friendId));
+    }
+  };
 
   return (
-    <View className="flex-1 bg-background px-6 pt-16">
+    <ScrollView className="flex-1 bg-black px-6 pt-16" contentContainerStyle={{ paddingBottom: 40 }}>
       <View className="mb-8 flex-row items-center gap-3">
         <TouchableOpacity
           accessibilityRole="button"
@@ -74,32 +113,35 @@ export default function LiveLobbyScreen() {
             router.back();
           }}
         >
-          <Ionicons color="#a1a1aa" name="arrow-back" size={24} />
+          <Ionicons color="#9ca3af" name="arrow-back" size={24} />
         </TouchableOpacity>
-        <Text className="font-bold text-2xl text-foreground">
+        <Text className="font-bold text-2xl text-white">
           Live Race Lobby
         </Text>
       </View>
 
       {/* Room code display */}
-      <View className="mb-8 items-center rounded-2xl border border-default-200 bg-default-50 py-6">
-        <Text className="mb-2 text-default-400 text-sm">Room Code</Text>
-        <Text className="font-bold text-6xl text-foreground tracking-widest">
+      <View className="mb-8 items-center rounded-2xl bg-neutral-900 py-6">
+        <Text className="mb-2 text-gray-400 text-sm">Room Code</Text>
+        <Text className="font-bold text-6xl text-white tracking-widest">
           {liveStore.roomCode ?? "----"}
         </Text>
-        <Text className="mt-2 text-default-400 text-xs">
+        <Text className="mt-2 text-gray-400 text-xs">
           Share this with friends
+        </Text>
+        <Text className="mt-1 text-orange-400 text-xs">
+          Distance: {(liveStore.targetDistanceMeters / 1000).toFixed(1)} km
         </Text>
       </View>
 
       {/* Participants list */}
-      <Text className="mb-3 font-semibold text-foreground">
+      <Text className="mb-3 font-semibold text-white">
         Participants ({participants.length}/
         {liveData?.room.maxParticipants ?? 8})
       </Text>
-      <View className="mb-8 rounded-2xl border border-default-200 p-4">
+      <View className="mb-6 rounded-2xl bg-neutral-900 p-4">
         {participants.length === 0 ? (
-          <Text className="text-default-400 text-sm">
+          <Text className="text-gray-400 text-sm">
             Waiting for players...
           </Text>
         ) : (
@@ -113,16 +155,16 @@ export default function LiveLobbyScreen() {
               >
                 <View className="flex-row items-center gap-2">
                   <View
-                    className={`h-2.5 w-2.5 rounded-full ${isMe ? "bg-primary" : "bg-success"}`}
+                    className={`h-2.5 w-2.5 rounded-full ${isMe ? "bg-orange-500" : "bg-green-500"}`}
                   />
                   <Text
-                    className={`font-medium ${isMe ? "text-primary" : "text-foreground"}`}
+                    className={`font-medium ${isMe ? "text-orange-500" : "text-white"}`}
                   >
                     {p.name}
                   </Text>
                 </View>
                 {isRoomHost && (
-                  <Text className="text-default-400 text-xs">host</Text>
+                  <Text className="text-gray-400 text-xs">host</Text>
                 )}
               </View>
             );
@@ -130,27 +172,74 @@ export default function LiveLobbyScreen() {
         )}
       </View>
 
+      {/* Friends invite list */}
+      {isHost && (
+        <>
+          <Text className="mb-3 font-semibold text-white">Invite Friends</Text>
+          <View className="mb-8 rounded-2xl bg-neutral-900 p-4">
+            {(friends ?? []).length === 0 ? (
+              <Text className="text-gray-400 text-sm">No friends to invite yet.</Text>
+            ) : (
+              (friends ?? []).map((friend) => {
+                const alreadyJoined = joinedIds.has(friend.friendId);
+                const requested = requestedFriendIds.includes(friend.friendId);
+
+                return (
+                  <View
+                    className="flex-row items-center justify-between py-2"
+                    key={friend.friendId}
+                  >
+                    <View>
+                      <Text className="font-medium text-white">{friend.name}</Text>
+                      <Text className="text-gray-400 text-xs">
+                        🔥 {friend.currentStreak} day streak
+                      </Text>
+                    </View>
+                    {alreadyJoined ? (
+                      <Text className="font-semibold text-green-400 text-xs">Joined</Text>
+                    ) : (
+                      <TouchableOpacity
+                        accessibilityRole="button"
+                        className={`rounded-lg px-3 py-1.5 ${
+                          requested ? "bg-neutral-700" : "bg-orange-500"
+                        }`}
+                        disabled={requested}
+                        onPress={() => handleRequestFriend(friend.friendId, friend.name)}
+                      >
+                        <Text className={`font-semibold text-xs ${requested ? "text-gray-300" : "text-white"}`}>
+                          {requested ? "Requested" : "Request"}
+                        </Text>
+                      </TouchableOpacity>
+                    )}
+                  </View>
+                );
+              })
+            )}
+          </View>
+        </>
+      )}
+
       {/* Start / waiting */}
       {isHost ? (
         <TouchableOpacity
           accessibilityRole="button"
-          className={`items-center rounded-xl py-4 ${canStart ? "bg-primary" : "bg-default-200"}`}
+          className={`items-center rounded-xl py-4 ${canStart ? "bg-orange-500" : "bg-neutral-700"}`}
           disabled={!canStart}
           onPress={handleStart}
         >
           <Text
-            className={`font-bold text-lg ${canStart ? "text-white" : "text-default-400"}`}
+            className={`font-bold text-lg ${canStart ? "text-white" : "text-gray-400"}`}
           >
             {canStart ? "Start Race" : "Need at least 2 players"}
           </Text>
         </TouchableOpacity>
       ) : (
         <View className="items-center py-4">
-          <Text className="text-default-400">
+          <Text className="text-gray-400">
             Waiting for host to start the race...
           </Text>
         </View>
       )}
-    </View>
+    </ScrollView>
   );
 }

@@ -10,7 +10,7 @@ import { useUniwind } from "uniwind";
 import { useAuthStore } from "@/stores/auth-store";
 import { useThemeStore } from "@/stores/theme-store";
 
-const CONVEX_URL = process.env.EXPO_PUBLIC_CONVEX_URL ?? "";
+const CONVEX_URL = "https://giddy-guineapig-514.convex.cloud";process.env.EXPO_PUBLIC_CONVEX_URL ?? "";
 
 const convex = new ConvexReactClient(CONVEX_URL);
 
