@@ -4,8 +4,15 @@ import { useMutation } from "convex/react";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { CheckCircle } from "lucide-react-native";
 import { useEffect, useRef, useState } from "react";
-import { Animated, Text, TouchableOpacity, View } from "react-native";
+import {
+  ActivityIndicator,
+  Animated,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useAuthStore } from "@/stores/auth-store";
 import { useRunStore } from "@/stores/run-store";
 
 function formatTime(s: number) {
@@ -40,21 +47,25 @@ function StatRow({ label, value }: { label: string; value: string }) {
 export default function FinishScreen() {
   const router = useRouter();
   const store = useRunStore();
-  const { distance, duration, avgPace, runId } = useLocalSearchParams<{
+  const { userId } = useAuthStore();
+  const { distance, duration, runId, mode } = useLocalSearchParams<{
     distance: string;
     duration: string;
     avgPace: string;
     runId: string;
+    mode: string;
   }>();
 
   const distanceM = Number(distance ?? "0");
   const durationSec = Number(duration ?? "0");
   const runIdStr = runId ?? "";
+  const isRanked = mode === "ranked";
 
-  const [uploaded, setUploaded] = useState(false);
-  const [uploading, setUploading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const uploadTelemetryMutation = useMutation(api.runs.uploadRunTelemetry);
+  const deleteRunMutation = useMutation(api.runs.deleteRun);
 
   useEffect(() => {
     Animated.spring(fadeAnim, {
@@ -65,31 +76,36 @@ export default function FinishScreen() {
   }, [fadeAnim]);
 
   const telemetryBuffer = store.telemetryBuffer;
-  const canUpload = !uploaded && telemetryBuffer.length > 0 && !!runIdStr;
+  const canUpload = telemetryBuffer.length > 0 && !!runIdStr;
 
-  const handleUpload = async () => {
-    if (!canUpload) {
-      return;
-    }
-    setUploading(true);
+  const handleSave = async () => {
+    setSaving(true);
     try {
-      await uploadTelemetryMutation({
-        runId: runIdStr as Id<"runs">,
-        telemetry: telemetryBuffer,
-      });
-      setUploaded(true);
+      if (canUpload) {
+        await uploadTelemetryMutation({
+          runId: runIdStr as Id<"runs">,
+          telemetry: telemetryBuffer,
+        });
+      }
     } finally {
-      setUploading(false);
+      store.reset();
+      router.replace("/(tabs)");
     }
   };
 
-  const handleDone = () => {
-    store.reset();
-    router.replace("/(tabs)");
-  };
-
-  const handleReview = () => {
-    router.push({ pathname: "/run/review/[id]", params: { id: runIdStr } });
+  const handleDontLog = async () => {
+    setDeleting(true);
+    try {
+      if (runIdStr && userId) {
+        await deleteRunMutation({
+          runId: runIdStr as Id<"runs">,
+          userId: userId as Id<"users">,
+        });
+      }
+    } finally {
+      store.reset();
+      router.replace("/(tabs)");
+    }
   };
 
   return (
@@ -107,43 +123,36 @@ export default function FinishScreen() {
         <StatRow label="Avg Pace" value={paceLabel(distanceM, durationSec)} />
       </View>
 
-      <View className="mt-10 w-full gap-3">
-        {canUpload || uploading ? (
-          <TouchableOpacity
-            className="items-center rounded-2xl bg-neutral-800 py-4"
-            disabled={uploading}
-            onPress={handleUpload}
-          >
-            <Text className="font-semibold text-base text-white">
-              {uploading
-                ? "Uploading…"
-                : `Upload GPS Trace (${telemetryBuffer.length} pts)`}
-            </Text>
-          </TouchableOpacity>
-        ) : null}
-        {uploaded ? (
-          <View className="items-center rounded-2xl bg-neutral-800 py-4">
-            <Text className="font-semibold text-base text-green-400">
-              GPS Trace Uploaded ✓
-            </Text>
-          </View>
-        ) : null}
-        {runIdStr ? (
-          <TouchableOpacity
-            className="items-center rounded-2xl bg-neutral-800 py-4"
-            onPress={handleReview}
-          >
-            <Text className="font-semibold text-base text-white">
-              Review Race
-            </Text>
-          </TouchableOpacity>
-        ) : null}
+      <View
+        style={{ marginTop: 40, width: "100%", gap: 12, paddingBottom: 24 }}
+      >
         <TouchableOpacity
           className="items-center rounded-2xl bg-orange-500 py-4"
-          onPress={handleDone}
+          disabled={saving}
+          onPress={handleSave}
         >
-          <Text className="font-bold text-base text-white">Done</Text>
+          {saving ? (
+            <ActivityIndicator color="white" />
+          ) : (
+            <Text className="font-bold text-base text-white">Save Run ▶</Text>
+          )}
         </TouchableOpacity>
+
+        {!isRanked && (
+          <TouchableOpacity
+            className="items-center rounded-2xl py-4"
+            disabled={deleting}
+            onPress={handleDontLog}
+          >
+            {deleting ? (
+              <ActivityIndicator color="#ef4444" />
+            ) : (
+              <Text className="font-semibold text-base text-red-400">
+                Don't Log
+              </Text>
+            )}
+          </TouchableOpacity>
+        )}
       </View>
     </SafeAreaView>
   );

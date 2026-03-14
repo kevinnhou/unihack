@@ -4,14 +4,15 @@ import { mutation, query } from "./_generated/server";
 export const startRun = mutation({
   args: {
     userId: v.id("users"),
-    currentUserElo: v.number(),
     mode: v.union(v.literal("ranked"), v.literal("social")),
     liveRoomId: v.optional(v.id("liveRooms")),
   },
   returns: v.id("runs"),
 
-  handler: async (ctx, { userId, currentUserElo, mode, liveRoomId }) =>
-    await ctx.db.insert("runs", {
+  handler: async (ctx, { userId, mode, liveRoomId }) => {
+    const user = await ctx.db.get(userId);
+    const currentUserElo = user?.elo ?? 1200;
+    return await ctx.db.insert("runs", {
       userId,
       mode,
       status: "active",
@@ -22,7 +23,8 @@ export const startRun = mutation({
       telemetry: [],
       currentUserElo,
       ...(liveRoomId ? { liveRoomId } : {}),
-    }),
+    });
+  },
 });
 
 /** Lightweight ping during active run — no GPS coordinates stored. */
@@ -128,6 +130,22 @@ export const endRun = mutation({
   },
 });
 
+export const deleteRun = mutation({
+  args: { runId: v.id("runs"), userId: v.id("users") },
+  returns: v.null(),
+  handler: async (ctx, { runId, userId }) => {
+    const run = await ctx.db.get(runId);
+    if (!run || run.userId !== userId) {
+      throw new Error("Not found");
+    }
+    if (run.mode === "ranked") {
+      throw new Error("Cannot delete ranked run");
+    }
+    await ctx.db.delete(runId);
+    return null;
+  },
+});
+
 type GhostEntry = {
   userId: string;
   name: string;
@@ -139,8 +157,20 @@ type GhostEntry = {
 };
 
 export const getRunById = query({
-  args: { runId: v.id("runs") },
-  handler: async (ctx, { runId }) => ctx.db.get(runId),
+  args: {
+    runId: v.id("runs"),
+    requestingUserId: v.optional(v.id("users")),
+  },
+  handler: async (ctx, { runId, requestingUserId }) => {
+    const run = await ctx.db.get(runId);
+    if (!run) {
+      return null;
+    }
+    if (requestingUserId && run.userId !== requestingUserId) {
+      return null;
+    }
+    return run;
+  },
 });
 
 /** All available ghosts including current user's own best run. */
@@ -160,7 +190,11 @@ export const getAllAvailableGhosts = query({
         continue;
       }
       const runElo = run.currentUserElo ?? 1200;
-      if (Math.abs(runElo - currentUserElo) > 100) {
+      // Exempt own runs from the Elo delta filter
+      if (
+        run.userId !== currentUserId &&
+        Math.abs(runElo - currentUserElo) > 100
+      ) {
         continue;
       }
       const existing = bestByUser.get(run.userId);
@@ -188,11 +222,17 @@ export const getAllAvailableGhosts = query({
     }
     // Sort: self first, then by elo delta (closest to currentUserElo), then by pace
     results.sort((a, b) => {
-      if (a.isSelf && !b.isSelf) return -1;
-      if (!a.isSelf && b.isSelf) return 1;
+      if (a.isSelf && !b.isSelf) {
+        return -1;
+      }
+      if (!a.isSelf && b.isSelf) {
+        return 1;
+      }
       const deltaA = Math.abs(a.elo - currentUserElo);
       const deltaB = Math.abs(b.elo - currentUserElo);
-      if (deltaA !== deltaB) return deltaA - deltaB;
+      if (deltaA !== deltaB) {
+        return deltaA - deltaB;
+      }
       return a.bestPace - b.bestPace;
     });
     return { ghosts: results, currentUserElo };

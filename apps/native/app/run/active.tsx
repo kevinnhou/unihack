@@ -3,7 +3,7 @@ import type { Id } from "@unihack/backend/convex/_generated/dataModel";
 import { useMutation, useQuery } from "convex/react";
 import { useRouter } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Linking, Text, TouchableOpacity, View } from "react-native";
+import { Linking, Platform, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { RunMap } from "@/components/run-map";
 import { useLivePing } from "@/hooks/use-live-ping";
@@ -74,11 +74,18 @@ function Stat({
 }) {
   return (
     <View className="items-center">
-      <Text className="mb-0.5 text-gray-400 text-xs uppercase tracking-widest">
+      <Text
+        className="mb-0.5 text-xs uppercase tracking-widest"
+        style={{ color: "#9ca3af" }}
+      >
         {label}
       </Text>
       <Text
-        className={`font-bold text-white ${large ? "text-4xl" : "text-xl"}`}
+        className="font-bold"
+        style={{
+          color: "#ffffff",
+          fontSize: large ? 36 : 22,
+        }}
       >
         {value}
       </Text>
@@ -207,6 +214,7 @@ export default function ActiveRunScreen() {
         duration: String(summary.elapsedSeconds),
         avgPace: String(summary.avgPace),
         runId,
+        mode: String(mode),
       },
     });
   }, [
@@ -255,15 +263,18 @@ export default function ActiveRunScreen() {
     : undefined;
 
   return (
-    <SafeAreaView className="flex-1 bg-black">
+    <SafeAreaView className="flex-1 items-center justify-center bg-black px-6">
       {/* Live map */}
       <RunMap coords={mapCoords} region={mapRegion} />
 
       {/* Centered HUD */}
       <View className="flex-1 justify-center px-6">
-        <View className="gap-8 rounded-3xl bg-neutral-900 px-6 py-8">
+        <View className="rounded-3xl bg-neutral-900 px-6 py-8">
           {/* Stats row */}
-          <View className="flex-row items-center justify-between">
+          <View
+            className="flex-row items-center justify-between"
+            style={{ marginBottom: 32 }}
+          >
             <Stat label="Distance" value={formatDistance(distance)} />
             <Stat label="Time" large value={formatTime(elapsedSeconds)} />
             <Stat label="Pace" value={formatPace(currentPace)} />
@@ -278,12 +289,17 @@ export default function ActiveRunScreen() {
               <TouchableOpacity
                 className="mt-2 self-start rounded-lg bg-red-500 px-3 py-2"
                 onPress={() => {
-                  Linking.openSettings().catch(() => {
-                    // ignore settings open failures
-                  });
+                  if (Platform.OS !== "web") {
+                    Linking.openSettings().catch(() => {
+                      // ignore settings open failures
+                    });
+                  }
                 }}
               >
-                <Text className="font-semibold text-white text-xs">
+                <Text
+                  className="font-semibold text-white text-xs"
+                  style={{ color: "#ffffff" }}
+                >
                   Open Settings
                 </Text>
               </TouchableOpacity>
@@ -291,7 +307,7 @@ export default function ActiveRunScreen() {
           )}
 
           {/* Progress bars */}
-          <View className="gap-5">
+          <View style={{ gap: 20, marginBottom: 32 }}>
             {/** biome-ignore lint/nursery/noLeakedRender: liveRoomId is a valid ID string or null, never empty string */}
             {liveRoomId && liveParticipants.length > 0 ? (
               liveParticipants.map((participant, index) => {
@@ -304,18 +320,33 @@ export default function ActiveRunScreen() {
                 return (
                   <View key={participant.userId}>
                     <View className="mb-2 flex-row items-center justify-between">
-                      <Text className="font-medium text-sm text-white">
+                      <Text
+                        className="font-medium text-sm text-white"
+                        style={{ color: "#ffffff" }}
+                      >
                         {participantLabel}
                       </Text>
-                      <Text className="text-sm text-white">
+                      <Text
+                        className="text-sm text-white"
+                        style={{ color: "#ffffff" }}
+                      >
                         {formatDistance(participant.distance)} /{" "}
                         {formatDistance(targetDistance)}
                       </Text>
                     </View>
-                    <View className="h-4 overflow-hidden rounded-full bg-neutral-700">
+                    <View
+                      style={{
+                        height: 8,
+                        width: "100%",
+                        overflow: "hidden",
+                        borderRadius: 999,
+                        backgroundColor: "#404040",
+                      }}
+                    >
                       <View
-                        className="h-full rounded-full"
                         style={{
+                          height: "100%",
+                          borderRadius: 999,
                           backgroundColor: barColor,
                           width: `${progressPercent(participant.distance, targetDistance)}%`,
                         }}
@@ -329,16 +360,33 @@ export default function ActiveRunScreen() {
                 {/* Your progress */}
                 <View>
                   <View className="mb-2 flex-row items-center justify-between">
-                    <Text className="font-medium text-sm text-white">You</Text>
-                    <Text className="text-sm text-white">
+                    <Text
+                      className="font-medium text-sm text-white"
+                      style={{ color: "#ffffff" }}
+                    >
+                      You
+                    </Text>
+                    <Text
+                      className="text-sm text-white"
+                      style={{ color: "#ffffff" }}
+                    >
                       {formatDistance(distance)} /{" "}
                       {formatDistance(targetDistance)}
                     </Text>
                   </View>
-                  <View className="h-4 overflow-hidden rounded-full bg-neutral-700">
+                  <View
+                    style={{
+                      height: 8,
+                      width: "100%",
+                      overflow: "hidden",
+                      borderRadius: 999,
+                      backgroundColor: "#404040",
+                    }}
+                  >
                     <View
-                      className="h-full rounded-full"
                       style={{
+                        height: "100%",
+                        borderRadius: 999,
                         backgroundColor: "#f97316",
                         width: `${progressPercent(distance, targetDistance)}%`,
                       }}
@@ -351,26 +399,59 @@ export default function ActiveRunScreen() {
                 {ghostRun && ghostDistM !== null && (
                   <View>
                     <View className="mb-2 flex-row items-center justify-between">
-                      <Text className="font-medium text-sm text-white">
+                      <Text
+                        className="font-medium text-sm text-white"
+                        style={{ color: "#ffffff" }}
+                      >
                         {ghostRun.name}
                       </Text>
-                      <Text className="text-sm text-white">
+                      <Text
+                        className="text-sm text-white"
+                        style={{ color: "#ffffff" }}
+                      >
                         {formatDistance(ghostDistM)} /{" "}
                         {formatDistance(targetDistance)}
                       </Text>
                     </View>
-                    <View className="h-4 overflow-hidden rounded-full bg-neutral-700">
+                    <View
+                      style={{
+                        height: 8,
+                        width: "100%",
+                        overflow: "hidden",
+                        borderRadius: 999,
+                        backgroundColor: "#404040",
+                      }}
+                    >
                       <View
-                        className="h-full rounded-full"
                         style={{
+                          height: "100%",
+                          borderRadius: 999,
                           backgroundColor: "#3b82f6",
                           width: `${progressPercent(ghostDistM, targetDistance)}%`,
                         }}
                       />
                     </View>
-                    <Text className="mt-3 text-center font-bold text-base text-orange-400">
-                      {ghostDeltaLabel(distance, ghostDistM)}
-                    </Text>
+                    <View
+                      style={{
+                        marginTop: 12,
+                        alignSelf: "center",
+                        backgroundColor: "rgba(249,115,22,0.2)",
+                        borderRadius: 999,
+                        paddingHorizontal: 12,
+                        paddingVertical: 4,
+                      }}
+                    >
+                      <Text
+                        style={{
+                          color: "#fb923c",
+                          textAlign: "center",
+                          fontWeight: "bold",
+                          fontSize: 16,
+                        }}
+                      >
+                        {ghostDeltaLabel(distance, ghostDistM)}
+                      </Text>
+                    </View>
                   </View>
                 )}
               </>
@@ -383,7 +464,10 @@ export default function ActiveRunScreen() {
             disabled={isEnding}
             onPress={handleFinish}
           >
-            <Text className="font-bold text-lg text-white">
+            <Text
+              className="font-bold text-lg text-white"
+              style={{ color: "#ffffff" }}
+            >
               {isEnding ? "Saving..." : "Finish Run"}
             </Text>
           </TouchableOpacity>
