@@ -4,8 +4,8 @@ import { useMutation, useQuery } from "convex/react";
 import { useRouter } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Text, TouchableOpacity, View } from "react-native";
-import MapView, { Marker, Polyline } from "react-native-maps";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { RunMap } from "@/components/run-map";
 import { useLocationTracking } from "@/hooks/use-location-tracking";
 import { type GhostInfo, useRunStore } from "@/stores/run-store";
 
@@ -245,24 +245,7 @@ export default function ActiveRunScreen() {
   return (
     <SafeAreaView className="flex-1 bg-black">
       {/* Live map */}
-      {/** biome-ignore lint/nursery/noLeakedRender: mapRegion is always an object, never 0 */}
-      {mapRegion && (
-        <MapView
-          region={mapRegion}
-          scrollEnabled={false}
-          style={{ width: "100%", height: 220 }}
-          zoomEnabled={false}
-        >
-          {mapCoords.length > 1 && (
-            <Polyline
-              coordinates={mapCoords}
-              strokeColor="#FF4500"
-              strokeWidth={3}
-            />
-          )}
-          <Marker coordinate={mapCoords.at(-1) ?? mapCoords[0]} />
-        </MapView>
-      )}
+      <RunMap coords={mapCoords} region={mapRegion} />
 
       {/* Centered HUD */}
       <View className="flex-1 justify-center px-6">

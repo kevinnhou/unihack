@@ -10,8 +10,8 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import MapView, { Polyline } from "react-native-maps";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { RunMap } from "@/components/run-map";
 import { useAuthStore } from "@/stores/auth-store";
 
 function formatTime(s: number) {
@@ -123,20 +123,9 @@ export default function ReviewRaceScreen() {
 
         {/* GPS trace map */}
         {initialRegion ? (
-          <MapView
-            initialRegion={initialRegion}
-            scrollEnabled={false}
-            style={{ width: "100%", height: 220 }}
-            zoomEnabled={false}
-          >
-            <Polyline
-              coordinates={mapCoords}
-              strokeColor="#FF4500"
-              strokeWidth={3}
-            />
-          </MapView>
+          <RunMap coords={mapCoords} initialRegion={initialRegion} />
         ) : (
-          <View className="mx-4 h-[220px] items-center justify-center rounded-2xl bg-neutral-900">
+          <View className="mx-4 h-55 items-center justify-center rounded-2xl bg-neutral-900">
             <Text className="text-gray-500">No GPS trace recorded</Text>
           </View>
         )}
