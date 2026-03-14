@@ -5,16 +5,25 @@ import { useRouter } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   Modal,
+  Pressable,
   ScrollView,
   Text,
-  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
 import { useAuthStore } from "@/stores/auth-store";
 import { useLiveStore } from "@/stores/live-store";
 import { useRunStore } from "@/stores/run-store";
+
+const DISTANCES = [
+  { label: "1 km", value: 1000 },
+  { label: "3 km", value: 3000 },
+  { label: "5 km", value: 5000 },
+  { label: "10 km", value: 10_000 },
+  { label: "Half marathon", value: 21_097 },
+];
 
 type Props = {
   visible: boolean;
@@ -52,6 +61,7 @@ export function RunConfigModal({
 
   const [mode, setMode] = useState<"solo" | "ghost" | "live">("solo");
   const [tab, setTab] = useState<"create" | "join">("create");
+  const [invalidState, setInvalidState] = useState(false);
   const [selectedGhostId, setSelectedGhostId] = useState<string | null>(null);
   const [distanceKm, setDistanceKm] = useState("5.0");
   const [codeChars, setCodeChars] = useState(["", "", "", ""]);
@@ -72,21 +82,50 @@ export function RunConfigModal({
     // biome-ignore lint/suspicious/noExplicitAny: _generated/api not yet regenerated with live module
     (api as any).live.requestLiveInvite
   );
-  const availableGhosts = useQuery(
+  const availableGhostsData = useQuery(
     api.runs.getAllAvailableGhosts,
     userId ? { currentUserId: userId as Id<"users"> } : "skip"
   );
 
+  const availableGhosts = availableGhostsData?.ghosts ?? [];
+  const currentUserElo = availableGhostsData?.currentUserElo ?? 1200;
+
+  function findClosestGhostByElo() {
+    const others = availableGhosts.filter((g) => !g.isSelf);
+    if (others.length === 0) return null;
+    const withDelta = others.map((g) => ({
+      ghost: g,
+      delta: Math.abs(g.elo - currentUserElo),
+    }));
+    const closest = withDelta.reduce((a, b) => (a.delta < b.delta ? a : b));
+    return closest.delta <= 100 ? closest.ghost : null;
+  }
+
+  const closestGhost = findClosestGhostByElo();
+
   useEffect(() => {
-    if (!(initialGhostUserId && availableGhosts)) {
-      return;
+    if (initialGhostUserId && availableGhosts.length > 0) {
+      const match = availableGhosts.find(
+        (g) => g.userId === initialGhostUserId
+      );
+      if (match && Math.abs(match.elo - currentUserElo) <= 100) {
+        setMode("ghost");
+        setSelectedGhostId(match.userId);
+        return;
+      }
     }
-    const match = availableGhosts.find((g) => g.userId === initialGhostUserId);
-    if (match) {
+    if (closestGhost) {
       setMode("ghost");
-      setSelectedGhostId(match.userId);
+      setSelectedGhostId(closestGhost.userId);
+    } else {
+      setSelectedGhostId(null);
     }
-  }, [initialGhostUserId, availableGhosts]);
+  }, [
+    initialGhostUserId,
+    availableGhosts,
+    closestGhost?.userId,
+    currentUserElo,
+  ]);
 
   useEffect(() => {
     if (!(visible && initialLiveInviteUserId)) {
@@ -97,7 +136,7 @@ export function RunConfigModal({
   }, [visible, initialLiveInviteUserId]);
 
   const selectedGhost =
-    availableGhosts?.find((g) => g.userId === selectedGhostId) ?? null;
+    availableGhosts.find((g) => g.userId === selectedGhostId) ?? null;
 
   const handleCreate = async () => {
     if (!userId || loading) {
@@ -197,11 +236,17 @@ export function RunConfigModal({
 
     const runMode = mode === "ghost" && selectedGhost ? "ranked" : "social";
     setLoading(true);
+    if (mode === "ghost" && !selectedGhost) {
+      setLoading(false);
+      setInvalidState(true);
+      return;
+    }
     try {
       const runId = await startRunMutation({
         userId: userId as Id<"users">,
         mode: runMode,
       });
+
       store.startRun(runId, runMode, userId);
       if (selectedGhost) {
         store.setGhostRun({
@@ -283,66 +328,102 @@ export function RunConfigModal({
             </TouchableOpacity>
           </View>
 
-          {/* Target distance */}
-          {mode !== "live" && (
-            <View className="mx-6 mb-6">
-              <Text className="mb-2 font-semibold text-gray-400 text-sm uppercase tracking-widest">
-                Target Distance (km)
-              </Text>
-              <TextInput
-                className="rounded-xl bg-neutral-900 px-4 py-3 text-base text-white"
-                keyboardType="decimal-pad"
-                onChangeText={setDistanceKm}
-                placeholder="5.0"
-                placeholderTextColor="#6b7280"
-                value={distanceKm}
-              />
-            </View>
-          )}
+          
+          <View className="mx-6 mb-6">
+            
+            {/* Target distance */}
+            <Text className="mb-2 font-semibold text-gray-400 text-sm uppercase tracking-widest">
+              Race Distance (km)
+            </Text>
+            {DISTANCES.map((d) => (
+              <Pressable
+                className="mb-3 flex-row items-center justify-between rounded-2xl p-4"
+                key={d.value}
+                onPress={() => setDistanceKm(d.value.toString())}
+                style={{
+                  backgroundColor:
+                    distanceKm === d.value.toString() ? "#FF4500" : "#1f1f1f",
+                }}
+              >
+                <Text
+                  className="font-semibold text-lg text-white"
+                  style={{
+                    color:
+                      distanceKm === d.value.toString() ? "white" : "#9ca3af",
+                  }}
+                >
+                  {d.label}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
 
           {/* Ghost list */}
           {mode === "ghost" && (
+            
             <View className="mx-6 mb-6">
-              <Text className="mb-3 font-semibold text-gray-400 text-sm uppercase tracking-widest">
-                Select Ghost
+              {/* Shitty toast message */}
+            {invalidState ? (<View className="border border-red-500 px-4 py-2 rounded-md">
+              <Text className="text-red-500 text-sm">
+                {invalidState ? "No ghosts available." : ""}
               </Text>
-              {availableGhosts === undefined ? (
+            </View>): null}
+              <Text className="text-gray-500 text-sm">
+                You will be racing against a ghost of similar elo.
+              </Text>
+
+              {/* FOR MIKE: we store ghost opposition race id in the run (as it can be optional). 
+              we can then use this to fetch the ghost run at user's run completion 
+              and compare result, distributing elo etc. */}
+
+              {availableGhostsData === undefined ? (
                 <ActivityIndicator color="#FF4500" />
-              ) : availableGhosts.length === 0 ? (
+              ) : closestGhost === null ? (
                 <Text className="text-gray-500 text-sm">
-                  No ghosts available yet. Complete a run first!
+                  {availableGhosts.length === 0
+                    ? "No ghosts available yet. Complete a run first!"
+                    : "No ghosts available within 100 ELO of your skill level."}
                 </Text>
               ) : (
-                availableGhosts.map((ghost) => {
-                  const isSelected = ghost.userId === selectedGhostId;
-                  return (
-                    <TouchableOpacity
-                      className={`mb-2 flex-row items-center rounded-2xl px-4 py-3 ${
-                        isSelected
-                          ? "border border-orange-500 bg-orange-500/10"
-                          : "bg-neutral-900"
-                      }`}
-                      key={ghost.userId}
-                      onPress={() =>
-                        setSelectedGhostId(isSelected ? null : ghost.userId)
-                      }
-                    >
-                      <View className="flex-1">
-                        <Text className="font-semibold text-white">
-                          {ghost.name}
-                          {ghost.isSelf ? " (You)" : ""}
-                        </Text>
-                        <Text className="text-gray-400 text-xs">
-                          {formatPace(ghost.bestPace)} ·{" "}
-                          {formatDist(ghost.bestDistance)}
-                        </Text>
-                      </View>
-                      {isSelected ? (
-                        <Text className="font-bold text-orange-500">✓</Text>
-                      ) : null}
-                    </TouchableOpacity>
-                  );
-                })
+                availableGhosts
+                  .filter(
+                    (g) => !g.isSelf && Math.abs(g.elo - currentUserElo) <= 100
+                  )
+                  .sort(
+                    (a, b) =>
+                      Math.abs(a.elo - currentUserElo) -
+                      Math.abs(b.elo - currentUserElo)
+                  )
+                  .map((ghost) => {
+                    const isSelected = ghost.userId === selectedGhostId;
+                    return (
+                      <TouchableOpacity
+                        className={`mb-2 flex-row items-center rounded-2xl px-4 py-3 ${
+                          isSelected
+                            ? "border border-orange-500 bg-orange-500/10"
+                            : "bg-neutral-900"
+                        }`}
+                        key={ghost.userId}
+                        onPress={() =>
+                          setSelectedGhostId(isSelected ? null : ghost.userId)
+                        }
+                      >
+                        <View className="flex-1">
+                          <Text className="font-semibold text-white">
+                            {ghost.name}
+                            {ghost.isSelf ? " (You)" : ""}
+                          </Text>
+                          <Text className="text-gray-400 text-xs">
+                            {formatPace(ghost.bestPace)} ·{" "}
+                            {formatDist(ghost.bestDistance)}
+                          </Text>
+                        </View>
+                        {isSelected ? (
+                          <Text className="font-bold text-orange-500">✓</Text>
+                        ) : null}
+                      </TouchableOpacity>
+                    );
+                  })
               )}
             </View>
           )}

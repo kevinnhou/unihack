@@ -132,6 +132,7 @@ type GhostEntry = {
   bestDistance: number;
   runId: string;
   isSelf: boolean;
+  elo: number;
 };
 
 export const getRunById = query({
@@ -143,6 +144,8 @@ export const getRunById = query({
 export const getAllAvailableGhosts = query({
   args: { currentUserId: v.id("users") },
   handler: async (ctx, { currentUserId }) => {
+    const currentUser = await ctx.db.get(currentUserId);
+    const currentUserElo = currentUser?.elo ?? 1200;
     const completedRuns = await ctx.db
       .query("runs")
       .filter((q) => q.eq(q.field("status"), "completed"))
@@ -172,6 +175,7 @@ export const getAllAvailableGhosts = query({
         bestDistance: run.distance,
         runId: run._id,
         isSelf: run.userId === currentUserId,
+        elo: user.elo,
       });
     }
     // Sort: self first, then by pace ascending
@@ -184,6 +188,6 @@ export const getAllAvailableGhosts = query({
       }
       return a.bestPace - b.bestPace;
     });
-    return results;
+    return { ghosts: results, currentUserElo };
   },
 });
