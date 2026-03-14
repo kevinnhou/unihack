@@ -75,6 +75,17 @@ export function useLocationTracking({
   gpsIntervalMs = 2000,
 }: UseLocationTrackingOptions) {
   const pingMutation = useMutation(api.runs.updateTelemetry);
+  // Keep mutable values in refs so callbacks always see the latest without
+  // causing startTracking to be recreated on every render.
+  const pingMutationRef = useRef(pingMutation);
+  const runIdRef = useRef(runId);
+  const pingIntervalMsRef = useRef(pingIntervalMs);
+  const gpsIntervalMsRef = useRef(gpsIntervalMs);
+  pingMutationRef.current = pingMutation;
+  runIdRef.current = runId;
+  pingIntervalMsRef.current = pingIntervalMs;
+  gpsIntervalMsRef.current = gpsIntervalMs;
+
   const subscriptionRef = useRef<LocationSubscription | null>(null);
   const pingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const prevCoordRef = useRef<{ lat: number; lng: number } | null>(null);
@@ -84,6 +95,7 @@ export function useLocationTracking({
 
   const stopTracking = useCallback(() => {
     if (subscriptionRef.current) {
+      subscriptionRef.current.remove();
       subscriptionRef.current = null;
     }
     if (pingIntervalRef.current !== null) {
@@ -107,7 +119,7 @@ export function useLocationTracking({
     subscriptionRef.current = await watchPositionAsync(
       {
         accuracy: Accuracy.Highest,
-        timeInterval: gpsIntervalMs,
+        timeInterval: gpsIntervalMsRef.current,
         distanceInterval: 1,
       },
       (location) => {
@@ -142,24 +154,27 @@ export function useLocationTracking({
       }
     );
 
-    if (runId) {
+    const currentRunId = runIdRef.current;
+    if (currentRunId) {
       pingIntervalRef.current = setInterval(() => {
         const state = useRunStore.getState();
         if (!state.isRunning) {
           return;
         }
         // Lightweight ping — no GPS coordinates sent to server
-        pingMutation({
-          runId: runId as Id<"runs">,
-          distance: state.distance,
-          duration: state.elapsedSeconds,
-          avgPace: state.currentPace,
-        }).catch(() => {
-          // network blip — silent
-        });
-      }, pingIntervalMs);
+        pingMutationRef
+          .current({
+            runId: currentRunId as Id<"runs">,
+            distance: state.distance,
+            duration: state.elapsedSeconds,
+            avgPace: state.currentPace,
+          })
+          .catch(() => {
+            // network blip — silent
+          });
+      }, pingIntervalMsRef.current);
     }
-  }, [runId, gpsIntervalMs, pingIntervalMs, pingMutation, stopTracking]);
+  }, [stopTracking]);
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: cleanup only on unmount
   useEffect(() => () => stopTracking(), []);

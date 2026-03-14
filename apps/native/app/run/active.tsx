@@ -77,21 +77,32 @@ function Stat({
 
 export default function ActiveRunScreen() {
   const router = useRouter();
-  const store = useRunStore();
+  // Granular selectors — avoids re-rendering (and re-running effects) on every
+  // GPS tick or timer tick when reading the whole store at once.
+  const runId = useRunStore((s) => s.runId) ?? "";
+  const liveRoomId = useRunStore((s) => s.liveRoomId);
+  const userId = useRunStore((s) => s.userId);
+  const distance = useRunStore((s) => s.distance);
+  const elapsedSeconds = useRunStore((s) => s.elapsedSeconds);
+  const currentPace = useRunStore((s) => s.currentPace);
+  const ghostRun = useRunStore((s) => s.ghostRun);
+  const targetDistanceStore = useRunStore((s) => s.targetDistance);
+  const mode = useRunStore((s) => s.mode);
+  const endRunStore = useRunStore((s) => s.endRun);
+  const setLiveRoomId = useRunStore((s) => s.setLiveRoomId);
+  const resetStore = useRunStore((s) => s.reset);
   const endRunMutation = useMutation(api.runs.endRun);
   const finishLiveParticipant = useMutation(api.live.finishLiveParticipant);
 
   const tickRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [isEnding, setIsEnding] = useState(false);
 
-  // Use the REAL tracking hook
-  const runId = store.runId ?? "";
   const { startTracking, stopTracking } = useLocationTracking({ runId });
 
   // Optional Live Ping integration if this happens to be a social/live run
   const { startPinging, stopPinging } = useLivePing({
-    roomId: store.liveRoomId,
-    userId: store.userId,
+    roomId: liveRoomId,
+    userId,
   });
 
   // ---------------------------------------------------------------------------
@@ -116,6 +127,7 @@ export default function ActiveRunScreen() {
   // ---------------------------------------------------------------------------
   // Finish Logic
   // ---------------------------------------------------------------------------
+  // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: PASS
   const handleFinish = useCallback(async () => {
     if (isEnding) {
       return;
@@ -129,9 +141,9 @@ export default function ActiveRunScreen() {
       clearInterval(tickRef.current);
     }
 
-    const summary = store.endRun();
-    const currentLiveRoomId = store.liveRoomId;
-    const currentUserId = store.userId;
+    const summary = endRunStore();
+    const currentLiveRoomId = liveRoomId;
+    const currentUserId = userId;
 
     // Handle Live Room Ending
     if (currentLiveRoomId && currentUserId) {
@@ -141,11 +153,12 @@ export default function ActiveRunScreen() {
         distance: summary.distance,
         duration: summary.elapsedSeconds,
       });
-      store.setLiveRoomId(null);
-      store.reset();
+      setLiveRoomId(null);
+      resetStore();
       router.replace({
         pathname: "/live/results",
         params: { roomId: currentLiveRoomId },
+        // biome-ignore lint/suspicious/noExplicitAny: PASS
       } as any);
       return;
     }
@@ -157,13 +170,11 @@ export default function ActiveRunScreen() {
         distance: summary.distance,
         duration: summary.elapsedSeconds,
         opponentId:
-          store.mode === "ranked" && store.ghostRun
-            ? (store.ghostRun.userId as Id<"users">)
+          mode === "ranked" && ghostRun
+            ? (ghostRun.userId as Id<"users">)
             : undefined,
         opponentAvgPace:
-          store.mode === "ranked" && store.ghostRun
-            ? store.ghostRun.avgPace
-            : undefined,
+          mode === "ranked" && ghostRun ? ghostRun.avgPace : undefined,
       });
     }
 
@@ -180,24 +191,30 @@ export default function ActiveRunScreen() {
     isEnding,
     stopTracking,
     stopPinging,
-    store,
+    endRunStore,
+    liveRoomId,
+    userId,
     runId,
     endRunMutation,
     finishLiveParticipant,
+    setLiveRoomId,
+    resetStore,
+    mode,
+    ghostRun,
     router,
   ]);
 
   // ---------------------------------------------------------------------------
   // Render Computations
   // ---------------------------------------------------------------------------
-  const ghostDistM = store.ghostRun
-    ? ghostDistanceAtTime(store.ghostRun, store.elapsedSeconds)
+  const ghostDistM = ghostRun
+    ? ghostDistanceAtTime(ghostRun, elapsedSeconds)
     : null;
 
   const targetDistance =
-    store.targetDistance > 0
-      ? store.targetDistance
-      : (store.ghostRun?.totalDistance ?? Math.max(store.distance, 1000));
+    targetDistanceStore > 0
+      ? targetDistanceStore
+      : (ghostRun?.totalDistance ?? Math.max(distance, 1000));
 
   return (
     <SafeAreaView className="flex-1 bg-black">
@@ -206,9 +223,9 @@ export default function ActiveRunScreen() {
         <View className="gap-8 rounded-3xl bg-neutral-900 px-6 py-8">
           {/* Stats row */}
           <View className="flex-row items-center justify-between">
-            <Stat label="Distance" value={formatDistance(store.distance)} />
-            <Stat label="Time" large value={formatTime(store.elapsedSeconds)} />
-            <Stat label="Pace" value={formatPace(store.currentPace)} />
+            <Stat label="Distance" value={formatDistance(distance)} />
+            <Stat label="Time" large value={formatTime(elapsedSeconds)} />
+            <Stat label="Pace" value={formatPace(currentPace)} />
           </View>
 
           {/* Progress bars */}
@@ -218,26 +235,26 @@ export default function ActiveRunScreen() {
               <View className="mb-2 flex-row items-center justify-between">
                 <Text className="font-medium text-sm text-white">You</Text>
                 <Text className="text-sm text-white">
-                  {formatDistance(store.distance)} /{" "}
-                  {formatDistance(targetDistance)}
+                  {formatDistance(distance)} / {formatDistance(targetDistance)}
                 </Text>
               </View>
               <View className="h-4 overflow-hidden rounded-full bg-neutral-700">
                 <View
                   className="h-full rounded-full bg-orange-500"
                   style={{
-                    width: `${Math.min(100, (store.distance / targetDistance) * 100)}%`,
+                    width: `${Math.min(100, (distance / targetDistance) * 100)}%`,
                   }}
                 />
               </View>
             </View>
 
             {/* Opponent progress */}
-            {store.ghostRun && ghostDistM !== null && (
+            {/** biome-ignore lint/nursery/noLeakedRender: PASS */}
+            {ghostRun && ghostDistM !== null && (
               <View>
                 <View className="mb-2 flex-row items-center justify-between">
                   <Text className="font-medium text-sm text-white">
-                    {store.ghostRun.name}
+                    {ghostRun.name}
                   </Text>
                   <Text className="text-sm text-white">
                     {formatDistance(ghostDistM)} /{" "}
@@ -253,7 +270,7 @@ export default function ActiveRunScreen() {
                   />
                 </View>
                 <Text className="mt-3 text-center font-bold text-base text-orange-400">
-                  {ghostDeltaLabel(store.distance, ghostDistM)}
+                  {ghostDeltaLabel(distance, ghostDistM)}
                 </Text>
               </View>
             )}
