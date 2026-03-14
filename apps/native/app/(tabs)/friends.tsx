@@ -66,10 +66,6 @@ export default function FriendsTabScreen() {
 
   const acceptFriendRequest = useMutation(api.friends.acceptFriendRequest);
 
-  if (!userId) {
-    return <Redirect href="/(auth)/signin" />;
-  }
-
   const filteredFriends = useMemo(() => {
     const q = searchTerm.trim().toLowerCase();
     if (!q) {
@@ -79,6 +75,10 @@ export default function FriendsTabScreen() {
       friend.name.toLowerCase().includes(q)
     );
   }, [friends, searchTerm]);
+
+  if (!userId) {
+    return <Redirect href="/(auth)/signin" />;
+  }
 
   const handleAccept = async (senderId: Id<"users">) => {
     if (!userId) {

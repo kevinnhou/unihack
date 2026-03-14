@@ -42,10 +42,6 @@ export default function AddFriendsScreen() {
       : "skip"
   ) as SearchUser[] | undefined;
 
-  if (!userId) {
-    return <Redirect href="/(auth)/signin" />;
-  }
-
   const shownUsers = useMemo(() => users ?? [], [users]);
 
   const handleRequest = useCallback(
@@ -83,6 +79,10 @@ export default function AddFriendsScreen() {
     },
     [userId, acceptFriendRequest]
   );
+
+  if (!userId) {
+    return <Redirect href="/(auth)/signin" />;
+  }
 
   return (
     <SafeAreaView className="flex-1 bg-black">
