@@ -63,6 +63,12 @@ defineTask(BACKGROUND_LOCATION_TASK, (({
 // Permission helpers
 // ---------------------------------------------------------------------------
 
+/**
+ * Returns true if foreground permission is granted (minimum to start tracking).
+ * Background permission is requested as well but a denial only logs a warning —
+ * startLocationUpdatesAsync will degrade gracefully on devices where "Always"
+ * is unavailable.
+ */
 export async function requestLocationPermissions(): Promise<boolean> {
   const { status: fg } = await requestForegroundPermissionsAsync();
   if (fg !== "granted") {
@@ -70,7 +76,12 @@ export async function requestLocationPermissions(): Promise<boolean> {
   }
 
   const { status: bg } = await requestBackgroundPermissionsAsync();
-  return bg === "granted";
+  if (bg !== "granted") {
+    console.warn(
+      "[Location] Background permission not granted — tracking foreground only"
+    );
+  }
+  return true;
 }
 
 export async function hasLocationPermissions(): Promise<boolean> {

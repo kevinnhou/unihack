@@ -46,11 +46,15 @@
       <true/>
     </dict>
     <key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-    <string>Agon needs your location to track your run.</string>
+    <string>Agon needs your location to track your run even in the background.</string>
     <key>NSLocationAlwaysUsageDescription</key>
-    <string>Allow $(PRODUCT_NAME) to access your location</string>
+    <string>Agon needs your location to track your run even in the background.</string>
     <key>NSLocationWhenInUseUsageDescription</key>
     <string>Agon needs your location to track your run.</string>
+    <key>UIBackgroundModes</key>
+    <array>
+      <string>location</string>
+    </array>
     <key>RCTNewArchEnabled</key>
     <true/>
     <key>UILaunchStoryboardName</key>
