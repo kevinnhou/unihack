@@ -4,11 +4,13 @@ import { mutation, query } from "./_generated/server";
 export const startRun = mutation({
   args: {
     userId: v.id("users"),
+    currentUserElo: v.number(),
     mode: v.union(v.literal("ranked"), v.literal("social")),
     liveRoomId: v.optional(v.id("liveRooms")),
   },
   returns: v.id("runs"),
-  handler: async (ctx, { userId, mode, liveRoomId }) =>
+
+  handler: async (ctx, { userId, currentUserElo, mode, liveRoomId }) =>
     await ctx.db.insert("runs", {
       userId,
       mode,
@@ -18,6 +20,7 @@ export const startRun = mutation({
       avgPace: 0,
       startedAt: Date.now(),
       telemetry: [],
+      currentUserElo,
       ...(liveRoomId ? { liveRoomId } : {}),
     }),
 });
@@ -132,6 +135,7 @@ type GhostEntry = {
   bestDistance: number;
   runId: string;
   isSelf: boolean;
+  elo: number;
 };
 
 export const getRunById = query({
@@ -143,6 +147,8 @@ export const getRunById = query({
 export const getAllAvailableGhosts = query({
   args: { currentUserId: v.id("users") },
   handler: async (ctx, { currentUserId }) => {
+    const currentUser = await ctx.db.get(currentUserId);
+    const currentUserElo = currentUser?.elo ?? 1200;
     const completedRuns = await ctx.db
       .query("runs")
       .filter((q) => q.eq(q.field("status"), "completed"))
@@ -151,6 +157,10 @@ export const getAllAvailableGhosts = query({
     const bestByUser = new Map<string, (typeof completedRuns)[0]>();
     for (const run of completedRuns) {
       if (run.avgPace <= 0) {
+        continue;
+      }
+      const runElo = run.currentUserElo ?? 1200;
+      if (Math.abs(runElo - currentUserElo) > 100) {
         continue;
       }
       const existing = bestByUser.get(run.userId);
@@ -165,6 +175,7 @@ export const getAllAvailableGhosts = query({
       if (!user) {
         continue;
       }
+      const runElo = run.currentUserElo ?? user.elo;
       results.push({
         userId: run.userId,
         name: user.name,
@@ -172,18 +183,18 @@ export const getAllAvailableGhosts = query({
         bestDistance: run.distance,
         runId: run._id,
         isSelf: run.userId === currentUserId,
+        elo: runElo,
       });
     }
-    // Sort: self first, then by pace ascending
+    // Sort: self first, then by elo delta (closest to currentUserElo), then by pace
     results.sort((a, b) => {
-      if (a.isSelf && !b.isSelf) {
-        return -1;
-      }
-      if (!a.isSelf && b.isSelf) {
-        return 1;
-      }
+      if (a.isSelf && !b.isSelf) return -1;
+      if (!a.isSelf && b.isSelf) return 1;
+      const deltaA = Math.abs(a.elo - currentUserElo);
+      const deltaB = Math.abs(b.elo - currentUserElo);
+      if (deltaA !== deltaB) return deltaA - deltaB;
       return a.bestPace - b.bestPace;
     });
-    return results;
+    return { ghosts: results, currentUserElo };
   },
 });
