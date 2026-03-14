@@ -5,17 +5,18 @@ import { useRouter } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
-  Alert,
   Modal,
   Pressable,
   ScrollView,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
 import { useAuthStore } from "@/stores/auth-store";
 import { useLiveStore } from "@/stores/live-store";
 import { useRunStore } from "@/stores/run-store";
+import { GhostAlertModal } from "./ghost-alert-modal";
 
 const DISTANCES = [
   { label: "1 km", value: 1000 },
@@ -75,6 +76,9 @@ export function RunConfigModal({
     useRef<TextInput>(null),
   ];
 
+  const [showGhostConfirm, setShowGhostConfirm] = useState(false);
+
+
   const startRunMutation = useMutation(api.runs.startRun);
   const createRoomMutation = useMutation(api.live.createLiveRoom);
   const joinRoomMutation = useMutation(api.live.joinLiveRoom);
@@ -89,26 +93,14 @@ export function RunConfigModal({
 
   const availableGhosts = availableGhostsData?.ghosts ?? [];
   const currentUserElo = availableGhostsData?.currentUserElo ?? 1200;
-
-  function findClosestGhostByElo() {
-    const others = availableGhosts.filter((g) => !g.isSelf);
-    if (others.length === 0) return null;
-    const withDelta = others.map((g) => ({
-      ghost: g,
-      delta: Math.abs(g.elo - currentUserElo),
-    }));
-    const closest = withDelta.reduce((a, b) => (a.delta < b.delta ? a : b));
-    return closest.delta <= 100 ? closest.ghost : null;
-  }
-
-  const closestGhost = findClosestGhostByElo();
+  const closestGhost = availableGhosts.find((g) => !g.isSelf) ?? null;
 
   useEffect(() => {
     if (initialGhostUserId && availableGhosts.length > 0) {
       const match = availableGhosts.find(
         (g) => g.userId === initialGhostUserId
       );
-      if (match && Math.abs(match.elo - currentUserElo) <= 100) {
+      if (match) {
         setMode("ghost");
         setSelectedGhostId(match.userId);
         return;
@@ -120,12 +112,7 @@ export function RunConfigModal({
     } else {
       setSelectedGhostId(null);
     }
-  }, [
-    initialGhostUserId,
-    availableGhosts,
-    closestGhost?.userId,
-    currentUserElo,
-  ]);
+  }, [initialGhostUserId, availableGhosts, closestGhost?.userId]);
 
   useEffect(() => {
     if (!(visible && initialLiveInviteUserId)) {
@@ -236,15 +223,11 @@ export function RunConfigModal({
 
     const runMode = mode === "ghost" && selectedGhost ? "ranked" : "social";
     setLoading(true);
-    if (mode === "ghost" && !selectedGhost) {
-      setLoading(false);
-      setInvalidState(true);
-      return;
-    }
     try {
       const runId = await startRunMutation({
         userId: userId as Id<"users">,
         mode: runMode,
+        currentUserElo,
       });
 
       store.startRun(runId, runMode, userId);
@@ -258,6 +241,7 @@ export function RunConfigModal({
       }
       const km = Number.parseFloat(distanceKm);
       store.setTargetDistance(Number.isFinite(km) && km > 0 ? km * 1000 : 0);
+      setShowGhostConfirm(false);
       onClose();
       router.replace("/run/active");
     } finally {
@@ -328,9 +312,7 @@ export function RunConfigModal({
             </TouchableOpacity>
           </View>
 
-          
           <View className="mx-6 mb-6">
-            
             {/* Target distance */}
             <Text className="mb-2 font-semibold text-gray-400 text-sm uppercase tracking-widest">
               Race Distance (km)
@@ -360,14 +342,15 @@ export function RunConfigModal({
 
           {/* Ghost list */}
           {mode === "ghost" && (
-            
             <View className="mx-6 mb-6">
               {/* Shitty toast message */}
-            {invalidState ? (<View className="border border-red-500 px-4 py-2 rounded-md">
-              <Text className="text-red-500 text-sm">
-                {invalidState ? "No ghosts available." : ""}
-              </Text>
-            </View>): null}
+              {invalidState ? (
+                <View className="rounded-md border border-red-500 px-4 py-2">
+                  <Text className="text-red-500 text-sm">
+                    {invalidState ? "No ghosts available." : ""}
+                  </Text>
+                </View>
+              ) : null}
               <Text className="text-gray-500 text-sm">
                 You will be racing against a ghost of similar elo.
               </Text>
@@ -386,14 +369,7 @@ export function RunConfigModal({
                 </Text>
               ) : (
                 availableGhosts
-                  .filter(
-                    (g) => !g.isSelf && Math.abs(g.elo - currentUserElo) <= 100
-                  )
-                  .sort(
-                    (a, b) =>
-                      Math.abs(a.elo - currentUserElo) -
-                      Math.abs(b.elo - currentUserElo)
-                  )
+                  .filter((g) => !g.isSelf)
                   .map((ghost) => {
                     const isSelected = ghost.userId === selectedGhostId;
                     return (
@@ -581,6 +557,16 @@ export function RunConfigModal({
           </TouchableOpacity>
         </View>
       </View>
+
+      <GhostAlertModal
+        displayName={selectedGhost?.name ?? ""}
+        distance={formatDist(Number.parseFloat(distanceKm) * 1000)}
+        elo={selectedGhost?.elo ?? 0}
+        loading={loading}
+        onCancel={() => setShowGhostConfirm(false)}
+        onConfirm={() => void handleStart()}
+        visible={showGhostConfirm && !!selectedGhost}
+      />
     </Modal>
   );
 }

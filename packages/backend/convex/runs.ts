@@ -4,11 +4,13 @@ import { mutation, query } from "./_generated/server";
 export const startRun = mutation({
   args: {
     userId: v.id("users"),
+    currentUserElo: v.number(),
     mode: v.union(v.literal("ranked"), v.literal("social")),
     liveRoomId: v.optional(v.id("liveRooms")),
   },
   returns: v.id("runs"),
-  handler: async (ctx, { userId, mode, liveRoomId }) =>
+
+  handler: async (ctx, { userId, currentUserElo, mode, liveRoomId }) =>
     await ctx.db.insert("runs", {
       userId,
       mode,
@@ -18,6 +20,7 @@ export const startRun = mutation({
       avgPace: 0,
       startedAt: Date.now(),
       telemetry: [],
+      currentUserElo,
       ...(liveRoomId ? { liveRoomId } : {}),
     }),
 });
@@ -156,6 +159,10 @@ export const getAllAvailableGhosts = query({
       if (run.avgPace <= 0) {
         continue;
       }
+      const runElo = run.currentUserElo ?? 1200;
+      if (Math.abs(runElo - currentUserElo) > 100) {
+        continue;
+      }
       const existing = bestByUser.get(run.userId);
       if (!existing || run.avgPace < existing.avgPace) {
         bestByUser.set(run.userId, run);
@@ -168,6 +175,7 @@ export const getAllAvailableGhosts = query({
       if (!user) {
         continue;
       }
+      const runElo = run.currentUserElo ?? user.elo;
       results.push({
         userId: run.userId,
         name: user.name,
@@ -175,17 +183,16 @@ export const getAllAvailableGhosts = query({
         bestDistance: run.distance,
         runId: run._id,
         isSelf: run.userId === currentUserId,
-        elo: user.elo,
+        elo: runElo,
       });
     }
-    // Sort: self first, then by pace ascending
+    // Sort: self first, then by elo delta (closest to currentUserElo), then by pace
     results.sort((a, b) => {
-      if (a.isSelf && !b.isSelf) {
-        return -1;
-      }
-      if (!a.isSelf && b.isSelf) {
-        return 1;
-      }
+      if (a.isSelf && !b.isSelf) return -1;
+      if (!a.isSelf && b.isSelf) return 1;
+      const deltaA = Math.abs(a.elo - currentUserElo);
+      const deltaB = Math.abs(b.elo - currentUserElo);
+      if (deltaA !== deltaB) return deltaA - deltaB;
       return a.bestPace - b.bestPace;
     });
     return { ghosts: results, currentUserElo };
