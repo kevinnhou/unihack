@@ -2,7 +2,7 @@ import { api } from "@unihack/backend/convex/_generated/api";
 import type { Id } from "@unihack/backend/convex/_generated/dataModel";
 import { useMutation, useQuery } from "convex/react";
 import { Redirect, useRouter } from "expo-router";
-import { Play, UserPlus, ChevronLeft } from "lucide-react-native";
+import { ChevronLeft, Play, UserPlus } from "lucide-react-native";
 import { useState } from "react";
 import {
   ActivityIndicator,
@@ -116,8 +116,18 @@ export default function FriendsScreen() {
         ListHeaderComponent={
           <View className="px-4 pt-4 pb-6">
             <View className="flex-row items-center justify-between">
-              <TouchableOpacity className="pr-2  text-orange-500" onPress={() => router.back()}>
-                <Text className="font-medium flex flex-row text-orange-500"><ChevronLeft color="currentColor" size={18} style={{ marginRight: 0 }} /> Profile</Text>
+              <TouchableOpacity
+                className="pr-2 text-orange-500"
+                onPress={() => router.back()}
+              >
+                <Text className="flex flex-row font-medium text-orange-500">
+                  <ChevronLeft
+                    color="currentColor"
+                    size={18}
+                    style={{ marginRight: 0 }}
+                  />{" "}
+                  Profile
+                </Text>
               </TouchableOpacity>
               <Text className="font-black text-3xl text-white">Friends</Text>
               <TouchableOpacity
@@ -172,8 +182,12 @@ export default function FriendsScreen() {
                   setAddError(null);
                 }}
               >
-                <View className="flex-row items-center text-orange-500 flex ">
-                  <ChevronLeft color="currentColor" size={18} style={{ marginRight: 8 }} />
+                <View className="flex flex-row items-center text-orange-500">
+                  <ChevronLeft
+                    color="currentColor"
+                    size={18}
+                    style={{ marginRight: 8 }}
+                  />
                   <Text className="font-medium text-gray-300">Profile</Text>
                 </View>
               </TouchableOpacity>

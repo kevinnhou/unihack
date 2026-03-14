@@ -16,6 +16,16 @@ export function useLivePing({
   pingIntervalMs?: number;
 }) {
   const pingMutation = useMutation(api.live.pingLiveProgress);
+  // Keep all mutable values in refs so startPinging identity stays stable.
+  const pingMutationRef = useRef(pingMutation);
+  const roomIdRef = useRef(roomId);
+  const userIdRef = useRef(userId);
+  const pingIntervalMsRef = useRef(pingIntervalMs);
+  pingMutationRef.current = pingMutation;
+  roomIdRef.current = roomId;
+  userIdRef.current = userId;
+  pingIntervalMsRef.current = pingIntervalMs;
+
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const stopPinging = useCallback(() => {
@@ -26,7 +36,9 @@ export function useLivePing({
   }, []);
 
   const startPinging = useCallback(() => {
-    if (!(roomId && userId)) {
+    const currentRoomId = roomIdRef.current;
+    const currentUserId = userIdRef.current;
+    if (!(currentRoomId && currentUserId)) {
       return;
     }
     intervalRef.current = setInterval(() => {
@@ -35,17 +47,19 @@ export function useLivePing({
       if (!isRunning) {
         return;
       }
-      pingMutation({
-        roomId: roomId as Id<"liveRooms">,
-        userId: userId as Id<"users">,
-        distance,
-        duration: elapsedSeconds,
-        avgPace: currentPace,
-      }).catch(() => {
-        // network blip — silent
-      });
-    }, pingIntervalMs);
-  }, [roomId, userId, pingIntervalMs, pingMutation]);
+      pingMutationRef
+        .current({
+          roomId: currentRoomId as Id<"liveRooms">,
+          userId: currentUserId as Id<"users">,
+          distance,
+          duration: elapsedSeconds,
+          avgPace: currentPace,
+        })
+        .catch(() => {
+          // network blip — silent
+        });
+    }, pingIntervalMsRef.current);
+  }, []);
 
   useEffect(() => () => stopPinging(), [stopPinging]);
 

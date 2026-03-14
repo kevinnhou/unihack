@@ -21,6 +21,16 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "android": {
+      "permissions": [
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION"
+      ],
+      "package": "com.anonymous.pinfire"
+    },
+    "ios": {
+      "bundleIdentifier": "com.anonymous.pinfire"
     }
   }
 }
