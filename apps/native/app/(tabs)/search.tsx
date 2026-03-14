@@ -113,7 +113,7 @@ export default function SearchScreen() {
           ) : isIncomingRequest ? (
             <Text className="text-sm text-white">Accept</Text>
           ) : item.requested ? (
-            <Text className="text-sm text-orange-500">Requested</Text>
+            <Text className="text-orange-500 text-sm">Requested</Text>
           ) : (
             <Text className="text-sm text-white">Add</Text>
           )}
@@ -150,22 +150,14 @@ export default function SearchScreen() {
         contentContainerStyle={{ paddingBottom: 40 }}
         showsVerticalScrollIndicator={false}
       >
-        {showAddedMe && (
+        {showAddedMe && addedMe.length !== 0 && (
           <>
-            <Text className="mb-1 px-4 text-sm text-gray-400">Added Me</Text>
-            {addedMe.length === 0 ? (
-              <View className="mb-6 px-4">
-                <Text className="text-center text-gray-500">
-                  No one has added you yet
-                </Text>
-              </View>
-            ) : (
-              addedMe.map((item) => renderUser(item))
-            )}
+            <Text className="mb-1 px-4 text-gray-400 text-sm">Added Me</Text>
+            {addedMe.map((item) => renderUser(item))}
           </>
         )}
 
-        <Text className="mb-1 px-4 text-sm text-gray-400">
+        <Text className="mb-1 px-4 text-gray-400 text-sm">
           {showAddedMe ? "Suggestions" : "Search results"}
         </Text>
         {suggestions.length === 0 ? (

@@ -1,6 +1,6 @@
 import "@/global.css";
 import { ConvexProvider, ConvexReactClient } from "convex/react";
-import { Slot } from "expo-router";
+import { Stack } from "expo-router";
 import { HeroUINativeProvider } from "heroui-native";
 import { useEffect } from "react";
 import { View } from "react-native";
@@ -55,7 +55,12 @@ export default function Layout() {
         <KeyboardProvider>
           <HeroUINativeProvider>
             <ThemeSync />
-            <Slot />
+            <Stack screenOptions={{ headerShown: false }}>
+              <Stack.Screen
+                name="friends/friends"
+                options={{ presentation: "modal" }}
+              />
+            </Stack>
           </HeroUINativeProvider>
         </KeyboardProvider>
       </ConvexProvider>

@@ -3,7 +3,13 @@ import type { Id } from "@unihack/backend/convex/_generated/dataModel";
 import { useQuery } from "convex/react";
 import { Redirect, useRouter } from "expo-router";
 import { LogOut } from "lucide-react-native";
-import { ScrollView, Text, TouchableOpacity, View } from "react-native";
+import {
+  Pressable,
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useAuthStore } from "@/stores/auth-store";
 
@@ -29,12 +35,16 @@ function StatRow({ label, value }: { label: string; value: string }) {
   );
 }
 
-export default function SettingsScreen() {
+export default function ProfileScreen() {
   const router = useRouter();
   const { userId, userName, userEmail, signOut } = useAuthStore();
 
   const stats = useQuery(
     api.users.getUserStats,
+    userId ? { userId: userId as Id<"users"> } : "skip"
+  );
+  const friends = useQuery(
+    api.friends.getFriends,
     userId ? { userId: userId as Id<"users"> } : "skip"
   );
 
@@ -51,18 +61,30 @@ export default function SettingsScreen() {
     <SafeAreaView className="flex-1 bg-black">
       <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
         {/* Profile header */}
-        <View className="flex-row items-center gap-4 px-4 pt-6 pb-6">
-          <View className="h-20 w-20 items-center justify-center rounded-full bg-orange-500">
-            <Text className="font-black text-3xl text-white">
-              {(userName ?? "?").charAt(0).toUpperCase()}
-            </Text>
+        <View className="flex flex-col pt-6 pb-6">
+          <View className="flex-row items-center gap-4 px-4">
+            <View className="h-20 w-20 items-center justify-center rounded-full bg-orange-500">
+              <Text className="font-black text-3xl text-white">
+                {(userName ?? "?").charAt(0).toUpperCase()}
+              </Text>
+            </View>
+            <View className="flex-1">
+              <Text className="font-black text-2xl text-white">
+                {userName ?? "Runner"}
+              </Text>
+              <Text className="text-gray-400 text-sm">{userEmail ?? ""}</Text>
+            </View>
           </View>
-          <View className="flex-1">
-            <Text className="font-black text-2xl text-white">
-              {userName ?? "Runner"}
+
+          <Pressable
+            className="mt-2 flex flex-col"
+            onPress={() => router.push("/friends/friends")}
+          >
+            <Text className="px-4 text-gray-400 text-md">Friends</Text>
+            <Text className="px-4 text-lg text-white">
+              {friends?.length ?? 0}
             </Text>
-            <Text className="text-gray-400 text-sm">{userEmail ?? ""}</Text>
-          </View>
+          </Pressable>
         </View>
 
         {/* Stats */}
