@@ -23,9 +23,9 @@ import { Tabs } from "expo-router";
 import {
   Activity,
   BarChart2,
+  Search,
   Settings,
   Shield,
-  Users,
 } from "lucide-react-native";
 
 export default function TabsLayout() {
@@ -71,11 +71,11 @@ export default function TabsLayout() {
           }}
         />
         <Tabs.Screen
-          name="friends"
+          name="search"
           options={{
-            title: "Friends",
+            title: "Search",
             tabBarIcon: ({ color, size }) => (
-              <Users color={color} size={size} />
+              <Search color={color} size={size} />
             ),
           }}
         />

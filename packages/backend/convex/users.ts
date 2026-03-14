@@ -31,6 +31,185 @@ function computeLongestStreak(sortedDates: string[]): number {
   return longest;
 }
 
+const searchUserShape = v.object({
+  userId: v.id("users"),
+  displayName: v.string(),
+  mutualFriendsCount: v.number(),
+  senderId: v.union(v.id("users"), v.null()),
+  requested: v.boolean(),
+});
+
+export const getIncomingRequests = query({
+  args: { currentUserId: v.id("users") },
+  returns: v.array(searchUserShape),
+  handler: async (ctx, { currentUserId }) => {
+    const incomingRequests = await ctx.db
+      .query("friends")
+      .withIndex("by_friend", (q) => q.eq("friendId", currentUserId))
+      .collect();
+
+    const requestsFromOthers = incomingRequests.filter(
+      (f) => f.requested && f.sender !== currentUserId
+    );
+
+    const currentUserFriends = await ctx.db
+      .query("friends")
+      .withIndex("by_user", (q) => q.eq("userId", currentUserId))
+      .collect();
+    const currentUserFriendIds = new Set(
+      currentUserFriends
+        .filter((f) => !f.requested)
+        .map((f) => f.friendId)
+        .filter((id) => id !== currentUserId)
+    );
+
+    const results: {
+      userId: Id<"users">;
+      displayName: string;
+      mutualFriendsCount: number;
+      senderId: Id<"users"> | null;
+      requested: boolean;
+    }[] = [];
+
+    for (const req of requestsFromOthers) {
+      const user = await ctx.db.get(req.userId);
+      if (!user || user._id === currentUserId) continue;
+
+      const displayName = user.displayUsername ?? user.name ?? "Unknown";
+
+      const targetUserFriends = await ctx.db
+        .query("friends")
+        .withIndex("by_user", (q) => q.eq("userId", user._id))
+        .collect();
+      const targetFriendIds = new Set(
+        targetUserFriends
+          .filter((f) => !f.requested)
+          .map((f) => f.friendId)
+          .filter((id) => id !== user._id)
+      );
+
+      let mutualCount = 0;
+      for (const fid of currentUserFriendIds) {
+        if (targetFriendIds.has(fid)) mutualCount += 1;
+      }
+
+      results.push({
+        userId: user._id,
+        displayName,
+        mutualFriendsCount: mutualCount,
+        senderId: req.sender,
+        requested: true,
+      });
+    }
+
+    return results.sort((a, b) => b.mutualFriendsCount - a.mutualFriendsCount);
+  },
+});
+
+export const getSuggestedUsers = query({
+  args: {
+    currentUserId: v.id("users"),
+    searchTerm: v.optional(v.string()),
+  },
+  returns: v.array(searchUserShape),
+  handler: async (ctx, { currentUserId, searchTerm }) => {
+    const incomingRequestUserIds = new Set(
+      (
+        await ctx.db
+          .query("friends")
+          .withIndex("by_friend", (q) => q.eq("friendId", currentUserId))
+          .collect()
+      )
+        .filter((f) => f.requested && f.sender !== currentUserId)
+        .map((f) => f.userId)
+    );
+
+    const allUsers = await ctx.db.query("users").collect();
+
+    const currentUserFriends = await ctx.db
+      .query("friends")
+      .withIndex("by_user", (q) => q.eq("userId", currentUserId))
+      .collect();
+    const currentUserFriendIds = new Set(
+      currentUserFriends
+        .filter((f) => !f.requested)
+        .map((f) => f.friendId)
+        .filter((id) => id !== currentUserId)
+    );
+
+    const results: {
+      userId: Id<"users">;
+      displayName: string;
+      mutualFriendsCount: number;
+      senderId: Id<"users"> | null;
+      requested: boolean;
+    }[] = [];
+
+    for (const user of allUsers) {
+      if (user._id === currentUserId) continue;
+      if (incomingRequestUserIds.has(user._id)) continue;
+
+      const displayName = user.displayUsername ?? user.name ?? "Unknown";
+      const searchable = `${displayName} ${user.name}`.toLowerCase();
+      if (
+        searchTerm &&
+        searchTerm.trim().length > 0 &&
+        !searchable.includes(searchTerm.trim().toLowerCase())
+      ) {
+        continue;
+      }
+
+      const hasExisting = await ctx.db
+        .query("friends")
+        .withIndex("by_user_friend", (q) =>
+          q.eq("userId", currentUserId).eq("friendId", user._id)
+        )
+        .first();
+      const hasReverse = await ctx.db
+        .query("friends")
+        .withIndex("by_user_friend", (q) =>
+          q.eq("userId", user._id).eq("friendId", currentUserId)
+        )
+        .first();
+
+      const isFriend =
+        (hasExisting && !hasExisting.requested) ||
+        (hasReverse && !hasReverse.requested);
+      if (isFriend) continue;
+
+      const isRequested =
+        (hasExisting?.requested ?? false) || (hasReverse?.requested ?? false);
+      const senderId = hasExisting?.sender ?? hasReverse?.sender ?? null;
+
+      const targetUserFriends = await ctx.db
+        .query("friends")
+        .withIndex("by_user", (q) => q.eq("userId", user._id))
+        .collect();
+      const targetFriendIds = new Set(
+        targetUserFriends
+          .filter((f) => !f.requested)
+          .map((f) => f.friendId)
+          .filter((id) => id !== user._id)
+      );
+
+      let mutualCount = 0;
+      for (const fid of currentUserFriendIds) {
+        if (targetFriendIds.has(fid)) mutualCount += 1;
+      }
+
+      results.push({
+        userId: user._id,
+        displayName,
+        mutualFriendsCount: mutualCount,
+        senderId,
+        requested: isRequested,
+      });
+    }
+
+    return results.sort((a, b) => b.mutualFriendsCount - a.mutualFriendsCount);
+  },
+});
+
 export const getUserByEmail = query({
   args: { email: v.string() },
   returns: v.union(v.id("users"), v.null()),

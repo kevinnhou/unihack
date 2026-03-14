@@ -34,13 +34,17 @@ function formatPace(secPerKm: number): string {
 }
 
 function ghostDistanceAtTime(ghost: GhostInfo, elapsedSeconds: number): number {
-  if (ghost.avgPace <= 0) { return 0; }
+  if (ghost.avgPace <= 0) {
+    return 0;
+  }
   return Math.min((elapsedSeconds / ghost.avgPace) * 1000, ghost.totalDistance);
 }
 
 function ghostDeltaLabel(userDist: number, ghostDist: number): string {
   const diff = userDist - ghostDist;
-  if (Math.abs(diff) < 10) { return "Even"; }
+  if (Math.abs(diff) < 10) {
+    return "Even";
+  }
   const distStr =
     Math.abs(diff) >= 1000
       ? `${(Math.abs(diff) / 1000).toFixed(1)} km`
@@ -113,13 +117,17 @@ export default function ActiveRunScreen() {
   // Finish Logic
   // ---------------------------------------------------------------------------
   const handleFinish = useCallback(async () => {
-    if (isEnding) { return; }
+    if (isEnding) {
+      return;
+    }
     setIsEnding(true);
 
     // Stop real tracking intervals
     stopTracking();
     stopPinging();
-    if (tickRef.current) { clearInterval(tickRef.current); }
+    if (tickRef.current) {
+      clearInterval(tickRef.current);
+    }
 
     const summary = store.endRun();
     const currentLiveRoomId = store.liveRoomId;
