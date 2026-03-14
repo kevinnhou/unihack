@@ -11,15 +11,16 @@ import {
 } from "expo-location";
 import type { TaskManagerTaskBody } from "expo-task-manager";
 import { defineTask } from "expo-task-manager";
+import {
+  BACKGROUND_LOCATION_TASK,
+  BG_LOCATION_DISTANCE_INTERVAL_M,
+  BG_LOCATION_TIME_INTERVAL_MS,
+  FOREGROUND_SERVICE_COLOR,
+} from "@/constants";
+import type { TelemetryPoint } from "@/types";
 
-export const BACKGROUND_LOCATION_TASK = "agon_BACKGROUND_LOCATION";
-
-export type TelemetryPoint = {
-  timestamp: number;
-  lat: number;
-  lng: number;
-  speed: number;
-};
+export { BACKGROUND_LOCATION_TASK };
+export type { TelemetryPoint };
 
 type BackgroundLocationCallback = (point: TelemetryPoint) => void;
 
@@ -93,12 +94,12 @@ export async function startTracking(
   try {
     await startLocationUpdatesAsync(BACKGROUND_LOCATION_TASK, {
       accuracy: Accuracy.Balanced,
-      timeInterval: 3000,
-      distanceInterval: 5,
+      timeInterval: BG_LOCATION_TIME_INTERVAL_MS,
+      distanceInterval: BG_LOCATION_DISTANCE_INTERVAL_M,
       foregroundService: {
         notificationTitle: "agon is tracking your run",
         notificationBody: "Your run is in progress.",
-        notificationColor: "#FF4500",
+        notificationColor: FOREGROUND_SERVICE_COLOR,
       },
       showsBackgroundLocationIndicator: true,
       pausesUpdatesAutomatically: false,
@@ -106,8 +107,6 @@ export async function startTracking(
   } catch (error) {
     // Location APIs might not be available in web environment
     console.warn("[Location] Could not start location updates:", error);
-    // For web, we could implement browser geolocation as fallback
-    // For now, just continue without location tracking
   }
 }
 
@@ -121,12 +120,10 @@ export async function stopTracking(): Promise<void> {
       await stopLocationUpdatesAsync(BACKGROUND_LOCATION_TASK);
     }
   } catch (error) {
-    // hasStartedLocationUpdatesAsync might not be available in web environment
     console.warn(
       "[Location] Could not check if location updates are running:",
       error
     );
-    // Try to stop anyway, it will fail silently if not running
     try {
       await stopLocationUpdatesAsync(BACKGROUND_LOCATION_TASK);
     } catch {
