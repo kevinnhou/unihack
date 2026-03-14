@@ -1,4 +1,4 @@
-package com.anonymous.pinfire
+package com.agon.app
 
 import android.app.Application
 import android.content.res.Configuration

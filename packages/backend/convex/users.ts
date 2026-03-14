@@ -73,7 +73,9 @@ export const getIncomingRequests = query({
 
     for (const req of requestsFromOthers) {
       const user = await ctx.db.get(req.userId);
-      if (!user || user._id === currentUserId) { continue; }
+      if (!user || user._id === currentUserId) {
+        continue;
+      }
 
       const displayName = user.displayUsername ?? user.name ?? "Unknown";
 
@@ -90,7 +92,9 @@ export const getIncomingRequests = query({
 
       let mutualCount = 0;
       for (const fid of currentUserFriendIds) {
-        if (targetFriendIds.has(fid)) { mutualCount += 1; }
+        if (targetFriendIds.has(fid)) {
+          mutualCount += 1;
+        }
       }
 
       results.push({
@@ -146,8 +150,12 @@ export const getSuggestedUsers = query({
     }[] = [];
 
     for (const user of allUsers) {
-      if (user._id === currentUserId) { continue; }
-      if (incomingRequestUserIds.has(user._id)) { continue; }
+      if (user._id === currentUserId) {
+        continue;
+      }
+      if (incomingRequestUserIds.has(user._id)) {
+        continue;
+      }
 
       const displayName = user.displayUsername ?? user.name ?? "Unknown";
       const searchable = `${displayName} ${user.name}`.toLowerCase();
@@ -175,7 +183,9 @@ export const getSuggestedUsers = query({
       const isFriend =
         (hasExisting && !hasExisting.requested) ||
         (hasReverse && !hasReverse.requested);
-      if (isFriend) { continue; }
+      if (isFriend) {
+        continue;
+      }
 
       const isRequested =
         (hasExisting?.requested ?? false) || (hasReverse?.requested ?? false);
@@ -194,7 +204,9 @@ export const getSuggestedUsers = query({
 
       let mutualCount = 0;
       for (const fid of currentUserFriendIds) {
-        if (targetFriendIds.has(fid)) { mutualCount += 1; }
+        if (targetFriendIds.has(fid)) {
+          mutualCount += 1;
+        }
       }
 
       results.push({

@@ -91,7 +91,7 @@ export const acceptFriendRequest = mutation({
       )
       .first();
 
-    if (!(request?.requested)) {
+    if (!request?.requested) {
       return { success: false as const, reason: "Request not found" };
     }
 
