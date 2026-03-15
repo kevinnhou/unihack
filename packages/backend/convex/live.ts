@@ -373,6 +373,111 @@ export const requestLiveInvite = mutation({
   },
 });
 
+export const requestGhostChallenge = mutation({
+  args: {
+    hostUserId: v.id("users"),
+    targetUserId: v.id("users"),
+    runId: v.id("runs"),
+    distance: v.number(),
+  },
+  returns: v.union(v.object({ success: v.literal(true) }), v.object({ success: v.literal(false), reason: v.string() })),
+  handler: async (ctx, { hostUserId, targetUserId, runId, distance }) => {
+    if (hostUserId === targetUserId) {
+      return { success: false as const, reason: "Cannot challenge yourself" };
+    }
+    const challengeId = await ctx.db.insert("ghostChallenges", {
+      hostUserId,
+      targetUserId,
+      runId,
+      distance,
+      status: "pending",
+      createdAt: Date.now(),
+    });
+
+    // Create an in-app notification for the target user so they see the challenge.
+    const host = await ctx.db.get(hostUserId);
+    const title = `${host?.name ?? "A friend"} challenged you to a ghost race`;
+    const body = `Distance: ${distance >= 1000 ? (distance / 1000).toFixed(1) + " km" : distance + " m"}`;
+    await ctx.db.insert("notifications", {
+      userId: targetUserId,
+      type: "ghostChallenge",
+      data: { title, body, payload: { challengeId, hostUserId, runId, distance } },
+      read: false,
+      createdAt: Date.now(),
+    });
+    return { success: true as const };
+  },
+});
+
+export const getGhostChallenges = query({
+  args: { userId: v.id("users") },
+  returns: v.array(
+    v.object({
+      _id: v.id("ghostChallenges"),
+      hostUserId: v.id("users"),
+      targetUserId: v.id("users"),
+      runId: v.id("runs"),
+      distance: v.number(),
+      status: v.union(v.literal("pending"), v.literal("accepted"), v.literal("dismissed")),
+      createdAt: v.number(),
+      hostName: v.string(),
+      hostRunAvgPace: v.number(),
+      hostRunDistance: v.number(),
+    })
+  ),
+  handler: async (ctx, { userId }) => {
+    const rows = await ctx.db
+      .query("ghostChallenges")
+      .withIndex("by_target", (q) => q.eq("targetUserId", userId))
+      .collect();
+    const pending = rows.filter((r) => r.status === "pending");
+    const results = [];
+    for (const r of pending) {
+      const host = await ctx.db.get(r.hostUserId);
+      const run = await ctx.db.get(r.runId);
+      results.push({
+        _id: r._id,
+        hostUserId: r.hostUserId,
+        targetUserId: r.targetUserId,
+        runId: r.runId,
+        distance: r.distance,
+        status: r.status,
+        createdAt: r.createdAt,
+        hostName: host?.name ?? "Friend",
+        hostRunAvgPace: run?.avgPace ?? 0,
+        hostRunDistance: run?.distance ?? r.distance,
+      });
+    }
+    return results;
+  },
+});
+
+export const acceptGhostChallenge = mutation({
+  args: { challengeId: v.id("ghostChallenges"), userId: v.id("users") },
+  returns: v.union(v.object({ success: v.literal(true), runId: v.id("runs") }), v.object({ success: v.literal(false), reason: v.string() })),
+  handler: async (ctx, { challengeId, userId }) => {
+    const ch = await ctx.db.get(challengeId);
+    if (!ch) return { success: false as const, reason: "Challenge not found" };
+    if (ch.targetUserId !== userId) return { success: false as const, reason: "Not target" };
+    if (ch.status !== "pending") return { success: false as const, reason: "Already responded" };
+    await ctx.db.patch(challengeId, { status: "accepted", respondedAt: Date.now() });
+    return { success: true as const, runId: ch.runId };
+  },
+});
+
+export const dismissGhostChallenge = mutation({
+  args: { challengeId: v.id("ghostChallenges"), userId: v.id("users") },
+  returns: v.null(),
+  handler: async (ctx, { challengeId, userId }) => {
+    const ch = await ctx.db.get(challengeId);
+    if (!ch) return null;
+    if (ch.targetUserId !== userId) return null;
+    if (ch.status !== "pending") return null;
+    await ctx.db.patch(challengeId, { status: "dismissed", respondedAt: Date.now() });
+    return null;
+  },
+});
+
 export const getLiveInvites = query({
   args: { userId: v.id("users") },
   returns: v.array(

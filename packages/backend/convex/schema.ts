@@ -139,4 +139,36 @@ export default defineSchema({
     .index("by_room", ["roomId"])
     .index("by_room_user", ["roomId", "userId"])
     .index("by_room_status", ["roomId", "status"]),
+
+  ghostChallenges: defineTable({
+    hostUserId: v.id("users"),
+    targetUserId: v.id("users"),
+    runId: v.id("runs"),
+    distance: v.number(),
+    status: v.union(v.literal("pending"), v.literal("accepted"), v.literal("dismissed")),
+    createdAt: v.number(),
+    respondedAt: v.optional(v.number()),
+  })
+    .index("by_target", ["targetUserId"])
+    .index("by_host", ["hostUserId"]),
+
+  notifications: defineTable({
+    userId: v.id("users"),
+    type: v.union(v.literal("ghostChallenge"), v.literal("liveInvite"), v.literal("generic")),
+    data: v.object({
+      title: v.string(),
+      body: v.string(),
+      payload: v.optional(
+        v.object({
+          challengeId: v.optional(v.id("ghostChallenges")),
+          hostUserId: v.optional(v.id("users")),
+          runId: v.optional(v.id("runs")),
+          distance: v.optional(v.number()),
+          roomId: v.optional(v.id("liveRooms")),
+        })
+      ),
+    }),
+    read: v.boolean(),
+    createdAt: v.number(),
+  }).index("by_user", ["userId"]),
 });
