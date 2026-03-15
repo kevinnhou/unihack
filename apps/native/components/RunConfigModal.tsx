@@ -94,6 +94,10 @@ export function RunConfigModal({
     // biome-ignore lint/suspicious/noExplicitAny: _generated/api not yet regenerated with live module
     (api as any).live.requestLiveInvite
   );
+  const requestGhostChallengeMutation = useMutation(
+    // biome-ignore lint/suspicious/noExplicitAny: _generated/api not yet regenerated with live module
+    (api as any).live.requestGhostChallenge
+  );
   const availableGhostsData = useQuery(
     api.runs.getAllAvailableGhosts,
     userId ? { currentUserId: userId as Id<"users"> } : "skip"
@@ -244,6 +248,21 @@ export function RunConfigModal({
       });
 
       store.startRun(runId, runMode, userId);
+      // If this modal was opened with an explicit target user for a ghost challenge,
+      // notify them via the server so they see an in-app notification.
+      if (mode === "ghost" && initialGhostUserId && initialGhostUserId !== userId) {
+        try {
+          await requestGhostChallengeMutation({
+            hostUserId: userId as Id<"users">,
+            targetUserId: initialGhostUserId as Id<"users">,
+            runId,
+            distance: selectedDistanceM,
+          });
+        } catch (e) {
+          // don't block the user if notification fails
+          console.warn("failed to send ghost challenge", e);
+        }
+      }
       if (selectedGhost) {
         store.setGhostRun({
           userId: selectedGhost.userId,

@@ -239,6 +239,7 @@ export default function ActiveRunScreen() {
         duration: String(summary.elapsedSeconds),
         avgPace: String(summary.avgPace),
         runId,
+        mode,
       },
     });
   }, [
@@ -293,6 +294,7 @@ export default function ActiveRunScreen() {
           duration: String(params.elapsedSeconds),
           avgPace: String(params.avgPace),
           runId,
+            mode,
         },
       });
     }

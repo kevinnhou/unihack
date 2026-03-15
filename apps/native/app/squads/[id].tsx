@@ -12,11 +12,15 @@ import {
   Clipboard,
   ScrollView,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
+  Modal,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { RunConfigModal } from "@/components/RunConfigModal";
+import { useRunStore } from "@/stores/run-store";
+import { useLiveStore } from "@/stores/live-store";
 import { useAuthStore } from "@/stores/auth-store";
 
 type SortBy = "streak" | "distance" | "pace";
@@ -44,6 +48,11 @@ export default function SquadDetailScreen() {
   const { userId } = useAuthStore();
   const [sortBy, setSortBy] = useState<SortBy>("distance");
   const [modalOpen, setModalOpen] = useState(false);
+  const [showSquadDistancePicker, setShowSquadDistancePicker] = useState(false);
+  const [squadDistanceKm, setSquadDistanceKm] = useState("5.0");
+  const [squadStarting, setSquadStarting] = useState(false);
+  const runStore = useRunStore();
+  const liveStore = useLiveStore();
   const [challengeUserId, setChallengeUserId] = useState<string | null>(null);
   const [challengeUserName, setChallengeUserName] = useState<string | null>(
     null
@@ -60,6 +69,16 @@ export default function SquadDetailScreen() {
   );
 
   const joinByCode = useMutation(api.squads.joinSquad);
+  const startRunMutation = useMutation(api.runs.startRun);
+  const createRoomMutation = useMutation(api.live.createLiveRoom);
+  const requestLiveInviteMutation = useMutation(
+    // biome-ignore lint/suspicious/noExplicitAny: generated api may not include live yet
+    (api as any).live.requestLiveInvite
+  );
+  const requestGhostChallengeMutation = useMutation(
+    // biome-ignore lint/suspicious/noExplicitAny
+    (api as any).live.requestGhostChallenge
+  );
 
   const leaderboard = useQuery(
     api.squads.getSquadLeaderboard,
@@ -140,6 +159,18 @@ export default function SquadDetailScreen() {
           </View>
         )}
 
+        {/* Challenge squad button (members only) */}
+        {isMember && (
+          <View className="px-4">
+            <TouchableOpacity
+              className="mb-4 rounded-2xl bg-orange-500 px-4 py-3"
+              onPress={() => setShowSquadDistancePicker(true)}
+              disabled={!isMember}
+            >
+              <Text className="text-center font-bold text-white">Challenge Squad</Text>
+            </TouchableOpacity>
+          </View>
+        )}
         {/* Sorting Pills */}
         <View className="mb-4 flex-row gap-2 px-4">
           {SORT_OPTIONS.map((opt) => (
@@ -242,6 +273,7 @@ export default function SquadDetailScreen() {
       <RunConfigModal
         initialLiveInviteName={challengeUserName}
         initialLiveInviteUserId={challengeUserId}
+        initialGhostUserId={challengeUserId}
         onClose={() => {
           setModalOpen(false);
           setChallengeUserId(null);
@@ -249,6 +281,91 @@ export default function SquadDetailScreen() {
         }}
         visible={modalOpen}
       />
+
+      {/* Squad-wide challenge distance picker */}
+      <Modal animationType="slide" visible={showSquadDistancePicker} transparent>
+        <SafeAreaView className="flex-1 justify-end" style={{ backgroundColor: 'rgba(0,0,0,0.7)' }}>
+          <View style={{ marginTop: 40 }} className="rounded-t-3xl bg-neutral-900 p-6">
+            <Text className="mb-2 font-black text-2xl text-white">Challenge Squad</Text>
+            <Text className="mb-4 text-gray-400">Choose a distance and challenge the whole squad</Text>
+
+            <View style={{ flexDirection: 'row', gap: 8, marginBottom: 12 }}>
+              {[1000, 3000, 5000, 10000].map((m) => (
+                <TouchableOpacity
+                  key={m}
+                  className={`flex-1 items-center rounded-xl py-2 ${Math.round(parseFloat(squadDistanceKm) * 1000) === m ? 'bg-orange-500' : 'bg-neutral-800'}`}
+                  onPress={() => setSquadDistanceKm((m / 1000).toFixed(1))}
+                >
+                  <Text className={`font-semibold ${Math.round(parseFloat(squadDistanceKm) * 1000) === m ? 'text-white' : 'text-gray-300'}`}>
+                    {m >= 1000 ? `${m / 1000} km` : `${m} m`}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            <TextInput
+              keyboardType="decimal-pad"
+              className="mb-4 rounded-xl bg-neutral-800 px-4 py-3 text-white"
+              value={squadDistanceKm}
+              onChangeText={setSquadDistanceKm}
+            />
+
+            <View style={{ gap: 12 }}>
+              <TouchableOpacity
+                className="mb-3 items-center rounded-2xl bg-orange-500 py-3"
+                onPress={async () => {
+                  // Live flow: create room and invite all members
+                  const km = Number.parseFloat(squadDistanceKm);
+                  const meters = Number.isFinite(km) && km > 0 ? Math.round(km * 1000) : 5000;
+                  setShowSquadDistancePicker(false);
+                  setSquadStarting(true);
+                  try {
+                    if (!userId) return;
+                    const { roomId, code } = await createRoomMutation({ userId: userId as Id<'users'> });
+                    const memberIds = leaderboard.map((e) => e.userId).filter((u) => u !== userId);
+                    await Promise.all(memberIds.map((targetId) => requestLiveInviteMutation({ roomId, hostUserId: userId as Id<'users'>, targetUserId: targetId as Id<'users'>, targetDistanceMeters: meters })));
+                    liveStore.setRoom(roomId, code, true, meters);
+                    router.push('/live/lobby');
+                  } finally {
+                    setSquadStarting(false);
+                  }
+                }}
+              >
+                <Text className="font-bold text-white">Race Live (Invite All)</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                className="mb-3 items-center rounded-2xl bg-neutral-800 py-3"
+                disabled={squadStarting || !userId}
+                onPress={async () => {
+                  // Ghost flow: start a ranked run and notify all members
+                  const km = Number.parseFloat(squadDistanceKm);
+                  const meters = Number.isFinite(km) && km > 0 ? Math.round(km * 1000) : 5000;
+                  setShowSquadDistancePicker(false);
+                  setSquadStarting(true);
+                  try {
+                    if (!userId) return;
+                    const runId = await startRunMutation({ userId: userId as Id<'users'>, mode: 'ranked' });
+                    runStore.startRun(runId, 'ranked', userId);
+                    runStore.setTargetDistance(meters);
+                    const memberIds = leaderboard.map((e) => e.userId).filter((u) => u !== userId);
+                    await Promise.all(memberIds.map((targetId) => requestGhostChallengeMutation({ hostUserId: userId as Id<'users'>, targetUserId: targetId as Id<'users'>, runId, distance: meters })));
+                    router.replace('/run/active');
+                  } finally {
+                    setSquadStarting(false);
+                  }
+                }}
+              >
+                <Text className="font-semibold text-white">Race Ghost (Challenge All)</Text>
+              </TouchableOpacity>
+            </View>
+
+            <TouchableOpacity className="items-center rounded-2xl border border-neutral-600 py-3" onPress={() => setShowSquadDistancePicker(false)}>
+              <Text className="font-semibold text-gray-400">Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </SafeAreaView>
+      </Modal>
     </SafeAreaView>
   );
 }

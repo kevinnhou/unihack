@@ -60,6 +60,7 @@ export default function FinishScreen() {
   const durationSec = Number(duration ?? "0");
   const runIdStr = runId ?? "";
   const isRanked = mode === "ranked";
+  const isSocial = mode === "social";
 
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -138,7 +139,7 @@ export default function FinishScreen() {
           )}
         </TouchableOpacity>
 
-        {!isRanked && (
+        {isSocial && (
           <TouchableOpacity
             className="items-center rounded-2xl py-4"
             disabled={deleting}
