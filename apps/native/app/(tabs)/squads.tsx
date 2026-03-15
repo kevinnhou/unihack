@@ -146,12 +146,12 @@ export default function SquadsScreen() {
             />
             <View className="mt-3 flex-row gap-2">
               <TextInput
+                autoCapitalize="characters"
                 className="flex-1 rounded-xl bg-neutral-900 px-4 py-3 text-white"
                 onChangeText={setJoinCodeInput}
                 placeholder="Join code"
                 placeholderTextColor="#6b7280"
                 value={joinCodeInput}
-                autoCapitalize="characters"
               />
               <TouchableOpacity
                 className="rounded-xl bg-orange-500 px-4 py-3"

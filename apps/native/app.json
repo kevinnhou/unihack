@@ -3,11 +3,14 @@
     "scheme": "agon",
     "userInterfaceStyle": "dark",
     "orientation": "default",
-    "web": {
-      "bundler": "metro"
-    },
     "name": "agon",
     "slug": "agon",
+    "icon": "./assets/images/icon.png",
+    "splash": {
+      "image": "./assets/images/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#000000"
+    },
     "plugins": [
       "expo-font",
       [
@@ -26,10 +29,20 @@
         "android.permission.ACCESS_COARSE_LOCATION",
         "android.permission.ACCESS_FINE_LOCATION"
       ],
-      "package": "com.agon.app"
+      "package": "com.agon.app",
+      "icon": "./assets/images/icon.png",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/android-icon-foreground.png",
+        "backgroundColor": "#000000"
+      }
     },
     "ios": {
-      "bundleIdentifier": "com.agon.app"
+      "bundleIdentifier": "com.agon.app",
+      "icon": "./assets/images/icon.png"
+    },
+    "web": {
+      "bundler": "metro",
+      "favicon": "./assets/images/favicon.png"
     }
   }
 }
