@@ -12,7 +12,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAuthStore } from "@/stores/auth-store";
 import { useLiveStore } from "@/stores/live-store";
 import { useRunStore } from "@/stores/run-store";
@@ -78,6 +78,8 @@ export function RunConfigModal({
   ];
 
   const [showGhostConfirm, setShowGhostConfirm] = useState(false);
+
+  const insets = useSafeAreaInsets();
 
   const startRunMutation = useMutation(api.runs.startRun);
   const createRoomMutation = useMutation(api.live.createLiveRoom);
@@ -259,7 +261,10 @@ export function RunConfigModal({
     >
       <SafeAreaView style={{ flex: 1, backgroundColor: "#000000" }}>
         {/* Header */}
-        <View className="flex-row items-center justify-between px-6 pt-6 pb-4">
+        <View
+          className="flex-row items-center justify-between px-6 pb-4"
+          style={{ paddingTop: insets.top + 8 }}
+        >
           <Text className="font-black text-2xl text-white">Start a Run</Text>
           <TouchableOpacity onPress={onClose}>
             <Text className="text-base text-gray-400">Cancel</Text>
