@@ -2,10 +2,11 @@ import { api } from "@unihack/backend/convex/_generated/api";
 import type { Id } from "@unihack/backend/convex/_generated/dataModel";
 import { useMutation, useQuery } from "convex/react";
 import { Redirect, useRouter } from "expo-router";
-import { Bell, ChevronRight, Play, Trophy, X } from "lucide-react-native";
+import { Bell, ChartArea, Flame, Play, X } from "lucide-react-native";
 import { useState } from "react";
 import {
   ActivityIndicator,
+  Dimensions,
   Modal,
   ScrollView,
   Text,
@@ -13,6 +14,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { RunActivityCard } from "@/components/RunActivityCard";
 import { RunConfigModal } from "@/components/RunConfigModal";
 import { useAuthStore } from "@/stores/auth-store";
 import { useLiveStore } from "@/stores/live-store";
@@ -30,24 +32,8 @@ function formatPace(secPerKm: number): string {
   return `${m}:${s.toString().padStart(2, "0")} /km`;
 }
 
-function StatCard({
-  label,
-  value,
-  color,
-}: {
-  label: string;
-  value: string;
-  color: string;
-}) {
-  return (
-    <View className="flex-1 items-center rounded-2xl bg-neutral-900 p-4">
-      <Text className="font-black text-2xl" style={{ color }}>
-        {value}
-      </Text>
-      <Text className="mt-1 text-gray-400 text-xs">{label}</Text>
-    </View>
-  );
-}
+const CARD_GAP = 12;
+const CARD_PADDING = 20;
 
 // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: PASS
 export default function HomeScreen() {
@@ -67,9 +53,9 @@ export default function HomeScreen() {
     api.users.getUserStats,
     userId ? { userId: userId as Id<"users"> } : "skip"
   );
-  const runs = useQuery(
-    api.users.getUserRuns,
-    userId ? { userId: userId as Id<"users"> } : "skip"
+  const feedRuns = useQuery(
+    api.runs.getFeedRuns,
+    userId ? { currentUserId: userId as Id<"users"> } : "skip"
   );
   const liveInvites = useQuery(
     // biome-ignore lint/suspicious/noExplicitAny: _generated/api not yet regenerated with live module
@@ -167,6 +153,40 @@ export default function HomeScreen() {
       setPendingFriendSenderId(null);
     }
   };
+  const eloChange = feedRuns
+    ? (() => {
+        // Calculate the elo change over this week's runs
+        // Get timestamps for the start and end of this week (Monday 00:00:00 to now)
+        const now = new Date();
+        const dayOfWeek = now.getDay() || 7; // Sunday is 0, convert to 7
+        const monday = new Date(
+          now.getFullYear(),
+          now.getMonth(),
+          now.getDate() - (dayOfWeek - 1)
+        );
+        monday.setHours(0, 0, 0, 0);
+        const weekStartTs = monday.getTime();
+
+        // Only consider completed runs by this user, in this week, and that actually have an elo change
+        const runsThisWeek = feedRuns.filter(
+          (item) =>
+            item.run.userId === userId &&
+            item.run.completedAt &&
+            item.run.completedAt >= weekStartTs &&
+            typeof item.run.eloGained === "number"
+        );
+
+        if (runsThisWeek.length === 0) return null;
+
+        // Sum all eloGained values for the week
+        const totalEloChange = runsThisWeek.reduce(
+          (acc, item) => acc + (item.run.eloGained ?? 0),
+          0
+        );
+        const sign = totalEloChange > 0 ? "+" : "";
+        return `${sign}${totalEloChange}`;
+      })()
+    : null;
 
   return (
     <SafeAreaView className="flex-1 bg-black">
@@ -194,74 +214,116 @@ export default function HomeScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* Streak card */}
-        <View
-          className="mx-4 mb-4 rounded-2xl p-5"
-          style={{ backgroundColor: "#FF4500" }}
-        >
-          <View className="mb-1 flex-row items-center gap-2">
-            <Trophy color="white" size={20} />
-            <Text className="font-semibold text-sm text-white">Streak</Text>
-          </View>
-          <Text className="font-black text-5xl text-white">
-            {stats?.currentStreak ?? "—"}
-          </Text>
-          <Text className="mt-1 text-orange-200 text-sm">
-            {stats?.currentStreak
-              ? `🔥 ${stats.currentStreak} day streak`
-              : "No active streak"}
-          </Text>
-        </View>
+        {/* Stats carousel */}
+        {(() => {
+          const { width: screenWidth } = Dimensions.get("window");
+          const cardWidth = screenWidth - CARD_PADDING * 2;
+          return (
+            <ScrollView
+              className="mb-4"
+              contentContainerStyle={{ paddingHorizontal: CARD_PADDING }}
+              decelerationRate="fast"
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              snapToAlignment="start"
+              snapToInterval={cardWidth + CARD_GAP}
+            >
+              {/* Streak card */}
+              <View
+                className="rounded-2xl p-4"
+                style={{
+                  backgroundColor: "#ff6900",
+                  width: cardWidth,
+                  marginRight: CARD_GAP,
+                }}
+              >
+                <View className="mb-1 flex-row items-center gap-1.5">
+                  <Flame color="white" size={16} />
+                  <Text className="text-sm text-white">Streak</Text>
+                </View>
+                <Text className="font-black text-5xl text-white">
+                  {stats?.currentStreak ?? "—"}
+                </Text>
+                <Text className="mt-1 text-orange-300 text-sm">
+                  {stats?.currentStreak
+                    ? `🔥 ${stats.currentStreak} day streak`
+                    : "No active streak"}
+                </Text>
+              </View>
 
-        {/* Stats row */}
-        <View className="mx-4 mb-4 flex-row gap-3">
-          <StatCard
-            color="#4ade80"
-            label="Runs"
-            value={String(stats?.totalRuns ?? "—")}
-          />
-          <StatCard
-            color="#60a5fa"
-            label="Distance"
-            value={stats ? formatDist(stats.totalDistanceMeters) : "—"}
-          />
-          <StatCard
-            color="#f59e0b"
-            label="Best Pace"
-            value={stats ? formatPace(stats.bestPaceSecPerKm) : "—"}
-          />
-        </View>
+              {/* Stats Card */}
+              <View
+                className="flex flex-col gap-2 rounded-2xl bg-neutral-900 p-4"
+                style={{ width: cardWidth, marginRight: CARD_GAP }}
+              >
+                <View className="mb-1 flex-row items-center gap-1.5">
+                  <ChartArea color="white" size={16} />
+                  <Text className="font-semibold text-sm text-white">
+                    This Week
+                  </Text>
+                </View>
+                <View className="flex flex-row gap-2">
+                  <View className="flex-1">
+                    <Text className="text-gray-400 text-xs">Distance</Text>
+                    <Text className="font-bold text-lg text-white">
+                      {stats ? formatDist(stats.totalDistanceMeters) : "—"}
+                    </Text>
+                  </View>
+                  <View className="flex-1">
+                    <Text className="text-gray-400 text-xs">Pace</Text>
+                    <Text className="font-bold text-lg text-white">
+                      {stats ? formatPace(stats.bestPaceSecPerKm) : "—"}
+                    </Text>
+                  </View>
+                  <View className="flex-1">
+                    <Text className="text-gray-400 text-xs">Runs</Text>
+                    <Text className="font-bold text-lg text-white">
+                      {stats ? stats.totalRuns : "—"}
+                    </Text>
+                  </View>
+                </View>
+              </View>
 
-        {/* Run history */}
-        <Text className="mb-3 px-4 font-bold text-lg text-white">
-          Run History
-        </Text>
-        {runs?.map((run) => (
-          <TouchableOpacity
-            className="mx-4 mb-2 flex-row items-center rounded-2xl bg-neutral-900 px-4 py-3"
-            key={run._id}
-            onPress={() =>
-              router.push({
-                pathname: "/run/review/[id]",
-                params: { id: run._id },
-              })
-            }
-          >
-            <View className="flex-1">
-              <Text className="font-semibold text-white">
-                {formatDist(run.distance)}
-              </Text>
-              <Text className="text-gray-400 text-xs">
-                {new Date(run.startedAt).toLocaleDateString()} ·{" "}
-                {formatPace(run.avgPace)}
-              </Text>
-            </View>
-            <ChevronRight color="#4b5563" size={18} />
-          </TouchableOpacity>
+              {/* Elo Card */}
+              <View
+                className="rounded-2xl p-4"
+                style={{
+                  backgroundColor: "#007AFF",
+                  width: cardWidth,
+                }}
+              >
+                <View className="mb-1 flex-row items-center gap-1.5">
+                  <Flame color="white" size={16} />
+                  <Text className="text-sm text-white">Elo</Text>
+                </View>
+                <Text className="font-black text-5xl text-white">
+                  {stats?.currentElo ?? "—"}
+                </Text>
+                <Text className="mt-1 text-blue-200 text-sm">
+                  {eloChange ? (
+                    <Text className="text-blue-300 text-sm">
+                      {eloChange} this week
+                    </Text>
+                  ) : (
+                    "No elo change this week"
+                  )}
+                </Text>
+              </View>
+            </ScrollView>
+          );
+        })()}
+
+        {/* Run history feed */}
+        {feedRuns?.map((item) => (
+          <RunActivityCard
+            isOwnRun={item.run.userId === userId}
+            item={item}
+            key={item.run._id}
+          />
         ))}
-        {runs?.length === 0 && (
+        {feedRuns?.length === 0 && (
           <Text className="px-4 text-gray-500 text-sm">
-            No runs yet. Start your first run!
+            No runs yet. Start your first run or add friends to see their runs!
           </Text>
         )}
       </ScrollView>

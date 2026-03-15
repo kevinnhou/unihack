@@ -34,6 +34,7 @@ export default defineSchema({
     duration: v.number(),
     avgPace: v.number(),
     startedAt: v.number(),
+    eloGained: v.optional(v.number()),
     currentUserElo: v.optional(v.number()),
     completedAt: v.optional(v.number()),
     liveRoomId: v.optional(v.id("liveRooms")),
