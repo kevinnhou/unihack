@@ -160,6 +160,105 @@ type GhostEntry = {
   elo: number;
 };
 
+/** Full run review data: run, type, opponent/participants, for solo/ghost/live. */
+export const getRunReviewDetails = query({
+  args: {
+    runId: v.id("runs"),
+    requestingUserId: v.optional(v.id("users")),
+  },
+  handler: async (ctx, { runId, requestingUserId }) => {
+    const run = await ctx.db.get(runId);
+    if (!run || run.status !== "completed") return null;
+
+    // Access check
+    if (requestingUserId && run.userId !== requestingUserId) {
+      const asUser = await ctx.db
+        .query("friends")
+        .withIndex("by_user_friend", (q) =>
+          q.eq("userId", requestingUserId).eq("friendId", run.userId)
+        )
+        .first();
+      const asFriend = await ctx.db
+        .query("friends")
+        .withIndex("by_user_friend", (q) =>
+          q.eq("userId", run.userId).eq("friendId", requestingUserId)
+        )
+        .first();
+      const isFriend =
+        (asUser && !asUser.requested) || (asFriend && !asFriend.requested);
+      if (!isFriend) return null;
+    }
+
+    const runner = await ctx.db.get(run.userId);
+    const runType: "solo" | "ghost" | "live" = run.opponentId
+      ? "ghost"
+      : run.liveRoomId
+        ? "live"
+        : "solo";
+
+    const result: {
+      run: typeof run;
+      runType: "solo" | "ghost" | "live";
+      runnerName: string;
+      runnerImage: string | null;
+      opponent?: { name: string; avgPace: number; distance: number };
+      participants?: Array<{
+        userId: string;
+        name: string;
+        runId: string;
+        distance: number;
+        duration: number;
+        avgPace: number;
+        telemetry: typeof run.telemetry;
+        isCurrentUser: boolean;
+      }>;
+    } = {
+      run,
+      runType,
+      runnerName: runner?.displayUsername ?? runner?.name ?? "Unknown",
+      runnerImage: runner?.image ?? null,
+    };
+
+    if (runType === "ghost" && run.opponentId) {
+      const opponent = await ctx.db.get(run.opponentId);
+      result.opponent = {
+        name: opponent?.name ?? "Ghost",
+        avgPace: run.opponentAvgPace ?? 0,
+        distance: run.distance,
+      };
+    }
+
+    if (runType === "live" && run.liveRoomId) {
+      const allRunsInRoom = await ctx.db
+        .query("runs")
+        .filter((q) => q.eq(q.field("liveRoomId"), run.liveRoomId))
+        .filter((q) => q.eq(q.field("status"), "completed"))
+        .collect();
+
+      const participants = await Promise.all(
+        allRunsInRoom.map(async (r) => {
+          const user = await ctx.db.get(r.userId);
+          return {
+            userId: r.userId,
+            name: user?.name ?? "Unknown",
+            runId: r._id,
+            distance: r.distance,
+            duration: r.duration,
+            avgPace: r.avgPace,
+            telemetry: r.telemetry ?? [],
+            isCurrentUser: r.userId === run.userId,
+          };
+        })
+      );
+      // Sort by avgPace (fastest first)
+      participants.sort((a, b) => (a.avgPace || 9999) - (b.avgPace || 9999));
+      result.participants = participants;
+    }
+
+    return result;
+  },
+});
+
 export const getRunById = query({
   args: {
     runId: v.id("runs"),

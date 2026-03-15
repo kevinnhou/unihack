@@ -48,6 +48,7 @@ export default function HomeScreen() {
   const [pendingFriendSenderId, setPendingFriendSenderId] = useState<
     string | null
   >(null);
+  const [activeCardIndex, setActiveCardIndex] = useState(0);
 
   const stats = useQuery(
     api.users.getUserStats,
@@ -218,98 +219,130 @@ export default function HomeScreen() {
         {(() => {
           const { width: screenWidth } = Dimensions.get("window");
           const cardWidth = screenWidth - CARD_PADDING * 2;
+          const pageWidth = cardWidth + CARD_GAP;
+          const CARD_COUNT = 3;
           return (
-            <ScrollView
-              className="mb-4"
-              contentContainerStyle={{ paddingHorizontal: CARD_PADDING }}
-              decelerationRate="fast"
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              snapToAlignment="start"
-              snapToInterval={cardWidth + CARD_GAP}
-            >
-              {/* Streak card */}
-              <View
-                className="rounded-2xl p-4"
-                style={{
-                  backgroundColor: "#ff6900",
-                  width: cardWidth,
-                  marginRight: CARD_GAP,
+            <View className="mb-4">
+              <ScrollView
+                className="mb-2"
+                contentContainerStyle={{ paddingHorizontal: CARD_PADDING }}
+                decelerationRate="fast"
+                horizontal
+                onMomentumScrollEnd={(e) => {
+                  const idx = Math.round(
+                    e.nativeEvent.contentOffset.x / pageWidth
+                  );
+                  setActiveCardIndex(Math.min(idx, CARD_COUNT - 1));
                 }}
+                onScroll={(e) => {
+                  const idx = Math.round(
+                    e.nativeEvent.contentOffset.x / pageWidth
+                  );
+                  setActiveCardIndex(
+                    Math.min(Math.max(idx, 0), CARD_COUNT - 1)
+                  );
+                }}
+                scrollEventThrottle={16}
+                showsHorizontalScrollIndicator={false}
+                snapToAlignment="start"
+                snapToInterval={pageWidth}
               >
-                <View className="mb-1 flex-row items-center gap-1.5">
-                  <Flame color="white" size={16} />
-                  <Text className="text-sm text-white">Streak</Text>
-                </View>
-                <Text className="font-black text-5xl text-white">
-                  {stats?.currentStreak ?? "—"}
-                </Text>
-                <Text className="mt-1 text-orange-300 text-sm">
-                  {stats?.currentStreak
-                    ? `🔥 ${stats.currentStreak} day streak`
-                    : "No active streak"}
-                </Text>
-              </View>
-
-              {/* Stats Card */}
-              <View
-                className="flex flex-col gap-2 rounded-2xl bg-neutral-900 p-4"
-                style={{ width: cardWidth, marginRight: CARD_GAP }}
-              >
-                <View className="mb-1 flex-row items-center gap-1.5">
-                  <ChartArea color="white" size={16} />
-                  <Text className="font-semibold text-sm text-white">
-                    This Week
+                {/* Streak card */}
+                <View
+                  className="rounded-2xl p-4"
+                  style={{
+                    backgroundColor: "#ff6900",
+                    width: cardWidth,
+                    marginRight: CARD_GAP,
+                  }}
+                >
+                  <View className="mb-1 flex-row items-center gap-1.5">
+                    <Flame color="white" size={16} />
+                    <Text className="text-sm text-white font-semibold">Streak</Text>
+                  </View>
+                  <Text className="font-black text-5xl text-white">
+                    {stats?.currentStreak ?? "—"}
+                  </Text>
+                  <Text className="mt-1 text-orange-300 text-sm">
+                    {stats?.currentStreak
+                      ? `🔥 ${stats.currentStreak} day streak`
+                      : "No active streak"}
                   </Text>
                 </View>
-                <View className="flex flex-row gap-2">
-                  <View className="flex-1">
-                    <Text className="text-gray-400 text-xs">Distance</Text>
-                    <Text className="font-bold text-lg text-white">
-                      {stats ? formatDist(stats.totalDistanceMeters) : "—"}
-                    </Text>
-                  </View>
-                  <View className="flex-1">
-                    <Text className="text-gray-400 text-xs">Pace</Text>
-                    <Text className="font-bold text-lg text-white">
-                      {stats ? formatPace(stats.bestPaceSecPerKm) : "—"}
-                    </Text>
-                  </View>
-                  <View className="flex-1">
-                    <Text className="text-gray-400 text-xs">Runs</Text>
-                    <Text className="font-bold text-lg text-white">
-                      {stats ? stats.totalRuns : "—"}
-                    </Text>
-                  </View>
-                </View>
-              </View>
 
-              {/* Elo Card */}
-              <View
-                className="rounded-2xl p-4"
-                style={{
-                  backgroundColor: "#007AFF",
-                  width: cardWidth,
-                }}
-              >
-                <View className="mb-1 flex-row items-center gap-1.5">
-                  <Flame color="white" size={16} />
-                  <Text className="text-sm text-white">Elo</Text>
-                </View>
-                <Text className="font-black text-5xl text-white">
-                  {stats?.currentElo ?? "—"}
-                </Text>
-                <Text className="mt-1 text-blue-200 text-sm">
-                  {eloChange ? (
-                    <Text className="text-blue-300 text-sm">
-                      {eloChange} this week
+                {/* Stats Card */}
+                <View
+                  className="flex flex-col gap-2 rounded-2xl bg-neutral-900 p-4"
+                  style={{ width: cardWidth, marginRight: CARD_GAP }}
+                >
+                  <View className="mb-1 flex-row items-center gap-1.5">
+                    <ChartArea color="white" size={16} />
+                    <Text className="font-semibold text-sm text-white">
+                      This Week
                     </Text>
-                  ) : (
-                    "No elo change this week"
-                  )}
-                </Text>
+                  </View>
+                  <View className="flex flex-row gap-2">
+                    <View className="flex-1">
+                      <Text className="text-gray-400 text-xs ">Distance</Text>
+                      <Text className="font-bold text-lg text-white">
+                        {stats ? formatDist(stats.totalDistanceMeters) : "—"}
+                      </Text>
+                    </View>
+                    <View className="flex-1">
+                      <Text className="text-gray-400 text-xs">Pace</Text>
+                      <Text className="font-bold text-lg text-white">
+                        {stats ? formatPace(stats.bestPaceSecPerKm) : "—"}
+                      </Text>
+                    </View>
+                    <View className="flex-1">
+                      <Text className="text-gray-400 text-xs">Runs</Text>
+                      <Text className="font-bold text-lg text-white">
+                        {stats ? stats.totalRuns : "—"}
+                      </Text>
+                    </View>
+                  </View>
+                </View>
+
+                {/* Elo Card */}
+                <View
+                  className="rounded-2xl p-4"
+                  style={{
+                    backgroundColor: "#007AFF",
+                    width: cardWidth,
+                  }}
+                >
+                  <View className="mb-1 flex-row items-center gap-1.5">
+                    <Flame color="white" size={16} />
+                    <Text className="text-sm text-white font-semibold">Elo</Text>
+                  </View>
+                  <Text className="font-black text-5xl text-white">
+                    {stats?.currentElo ?? "—"}
+                  </Text>
+                  <Text className="mt-1 text-blue-200 text-sm">
+                    {eloChange ? (
+                      <Text className="text-blue-300 text-sm">
+                        {eloChange} this week
+                      </Text>
+                    ) : (
+                      "No elo change this week"
+                    )}
+                  </Text>
+                </View>
+              </ScrollView>
+              <View className="flex-row justify-center gap-2">
+                {[0, 1, 2].map((i) => (
+                  <View
+                    className="h-1.5 rounded-full"
+                    key={i}
+                    style={{
+                      width: activeCardIndex === i ? 16 : 6,
+                      backgroundColor:
+                        activeCardIndex === i ? "#ff6900" : "#4b5563",
+                    }}
+                  />
+                ))}
               </View>
-            </ScrollView>
+            </View>
           );
         })()}
 
@@ -327,8 +360,6 @@ export default function HomeScreen() {
           </Text>
         )}
       </ScrollView>
-
-      {/* FAB Start Run */}
       <TouchableOpacity
         className="absolute right-6 bottom-8 h-16 w-16 items-center justify-center rounded-full bg-orange-500 shadow-lg"
         onPress={() => setModalOpen(true)}

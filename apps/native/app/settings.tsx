@@ -148,7 +148,7 @@ export default function SettingsScreen() {
                 }}
                 style={{
                   backgroundColor:
-                    profileVisibility === opt.value ? "#FF4500" : "transparent",
+                    profileVisibility === opt.value ? "#ff6900" : "transparent",
                 }}
               >
                 <Text
@@ -172,7 +172,7 @@ export default function SettingsScreen() {
                 saveSettings({ showStats: val });
               }}
               thumbColor="white"
-              trackColor={{ false: "#374151", true: "#FF4500" }}
+              trackColor={{ false: "#374151", true: "#ff6900" }}
               value={showStats}
             />
           </View>
@@ -185,7 +185,7 @@ export default function SettingsScreen() {
                 saveSettings({ showRunHistory: val });
               }}
               thumbColor="white"
-              trackColor={{ false: "#374151", true: "#FF4500" }}
+              trackColor={{ false: "#374151", true: "#ff6900" }}
               value={showRunHistory}
             />
           </View>

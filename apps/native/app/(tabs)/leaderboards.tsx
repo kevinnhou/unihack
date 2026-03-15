@@ -72,7 +72,7 @@ export default function LeaderboardsScreen() {
               className="flex-1 items-center rounded-xl py-2"
               key={t}
               onPress={() => setTab(t)}
-              style={{ backgroundColor: tab === t ? "#FF4500" : "transparent" }}
+              style={{ backgroundColor: tab === t ? "#ff6900" : "transparent" }}
             >
               <Text
                 className="font-semibold text-sm capitalize"
@@ -110,9 +110,9 @@ export default function LeaderboardsScreen() {
             <View
               className="mx-4 mb-2 flex-row items-center gap-3 rounded-2xl px-4 py-3"
               style={{
-                backgroundColor: item.isMe ? "#ff450015" : "#171717",
+                backgroundColor: item.isMe ? "#ff690015" : "#171717",
                 borderWidth: item.isMe ? 1 : 0,
-                borderColor: item.isMe ? "#FF4500" : "transparent",
+                borderColor: item.isMe ? "#ff6900" : "transparent",
               }}
             >
               <Text

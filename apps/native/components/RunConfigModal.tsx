@@ -377,7 +377,7 @@ export function RunConfigModal({
               </Text>
 
               {availableGhostsData === undefined ? (
-                <ActivityIndicator color="#FF4500" />
+                <ActivityIndicator color="#ff6900" />
               ) : closestGhost === null ? (
                 <Text className="text-gray-500 text-sm">
                   {filteredGhosts.length === 0

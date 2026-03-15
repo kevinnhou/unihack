@@ -111,7 +111,7 @@ export default function FinishScreen() {
   return (
     <SafeAreaView className="flex-1 items-center justify-center bg-black px-6">
       <Animated.View style={{ opacity: fadeAnim, alignItems: "center" }}>
-        <CheckCircle color="#FF4500" size={80} />
+        <CheckCircle color="#ff6900" size={80} />
         <Text className="mt-4 font-black text-4xl text-white">
           Run Complete
         </Text>
