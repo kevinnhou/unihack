@@ -7,13 +7,16 @@ import { useMemo, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
+  Modal,
   Text,
   TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { RunConfigModal } from "@/components/RunConfigModal";
+import { useRunStore } from "@/stores/run-store";
+import { useLiveStore } from "@/stores/live-store";
 import { useAuthStore } from "@/stores/auth-store";
 
 function formatPace(secPerKm: number): string {
@@ -53,6 +56,38 @@ export default function FriendsTabScreen() {
     null
   );
   const [modalOpen, setModalOpen] = useState(false);
+  const [showChallengeOptions, setShowChallengeOptions] = useState(false);
+  const [starting, setStarting] = useState(false);
+  const [showDistancePicker, setShowDistancePicker] = useState(false);
+  const [distanceKm, setDistanceKm] = useState("5.0");
+  const [distanceMode, setDistanceMode] = useState<"live" | "ghost">("live");
+  const startRunMutation = useMutation(api.runs.startRun);
+  const runStore = useRunStore();
+  const createRoomMutation = useMutation(api.live.createLiveRoom);
+  const requestLiveInviteMutation = useMutation(
+    // _generated types might not include live.requestLiveInvite yet
+    // biome-ignore lint/suspicious/noExplicitAny: using any for generated api forward-compat
+    (api as any).live.requestLiveInvite
+  );
+  const requestGhostChallengeMutation = useMutation(
+    // biome-ignore lint/suspicious/noExplicitAny: forward-compat
+    (api as any).live.requestGhostChallenge
+  );
+  const getGhostChallengesQuery = useQuery(
+    // biome-ignore lint/suspicious/noExplicitAny: forward-compat
+    (api as any).live.getGhostChallenges,
+    userId ? { userId: userId as Id<'users'> } : 'skip'
+  ) as any[] | undefined;
+  const acceptGhostChallengeMutation = useMutation(
+    // biome-ignore lint/suspicious/noExplicitAny
+    (api as any).live.acceptGhostChallenge
+  );
+  const dismissGhostChallengeMutation = useMutation(
+    // biome-ignore lint/suspicious/noExplicitAny
+    (api as any).live.dismissGhostChallenge
+  );
+  const liveStore = useLiveStore();
+  const insets = useSafeAreaInsets();
 
   const friends = useQuery(
     api.friends.getFriends,
@@ -211,7 +246,9 @@ export default function FriendsTabScreen() {
                 onPress={() => {
                   setChallengeUserId(item.friendId);
                   setChallengeUserName(item.name);
-                  setModalOpen(true);
+                  // Open distance picker directly so user can pick distance and then choose Live or Ghost
+                  setShowDistancePicker(true);
+                  setDistanceMode('live');
                 }}
               >
                 <Play color="white" fill="white" size={16} />
@@ -232,6 +269,184 @@ export default function FriendsTabScreen() {
         }}
         visible={modalOpen}
       />
+
+      <Modal animationType="slide" visible={showChallengeOptions} transparent>
+        <SafeAreaView className="flex-1 justify-end" style={{ backgroundColor: 'rgba(0,0,0,0.7)' }}>
+          <View style={{ marginTop: insets.top + 40, maxHeight: '80%' }} className="rounded-t-3xl bg-neutral-900 p-6">
+            <Text className="mb-2 font-black text-2xl text-white">Race {challengeUserName}</Text>
+            <Text className="mb-4 text-gray-400">Choose an option</Text>
+
+            <TouchableOpacity
+              className="mb-3 items-center rounded-2xl bg-neutral-800 py-3"
+              onPress={() => {
+                setDistanceMode("live");
+                setShowDistancePicker(true);
+              }}
+            >
+              <Text className="font-bold text-white">Race Live</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              className="mb-3 items-center rounded-2xl bg-neutral-800 py-3"
+              disabled={starting || !userId}
+              onPress={() => {
+                setDistanceMode("ghost");
+                setShowDistancePicker(true);
+              }}
+            >
+              <Text className="font-semibold text-white">Race Ghost</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              className="items-center rounded-2xl border border-neutral-600 py-3"
+              onPress={() => setShowChallengeOptions(false)}
+            >
+              <Text className="font-semibold text-gray-400">Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </SafeAreaView>
+      </Modal>
+
+      {/* Incoming ghost challenge popup (shows first pending) */}
+      {getGhostChallengesQuery && getGhostChallengesQuery.length > 0 && (
+        <Modal animationType="slide" transparent visible>
+          <SafeAreaView className="flex-1 justify-center" style={{ backgroundColor: 'rgba(0,0,0,0.6)' }}>
+            <View className="mx-6 rounded-2xl bg-neutral-900 p-6">
+              <Text className="mb-2 font-black text-2xl text-white">Ghost Challenge</Text>
+              <Text className="mb-4 text-gray-400">{getGhostChallengesQuery[0].hostName} challenged you to race their ghost — {Math.round(getGhostChallengesQuery[0].distance) >= 1000 ? `${(getGhostChallengesQuery[0].distance/1000).toFixed(1)} km` : `${getGhostChallengesQuery[0].distance} m`}.</Text>
+
+              <View className="mb-4">
+                <TouchableOpacity
+                  className="mb-3 items-center rounded-2xl bg-orange-500 py-3"
+                  onPress={async () => {
+                    const c = getGhostChallengesQuery[0];
+                    // mark accepted
+                    const res: any = await acceptGhostChallengeMutation({ challengeId: c._id, userId: userId as Id<'users'> });
+                    if (res?.success && res.runId) {
+                      // start a ranked run for acceptor and set ghost info
+                      const runId = await startRunMutation({ userId: userId as Id<'users'>, mode: 'ranked' });
+                      runStore.startRun(runId, 'ranked', userId);
+                      runStore.setTargetDistance(c.distance);
+                      runStore.setGhostRun({ userId: c.hostUserId, name: c.hostName, avgPace: c.hostRunAvgPace, totalDistance: c.hostRunDistance });
+                      // navigate to active run
+                      router.replace('/run/active');
+                    }
+                  }}
+                >
+                  <Text className="font-bold text-white">Start Race</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity className="items-center rounded-2xl border border-neutral-600 py-3" onPress={async () => { await dismissGhostChallengeMutation({ challengeId: getGhostChallengesQuery[0]._id, userId: userId as Id<'users'> }); }}>
+                  <Text className="font-semibold text-gray-400">Dismiss</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </SafeAreaView>
+        </Modal>
+      )}
+
+      {/* Distance picker used for both Live and Ghost flows */}
+      <Modal animationType="slide" visible={showDistancePicker} transparent>
+        <SafeAreaView className="flex-1 justify-end" style={{ backgroundColor: 'rgba(0,0,0,0.7)' }}>
+          <View style={{ marginTop: insets.top + 40 }} className="rounded-t-3xl bg-neutral-900 p-6">
+            <Text className="mb-2 font-black text-2xl text-white">Set Distance</Text>
+            <Text className="mb-4 text-gray-400">Choose a distance for this challenge</Text>
+
+            <View style={{ flexDirection: 'row', gap: 8, marginBottom: 12 }}>
+              {[1000, 3000, 5000, 10000].map((m) => (
+                <TouchableOpacity
+                  key={m}
+                  className={`flex-1 items-center rounded-xl py-2 ${Math.round(parseFloat(distanceKm) * 1000) === m ? 'bg-orange-500' : 'bg-neutral-800'}`}
+                  onPress={() => setDistanceKm((m / 1000).toFixed(1))}
+                >
+                  <Text className={`font-semibold ${Math.round(parseFloat(distanceKm) * 1000) === m ? 'text-white' : 'text-gray-300'}`}>
+                    {m >= 1000 ? `${m / 1000} km` : `${m} m`}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            <TextInput
+              keyboardType="decimal-pad"
+              className="mb-4 rounded-xl bg-neutral-800 px-4 py-3 text-white"
+              value={distanceKm}
+              onChangeText={setDistanceKm}
+            />
+
+            <View style={{ gap: 12 }}>
+              <TouchableOpacity
+                className="mb-3 items-center rounded-2xl bg-orange-500 py-3"
+                onPress={async () => {
+                  // Live flow
+                  const km = Number.parseFloat(distanceKm);
+                  const meters = Number.isFinite(km) && km > 0 ? Math.round(km * 1000) : 5000;
+                  setShowDistancePicker(false);
+                  setShowChallengeOptions(false);
+                  if (!userId || !challengeUserId) return;
+                  setStarting(true);
+                  try {
+                    const { roomId, code } = await createRoomMutation({
+                      userId: userId as Id<'users'>,
+                    });
+                    await requestLiveInviteMutation({
+                      roomId,
+                      hostUserId: userId as Id<'users'>,
+                      targetUserId: challengeUserId as Id<'users'>,
+                      targetDistanceMeters: meters,
+                    });
+                    liveStore.setRoom(roomId, code, true, meters);
+                    router.push('/live/lobby');
+                  } finally {
+                    setStarting(false);
+                  }
+                }}
+              >
+                <Text className="font-bold text-white">Race Live</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                className="mb-3 items-center rounded-2xl bg-neutral-800 py-3"
+                disabled={starting || !userId}
+                onPress={async () => {
+                  // Ghost flow
+                  const km = Number.parseFloat(distanceKm);
+                  const meters = Number.isFinite(km) && km > 0 ? Math.round(km * 1000) : 5000;
+                  setShowDistancePicker(false);
+                  setShowChallengeOptions(false);
+                  if (!userId) return;
+                  setStarting(true);
+                  try {
+                    const runId = await startRunMutation({
+                      userId: userId as Id<'users'>,
+                      mode: 'ranked',
+                    });
+                    runStore.startRun(runId, 'ranked', userId);
+                    runStore.setTargetDistance(meters);
+                      // notify target of ghost challenge
+                      if (challengeUserId) {
+                        await requestGhostChallengeMutation({
+                          hostUserId: userId as Id<'users'>,
+                          targetUserId: challengeUserId as Id<'users'>,
+                          runId,
+                          distance: meters,
+                        });
+                      }
+                    router.replace('/run/active');
+                  } finally {
+                    setStarting(false);
+                  }
+                }}
+              >
+                <Text className="font-semibold text-white">Race Ghost</Text>
+              </TouchableOpacity>
+            </View>
+
+            <TouchableOpacity className="items-center rounded-2xl border border-neutral-600 py-3" onPress={() => setShowDistancePicker(false)}>
+              <Text className="font-semibold text-gray-400">Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </SafeAreaView>
+      </Modal>
     </SafeAreaView>
   );
 }
