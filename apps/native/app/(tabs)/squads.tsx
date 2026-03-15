@@ -264,7 +264,7 @@ function SquadCard({
       onPress={onPress}
     >
       <View className="h-12 w-12 items-center justify-center rounded-full bg-orange-500/20">
-        <Shield color="#FF4500" size={22} />
+        <Shield color="#ff6900" size={22} />
       </View>
       <View className="flex-1">
         <Text className="font-bold text-base text-white">{item.name}</Text>

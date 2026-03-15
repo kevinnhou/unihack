@@ -85,7 +85,7 @@ export default function SquadDetailScreen() {
   if (squad === undefined || leaderboard === undefined) {
     return (
       <SafeAreaView className="flex-1 items-center justify-center bg-black">
-        <ActivityIndicator color="#FF4500" size="large" />
+        <ActivityIndicator color="#ff6900" size="large" />
       </SafeAreaView>
     );
   }

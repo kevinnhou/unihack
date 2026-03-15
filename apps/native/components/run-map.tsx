@@ -1,18 +1,22 @@
 // Web/fallback stub — react-native-maps is not available on web.
-type Coord = { latitude: number; longitude: number };
+export type Coord = { latitude: number; longitude: number };
 
-type Region = {
+export type Region = {
   latitude: number;
   longitude: number;
   latitudeDelta: number;
   longitudeDelta: number;
 };
 
-type RunMapProps = {
-  coords: Coord[];
+export type RunMapRoute = { coords: Coord[]; color: string };
+
+export type RunMapProps = {
+  coords?: Coord[];
+  routes?: RunMapRoute[];
   region?: Region;
   initialRegion?: Region;
   height?: number;
+  interactive?: boolean;
 };
 
 // biome-ignore lint/correctness/noUnusedVariables: shared interface for platform files

@@ -165,7 +165,7 @@ export default function UserProfileScreen() {
               className="flex-1 flex-row items-center justify-center gap-2 rounded-2xl bg-neutral-900 py-3"
               onPress={() => setModalOpen(true)}
             >
-              <Play color="#FF4500" fill="#FF4500" size={16} />
+              <Play color="#ff6900" fill="#ff6900" size={16} />
               <Text className="font-semibold text-orange-400">Challenge</Text>
             </TouchableOpacity>
           </View>
