@@ -72,6 +72,10 @@ export default function Layout() {
                 name="friends/friends"
                 options={{ presentation: "modal" }}
               />
+              <Stack.Screen
+                name="settings"
+                options={{ presentation: "modal" }}
+              />
             </Stack>
           </HeroUINativeProvider>
         </KeyboardProvider>
