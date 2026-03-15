@@ -1,11 +1,6 @@
-import {
-  ActivityIndicator,
-  Modal,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { Modal, Text, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { RunningSpinner } from "./running-spinner";
 
 type Props = {
   visible: boolean;
@@ -54,7 +49,7 @@ export function GhostAlertModal({
             onPress={onConfirm}
           >
             {loading ? (
-              <ActivityIndicator color="white" />
+              <RunningSpinner color="white" size="small" />
             ) : (
               <Text className="font-bold text-lg text-white">Let's go!</Text>
             )}

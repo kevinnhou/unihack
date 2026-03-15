@@ -5,7 +5,6 @@ import { useRouter } from "expo-router";
 import { Plus, Shield, Users } from "lucide-react-native";
 import { useState } from "react";
 import {
-  ActivityIndicator,
   FlatList,
   Modal,
   Text,
@@ -14,6 +13,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { RunningSpinner } from "@/components/running-spinner";
 import { useAuthStore } from "@/stores/auth-store";
 
 type SquadItem = {
@@ -236,7 +236,7 @@ export default function SquadsScreen() {
                 onPress={handleCreate}
               >
                 {loading ? (
-                  <ActivityIndicator color="white" size="small" />
+                  <RunningSpinner color="white" size="small" />
                 ) : (
                   <Text className="font-bold text-white">Create</Text>
                 )}

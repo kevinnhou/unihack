@@ -8,7 +8,6 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { ArrowLeft, Copy, Play } from "lucide-react-native";
 import { useState } from "react";
 import {
-  ActivityIndicator,
   Clipboard,
   ScrollView,
   Text,
@@ -21,6 +20,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { RunConfigModal } from "@/components/RunConfigModal";
 import { useRunStore } from "@/stores/run-store";
 import { useLiveStore } from "@/stores/live-store";
+import { RunningSpinner } from "@/components/running-spinner";
 import { useAuthStore } from "@/stores/auth-store";
 
 type SortBy = "streak" | "distance" | "pace";
@@ -104,7 +104,7 @@ export default function SquadDetailScreen() {
   if (squad === undefined || leaderboard === undefined) {
     return (
       <SafeAreaView className="flex-1 items-center justify-center bg-black">
-        <ActivityIndicator color="#ff6900" size="large" />
+        <RunningSpinner color="#ff6900" size="large" />
       </SafeAreaView>
     );
   }

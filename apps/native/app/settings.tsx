@@ -5,7 +5,6 @@ import { useRouter } from "expo-router";
 import { Camera, LogOut } from "lucide-react-native";
 import { useEffect, useState } from "react";
 import {
-  ActivityIndicator,
   Image,
   ScrollView,
   Switch,
@@ -14,6 +13,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { RunningSpinner } from "@/components/running-spinner";
 import { useConvexImageUpload } from "@/lib/uploadthing";
 import { useAuthStore } from "@/stores/auth-store";
 
@@ -119,7 +119,7 @@ export default function SettingsScreen() {
               )}
               <View className="absolute right-0 bottom-0 h-7 w-7 items-center justify-center rounded-full bg-neutral-700">
                 {uploading ? (
-                  <ActivityIndicator color="white" size="small" />
+                  <RunningSpinner color="white" size="small" />
                 ) : (
                   <Camera color="white" size={14} />
                 )}

@@ -6,7 +6,6 @@ import { ArrowLeft, Ghost, Radio, Trophy, User } from "lucide-react-native";
 import type React from "react";
 import { useState } from "react";
 import {
-  ActivityIndicator,
   Image,
   ScrollView,
   Text,
@@ -15,6 +14,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { type Coord, type Region, RunMap } from "@/components/run-map";
+import { RunningSpinner } from "@/components/running-spinner";
 import { useAuthStore } from "@/stores/auth-store";
 
 const LIVE_COLORS = ["#ff6900", "#22c55e", "#3b82f6", "#a855f7", "#f59e0b"];
@@ -151,7 +151,7 @@ export default function ReviewRaceScreen() {
   if (details === undefined) {
     return (
       <SafeAreaView className="flex-1 items-center justify-center bg-black">
-        <ActivityIndicator color="#ff6900" size="large" />
+        <RunningSpinner color="#ff6900" size="large" />
       </SafeAreaView>
     );
   }

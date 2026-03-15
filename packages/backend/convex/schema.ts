@@ -145,7 +145,11 @@ export default defineSchema({
     targetUserId: v.id("users"),
     runId: v.id("runs"),
     distance: v.number(),
-    status: v.union(v.literal("pending"), v.literal("accepted"), v.literal("dismissed")),
+    status: v.union(
+      v.literal("pending"),
+      v.literal("accepted"),
+      v.literal("dismissed")
+    ),
     createdAt: v.number(),
     respondedAt: v.optional(v.number()),
   })
@@ -154,7 +158,11 @@ export default defineSchema({
 
   notifications: defineTable({
     userId: v.id("users"),
-    type: v.union(v.literal("ghostChallenge"), v.literal("liveInvite"), v.literal("generic")),
+    type: v.union(
+      v.literal("ghostChallenge"),
+      v.literal("liveInvite"),
+      v.literal("generic")
+    ),
     data: v.object({
       title: v.string(),
       body: v.string(),

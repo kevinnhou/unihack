@@ -4,7 +4,6 @@ import { useMutation, useQuery } from "convex/react";
 import { useRouter } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import {
-  ActivityIndicator,
   Modal,
   ScrollView,
   Text,
@@ -20,6 +19,7 @@ import { useAuthStore } from "@/stores/auth-store";
 import { useLiveStore } from "@/stores/live-store";
 import { useRunStore } from "@/stores/run-store";
 import { GhostAlertModal } from "./ghost-alert-modal";
+import { RunningSpinner } from "./running-spinner";
 
 const MIN_KM = 0.1;
 const MAX_KM = 42.2;
@@ -402,7 +402,7 @@ export function RunConfigModal({
               </Text>
 
               {availableGhostsData === undefined ? (
-                <ActivityIndicator color="#ff6900" />
+                <RunningSpinner color="#ff6900" size="small" />
               ) : closestGhost === null ? (
                 <Text className="text-gray-500 text-sm">
                   {filteredGhosts.length === 0
@@ -508,7 +508,7 @@ export function RunConfigModal({
                     onPress={handleCreate}
                   >
                     {loading ? (
-                      <ActivityIndicator color="white" />
+                      <RunningSpinner color="white" size="small" />
                     ) : (
                       <Text className="font-bold text-base text-white">
                         Create Room
@@ -550,7 +550,7 @@ export function RunConfigModal({
                     onPress={handleJoin}
                   >
                     {loading ? (
-                      <ActivityIndicator color="#f97316" />
+                      <RunningSpinner color="#f97316" size="small" />
                     ) : (
                       <Text className="font-bold text-base text-orange-500">
                         Join Room
@@ -576,7 +576,7 @@ export function RunConfigModal({
             onPress={handleStart}
           >
             {loading ? (
-              <ActivityIndicator color="white" />
+              <RunningSpinner color="white" size="small" />
             ) : (
               <Text className="font-bold text-lg text-white">Start Run ▶</Text>
             )}

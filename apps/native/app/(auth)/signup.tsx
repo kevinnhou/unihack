@@ -4,7 +4,6 @@ import { useRouter } from "expo-router";
 import { ChevronRight } from "lucide-react-native";
 import { useState } from "react";
 import {
-  ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -16,6 +15,7 @@ import {
 import Animated, { FadeInUp } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { AgonLogo } from "@/components/agon-logo";
+import { RunningSpinner } from "@/components/running-spinner";
 import { useAuthStore } from "@/stores/auth-store";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -280,7 +280,7 @@ export default function SignUpScreen() {
               }}
             >
               {loading ? (
-                <ActivityIndicator color="white" />
+                <RunningSpinner color="white" size="small" />
               ) : (
                 <>
                   <Text
