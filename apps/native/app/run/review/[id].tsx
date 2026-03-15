@@ -54,7 +54,9 @@ export default function ReviewRaceScreen() {
 
   const fullRun = useQuery(
     api.runs.getRunById,
-    id ? { runId: id as Id<"runs"> } : "skip"
+    id && userId
+      ? { runId: id as Id<"runs">, requestingUserId: userId as Id<"users"> }
+      : "skip"
   );
 
   const run = runs?.find((r) => r._id === id);

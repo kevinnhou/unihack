@@ -3,7 +3,13 @@ import type { Id } from "@unihack/backend/convex/_generated/dataModel";
 import { useMutation, useQuery } from "convex/react";
 import { useRouter } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Linking, Text, TouchableOpacity, View } from "react-native";
+import {
+  Linking,
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { RunMap } from "@/components/run-map";
 import { useLivePing } from "@/hooks/use-live-ping";
@@ -52,8 +58,6 @@ function ghostDeltaLabel(userDist: number, ghostDist: number): string {
       : `${Math.round(Math.abs(diff))} m`;
   return diff > 0 ? `+${distStr} ahead` : `-${distStr} behind`;
 }
-
-const barColors = ["#3b82f6", "#22c55e", "#a855f7", "#eab308"];
 
 function progressPercent(
   distanceMeters: number,
@@ -135,6 +139,10 @@ export default function ActiveRunScreen() {
     startTracking();
     startPinging();
 
+    if (tickRef.current !== null) {
+      clearInterval(tickRef.current);
+    }
+
     tickRef.current = setInterval(() => {
       useRunStore.getState().tickElapsed();
     }, 1000);
@@ -145,7 +153,7 @@ export default function ActiveRunScreen() {
         tickRef.current = null;
       }
     };
-  }, [startTracking, startPinging, isRunning]);
+  }, [isRunning, startTracking, startPinging]);
 
   // ---------------------------------------------------------------------------
   // Finish Logic
@@ -157,6 +165,7 @@ export default function ActiveRunScreen() {
     }
     setIsEnding(true);
 
+    // Stop real tracking intervals
     stopTracking();
     stopPinging();
     if (tickRef.current) {
@@ -229,8 +238,6 @@ export default function ActiveRunScreen() {
   // ---------------------------------------------------------------------------
   // Render Computations
   // ---------------------------------------------------------------------------
-  const liveParticipants = liveRoom?.participants ?? [];
-
   const ghostDistM = ghostRun
     ? ghostDistanceAtTime(ghostRun, elapsedSeconds)
     : null;
@@ -239,6 +246,25 @@ export default function ActiveRunScreen() {
     targetDistanceStore > 0
       ? targetDistanceStore
       : (ghostRun?.totalDistance ?? Math.max(distance, 1000));
+
+  const liveParticipants = [...(liveRoom?.participants ?? [])].sort(
+    (a, b) => b.distance - a.distance
+  );
+
+  const barColors = [
+    "#f97316",
+    "#3b82f6",
+    "#10b981",
+    "#ec4899",
+    "#eab308",
+    "#06b6d4",
+    "#8b5cf6",
+    "#f43f5e",
+  ] as const;
+
+  if (!(isRunning && runId)) {
+    return <SafeAreaView className="flex-1 bg-black" />;
+  }
 
   const lastPoint = telemetryBuffer.at(-1);
   const mapCoords = telemetryBuffer.map((p) => ({
@@ -254,108 +280,84 @@ export default function ActiveRunScreen() {
       }
     : undefined;
 
+
   return (
     <SafeAreaView className="flex-1 bg-black">
-      {/* Live map */}
-      <RunMap coords={mapCoords} region={mapRegion} />
+      <ScrollView contentContainerStyle={{ flexGrow: 1, paddingVertical: 24 }}>
+        <View className="flex-1 justify-center px-6">
+          <View className="gap-8 rounded-3xl bg-neutral-900 px-6 py-8">
+            <RunMap coords={mapCoords} region={mapRegion} />
 
-      {/* Centered HUD */}
-      <View className="flex-1 justify-center px-6">
-        <View className="gap-8 rounded-3xl bg-neutral-900 px-6 py-8">
-          {/* Stats row */}
-          <View className="flex-row items-center justify-between">
-            <Stat label="Distance" value={formatDistance(distance)} />
-            <Stat label="Time" large value={formatTime(elapsedSeconds)} />
-            <Stat label="Pace" value={formatPace(currentPace)} />
-          </View>
-
-          {/** biome-ignore lint/nursery/noLeakedRender: permissionDenied is boolean */}
-          {permissionDenied && (
-            <View className="rounded-2xl border border-red-500/40 bg-red-500/10 px-4 py-3">
-              <Text className="font-semibold text-red-300 text-sm">
-                Location permission is required for live distance tracking.
-              </Text>
-              <TouchableOpacity
-                className="mt-2 self-start rounded-lg bg-red-500 px-3 py-2"
-                onPress={() => {
-                  Linking.openSettings().catch(() => {
-                    // ignore settings open failures
-                  });
-                }}
-              >
-                <Text className="font-semibold text-white text-xs">
-                  Open Settings
-                </Text>
-              </TouchableOpacity>
+            {/* Stats row */}
+            <View className="flex-row items-center justify-between">
+              <Stat label="Distance" value={formatDistance(distance)} />
+              <Stat label="Time" large value={formatTime(elapsedSeconds)} />
+              <Stat label="Pace" value={formatPace(currentPace)} />
             </View>
-          )}
 
-          {/* Progress bars */}
-          <View className="gap-5">
-            {/** biome-ignore lint/nursery/noLeakedRender: liveRoomId is a valid ID string or null, never empty string */}
-            {liveRoomId && liveParticipants.length > 0 ? (
-              liveParticipants.map((participant, index) => {
-                const isMe = participant.userId === userId;
-                const participantLabel = isMe ? "You" : participant.name;
-                const barColor = isMe
-                  ? "#f97316"
-                  : barColors[index % barColors.length];
+            {permissionDenied && (
+              <View className="rounded-2xl border border-red-500/40 bg-red-500/10 px-4 py-3">
+                <Text className="font-semibold text-red-300 text-sm">
+                  Location permission is required for live distance tracking.
+                </Text>
+                <TouchableOpacity
+                  className="mt-2 self-start rounded-lg bg-red-500 px-3 py-2"
+                  onPress={() => {
+                    Linking.openSettings().catch(() => {
+                      // ignore settings open failures
+                    });
+                  }}
+                >
+                  <Text className="font-semibold text-white text-xs">
+                    Open Settings
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            )}
 
-                return (
-                  <View key={participant.userId}>
-                    <View className="mb-2 flex-row items-center justify-between">
-                      <Text className="font-medium text-sm text-white">
-                        {participantLabel}
-                      </Text>
-                      <Text className="text-sm text-white">
-                        {formatDistance(participant.distance)} /{" "}
-                        {formatDistance(targetDistance)}
-                      </Text>
+            {/* Progress bars */}
+            <View className="gap-5">
+              {liveRoomId && liveParticipants.length > 0 ? (
+                liveParticipants.map((participant, index) => {
+                  const isMe = participant.userId === userId;
+                  const participantLabel = isMe ? "You" : participant.name;
+                  const barColor = isMe
+                    ? "#f97316"
+                    : barColors[index % barColors.length];
+
+                  return (
+                    <View key={participant.userId}>
+                      <View className="mb-2 flex-row items-center justify-between">
+                        <Text className="font-medium text-sm text-white">
+                          {participantLabel}
+                        </Text>
+                        <Text className="text-sm text-white">
+                          {formatDistance(participant.distance)} /{" "}
+                          {formatDistance(targetDistance)}
+                        </Text>
+                      </View>
+                      <View className="h-4 overflow-hidden rounded-full bg-neutral-700">
+                        <View
+                          className="h-full rounded-full"
+                          style={{
+                            backgroundColor: barColor,
+                            width: `${progressPercent(participant.distance, targetDistance)}%`,
+                          }}
+                        />
+                      </View>
                     </View>
-                    <View className="h-4 overflow-hidden rounded-full bg-neutral-700">
-                      <View
-                        className="h-full rounded-full"
-                        style={{
-                          backgroundColor: barColor,
-                          width: `${progressPercent(participant.distance, targetDistance)}%`,
-                        }}
-                      />
-                    </View>
-                  </View>
-                );
-              })
-            ) : (
-              <>
-                {/* Your progress */}
-                <View>
-                  <View className="mb-2 flex-row items-center justify-between">
-                    <Text className="font-medium text-sm text-white">You</Text>
-                    <Text className="text-sm text-white">
-                      {formatDistance(distance)} /{" "}
-                      {formatDistance(targetDistance)}
-                    </Text>
-                  </View>
-                  <View className="h-4 overflow-hidden rounded-full bg-neutral-700">
-                    <View
-                      className="h-full rounded-full"
-                      style={{
-                        backgroundColor: "#f97316",
-                        width: `${progressPercent(distance, targetDistance)}%`,
-                      }}
-                    />
-                  </View>
-                </View>
-
-                {/* Opponent progress */}
-                {/** biome-ignore lint/nursery/noLeakedRender: PASS */}
-                {ghostRun && ghostDistM !== null && (
+                  );
+                })
+              ) : (
+                <>
+                  {/* Your progress */}
                   <View>
                     <View className="mb-2 flex-row items-center justify-between">
                       <Text className="font-medium text-sm text-white">
-                        {ghostRun.name}
+                        You
                       </Text>
                       <Text className="text-sm text-white">
-                        {formatDistance(ghostDistM)} /{" "}
+                        {formatDistance(distance)} /{" "}
                         {formatDistance(targetDistance)}
                       </Text>
                     </View>
@@ -363,32 +365,57 @@ export default function ActiveRunScreen() {
                       <View
                         className="h-full rounded-full"
                         style={{
-                          backgroundColor: "#3b82f6",
-                          width: `${progressPercent(ghostDistM, targetDistance)}%`,
+                          backgroundColor: "#f97316",
+                          width: `${progressPercent(distance, targetDistance)}%`,
                         }}
                       />
                     </View>
-                    <Text className="mt-3 text-center font-bold text-base text-orange-400">
-                      {ghostDeltaLabel(distance, ghostDistM)}
-                    </Text>
                   </View>
-                )}
-              </>
-            )}
-          </View>
 
-          {/* Finish button */}
-          <TouchableOpacity
-            className="mt-4 items-center rounded-2xl bg-red-600 py-4"
-            disabled={isEnding}
-            onPress={handleFinish}
-          >
-            <Text className="font-bold text-lg text-white">
-              {isEnding ? "Saving..." : "Finish Run"}
-            </Text>
-          </TouchableOpacity>
+                  {/* Opponent progress */}
+                  {/** biome-ignore lint/nursery/noLeakedRender: PASS */}
+                  {ghostRun && ghostDistM !== null && (
+                    <View>
+                      <View className="mb-2 flex-row items-center justify-between">
+                        <Text className="font-medium text-sm text-white">
+                          {ghostRun.name}
+                        </Text>
+                        <Text className="text-sm text-white">
+                          {formatDistance(ghostDistM)} /{" "}
+                          {formatDistance(targetDistance)}
+                        </Text>
+                      </View>
+                      <View className="h-4 overflow-hidden rounded-full bg-neutral-700">
+                        <View
+                          className="h-full rounded-full"
+                          style={{
+                            backgroundColor: "#3b82f6",
+                            width: `${progressPercent(ghostDistM, targetDistance)}%`,
+                          }}
+                        />
+                      </View>
+                      <Text className="mt-3 text-center font-bold text-base text-orange-400">
+                        {ghostDeltaLabel(distance, ghostDistM)}
+                      </Text>
+                    </View>
+                  )}
+                </>
+              )}
+            </View>
+
+            {/* Finish button */}
+            <TouchableOpacity
+              className="mt-4 items-center rounded-2xl bg-red-600 py-4"
+              disabled={isEnding}
+              onPress={handleFinish}
+            >
+              <Text className="font-bold text-lg text-white">
+                {isEnding ? "Saving..." : "Finish Run"}
+              </Text>
+            </TouchableOpacity>
+          </View>
         </View>
-      </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }

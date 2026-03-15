@@ -3,8 +3,10 @@ import type { Id } from "@unihack/backend/convex/_generated/dataModel";
 import { useMutation } from "convex/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
+  BG_LOCATION_TIME_INTERVAL_MS,
   DEFAULT_LIVE_PING_INTERVAL_MS,
   DEFAULT_PING_INTERVAL_MS,
+  MIN_MOVE_SPEED_MS,
   MIN_PACE_DISTANCE_M,
   PACE_WINDOW_MS,
 } from "@/constants";
@@ -57,7 +59,9 @@ function computeDistanceDelta(
   if (prev === null) {
     return 0;
   }
-  return haversineMeters(prev.lat, prev.lng, lat, lng);
+  const distance = haversineMeters(prev.lat, prev.lng, lat, lng);
+  const minMoveM = MIN_MOVE_SPEED_MS * (BG_LOCATION_TIME_INTERVAL_MS / 1000);
+  return distance >= minMoveM ? distance : 0;
 }
 
 type UseLocationTrackingOptions = {
@@ -135,27 +139,31 @@ export function useLocationTracking({
       state.addTelemetryPoint(point, newDistance, pace);
     };
 
-    await serviceStartTracking(locationHandler);
-    startPinging();
+    try {
+      await serviceStartTracking(locationHandler);
+      startPinging();
 
-    const currentRunId = runIdRef.current;
-    if (currentRunId) {
-      pingIntervalRef.current = setInterval(() => {
-        const state = useRunStore.getState();
-        if (!state.isRunning) {
-          return;
-        }
-        pingMutationRef
-          .current({
-            runId: currentRunId as Id<"runs">,
-            distance: state.distance,
-            duration: state.elapsedSeconds,
-            avgPace: state.currentPace,
-          })
-          .catch(() => {
-            // network blip — silent
-          });
-      }, pingIntervalMsRef.current);
+      const currentRunId = runIdRef.current;
+      if (currentRunId) {
+        pingIntervalRef.current = setInterval(() => {
+          const state = useRunStore.getState();
+          if (!state.isRunning) {
+            return;
+          }
+          pingMutationRef
+            .current({
+              runId: currentRunId as Id<"runs">,
+              distance: state.distance,
+              duration: state.elapsedSeconds,
+              avgPace: state.currentPace,
+            })
+            .catch(() => {
+              // network blip — silent
+            });
+        }, pingIntervalMsRef.current);
+      }
+    } catch {
+      setPermissionDenied(true);
     }
   }, [stopTracking, startPinging]);
 

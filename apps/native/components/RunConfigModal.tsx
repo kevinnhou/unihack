@@ -6,24 +6,25 @@ import { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Modal,
-  Pressable,
   ScrollView,
   Text,
   TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useAuthStore } from "@/stores/auth-store";
 import { useLiveStore } from "@/stores/live-store";
 import { useRunStore } from "@/stores/run-store";
 import { GhostAlertModal } from "./ghost-alert-modal";
 
-const DISTANCES = [
-  { label: "1 km", value: 1000 },
-  { label: "3 km", value: 3000 },
-  { label: "5 km", value: 5000 },
-  { label: "10 km", value: 10_000 },
-  { label: "Half marathon", value: 21_097 },
+const PRESET_DISTANCES = [
+  { m: 1000, label: "1 km" },
+  { m: 3000, label: "3 km" },
+  { m: 5000, label: "5 km" },
+  { m: 10_000, label: "10 km" },
+  { m: 21_097, label: "HM" },
+  { m: 42_195, label: "FM" },
 ];
 
 type Props = {
@@ -62,8 +63,8 @@ export function RunConfigModal({
 
   const [mode, setMode] = useState<"solo" | "ghost" | "live">("solo");
   const [tab, setTab] = useState<"create" | "join">("create");
-  const [invalidState, setInvalidState] = useState(false);
   const [selectedGhostId, setSelectedGhostId] = useState<string | null>(null);
+  const [selectedDistanceM, setSelectedDistanceM] = useState(5000);
   const [distanceKm, setDistanceKm] = useState("5.0");
   const [codeChars, setCodeChars] = useState(["", "", "", ""]);
   const [joinError, setJoinError] = useState<string | null>(null);
@@ -78,7 +79,6 @@ export function RunConfigModal({
 
   const [showGhostConfirm, setShowGhostConfirm] = useState(false);
 
-
   const startRunMutation = useMutation(api.runs.startRun);
   const createRoomMutation = useMutation(api.live.createLiveRoom);
   const joinRoomMutation = useMutation(api.live.joinLiveRoom);
@@ -92,7 +92,6 @@ export function RunConfigModal({
   );
 
   const availableGhosts = availableGhostsData?.ghosts ?? [];
-  const currentUserElo = availableGhostsData?.currentUserElo ?? 1200;
   const closestGhost = availableGhosts.find((g) => !g.isSelf) ?? null;
 
   useEffect(() => {
@@ -112,7 +111,7 @@ export function RunConfigModal({
     } else {
       setSelectedGhostId(null);
     }
-  }, [initialGhostUserId, availableGhosts, closestGhost?.userId]);
+  }, [initialGhostUserId, availableGhosts, closestGhost?.userId, closestGhost]);
 
   useEffect(() => {
     if (!(visible && initialLiveInviteUserId)) {
@@ -227,7 +226,6 @@ export function RunConfigModal({
       const runId = await startRunMutation({
         userId: userId as Id<"users">,
         mode: runMode,
-        currentUserElo,
       });
 
       store.startRun(runId, runMode, userId);
@@ -239,8 +237,7 @@ export function RunConfigModal({
           totalDistance: selectedGhost.bestDistance,
         });
       }
-      const km = Number.parseFloat(distanceKm);
-      store.setTargetDistance(Number.isFinite(km) && km > 0 ? km * 1000 : 0);
+      store.setTargetDistance(selectedDistanceM);
       setShowGhostConfirm(false);
       onClose();
       router.replace("/run/active");
@@ -256,7 +253,7 @@ export function RunConfigModal({
       presentationStyle="fullScreen"
       visible={visible}
     >
-      <View className="flex-1 bg-black">
+      <SafeAreaView style={{ flex: 1, backgroundColor: "#000000" }}>
         {/* Header */}
         <View className="flex-row items-center justify-between px-6 pt-6 pb-4">
           <Text className="font-black text-2xl text-white">Start a Run</Text>
@@ -312,52 +309,60 @@ export function RunConfigModal({
             </TouchableOpacity>
           </View>
 
-          <View className="mx-6 mb-6">
-            {/* Target distance */}
-            <Text className="mb-2 font-semibold text-gray-400 text-sm uppercase tracking-widest">
-              Race Distance (km)
-            </Text>
-            {DISTANCES.map((d) => (
-              <Pressable
-                className="mb-3 flex-row items-center justify-between rounded-2xl p-4"
-                key={d.value}
-                onPress={() => setDistanceKm(d.value.toString())}
+          {/* Distance presets — ghost mode only */}
+          {mode === "ghost" && (
+            <View className="mx-6 mb-6">
+              <Text className="mb-4 font-semibold text-gray-400 text-sm uppercase tracking-widest">
+                Race Distance
+              </Text>
+              <Text
                 style={{
-                  backgroundColor:
-                    distanceKm === d.value.toString() ? "#FF4500" : "#1f1f1f",
+                  color: "#ffffff",
+                  fontSize: 28,
+                  fontWeight: "900",
+                  textAlign: "center",
+                  marginBottom: 16,
                 }}
               >
-                <Text
-                  className="font-semibold text-lg text-white"
-                  style={{
-                    color:
-                      distanceKm === d.value.toString() ? "white" : "#9ca3af",
-                  }}
-                >
-                  {d.label}
-                </Text>
-              </Pressable>
-            ))}
-          </View>
+                {formatDist(selectedDistanceM)}
+              </Text>
+              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+                {PRESET_DISTANCES.map((preset) => {
+                  const isSelected = selectedDistanceM === preset.m;
+                  return (
+                    <TouchableOpacity
+                      key={preset.m}
+                      onPress={() => setSelectedDistanceM(preset.m)}
+                      style={{
+                        width: "31%",
+                        alignItems: "center",
+                        paddingVertical: 12,
+                        borderRadius: 12,
+                        backgroundColor: isSelected ? "#f97316" : "#262626",
+                      }}
+                    >
+                      <Text
+                        style={{
+                          color: isSelected ? "#ffffff" : "#9ca3af",
+                          fontWeight: "600",
+                          fontSize: 14,
+                        }}
+                      >
+                        {preset.label}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            </View>
+          )}
 
           {/* Ghost list */}
           {mode === "ghost" && (
             <View className="mx-6 mb-6">
-              {/* Shitty toast message */}
-              {invalidState ? (
-                <View className="rounded-md border border-red-500 px-4 py-2">
-                  <Text className="text-red-500 text-sm">
-                    {invalidState ? "No ghosts available." : ""}
-                  </Text>
-                </View>
-              ) : null}
-              <Text className="text-gray-500 text-sm">
+              <Text className="mb-3 text-gray-500 text-sm">
                 You will be racing against a ghost of similar elo.
               </Text>
-
-              {/* FOR MIKE: we store ghost opposition race id in the run (as it can be optional). 
-              we can then use this to fetch the ghost run at user's run completion 
-              and compare result, distributing elo etc. */}
 
               {availableGhostsData === undefined ? (
                 <ActivityIndicator color="#FF4500" />
@@ -556,15 +561,18 @@ export function RunConfigModal({
             )}
           </TouchableOpacity>
         </View>
-      </View>
+      </SafeAreaView>
 
       <GhostAlertModal
         displayName={selectedGhost?.name ?? ""}
-        distance={formatDist(Number.parseFloat(distanceKm) * 1000)}
+        distance={formatDist(selectedDistanceM)}
         elo={selectedGhost?.elo ?? 0}
         loading={loading}
         onCancel={() => setShowGhostConfirm(false)}
-        onConfirm={() => void handleStart()}
+        onConfirm={async () => {
+          await handleStart();
+        }}
+        // biome-ignore lint/nursery/noLeakedRender: !!selectedGhost is always boolean
         visible={showGhostConfirm && !!selectedGhost}
       />
     </Modal>

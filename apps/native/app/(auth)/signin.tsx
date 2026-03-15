@@ -48,7 +48,12 @@ export default function SignInScreen() {
     <SafeAreaView className="flex-1 bg-black">
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
-        className="flex-1 justify-center px-6 pt-24"
+        style={{
+          flex: 1,
+          justifyContent: "center",
+          paddingHorizontal: 24,
+          paddingTop: 96,
+        }}
       >
         <Text className="mb-2 font-black text-4xl text-white">agon 🔥</Text>
         <Text className="mb-8 text-gray-400">Sign in to compete</Text>
