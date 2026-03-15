@@ -18,33 +18,60 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { AgonLogo } from "@/components/agon-logo";
 import { useAuthStore } from "@/stores/auth-store";
 
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+function validateSignUp(
+  name: string,
+  email: string,
+  password: string
+): { name: string | null; email: string | null; password: string | null } {
+  const nameErr =
+    name.trim().length < 2 ? "Name must be at least 2 characters" : null;
+  const emailErr = email.trim()
+    ? EMAIL_REGEX.test(email.trim())
+      ? null
+      : "Enter a valid email address"
+    : "Email is required";
+  const passwordErr =
+    password.length < 6 ? "Password must be at least 6 characters" : null;
+  return { name: nameErr, email: emailErr, password: passwordErr };
+}
+
 export default function SignUpScreen() {
   const router = useRouter();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<{
+    name: string | null;
+    email: string | null;
+    password: string | null;
+  }>({ name: null, email: null, password: null });
+  const [serverError, setServerError] = useState<string | null>(null);
   const [focusedField, setFocusedField] = useState<string | null>(null);
   const signIn = useAuthStore((state) => state.signIn);
   const signUpMutation = useMutation(api.authpwd.signUp);
 
   const handleSignUp = async () => {
-    if (!(name && email && password)) {
+    const errs = validateSignUp(name, email, password);
+    if (errs.name || errs.email || errs.password) {
+      setFieldErrors(errs);
       return;
     }
+
     setLoading(true);
-    setError(null);
+    setServerError(null);
     try {
       const result = await signUpMutation({ name, email, password });
       if (!result.success) {
-        setError(result.reason);
+        setServerError(result.reason);
         return;
       }
       await signIn(result.userId, result.name, email);
       router.replace("/(tabs)");
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : "Something went wrong");
+      setServerError(e instanceof Error ? e.message : "Something went wrong");
     } finally {
       setLoading(false);
     }
@@ -104,7 +131,10 @@ export default function SignUpScreen() {
             </Text>
             <TextInput
               onBlur={() => setFocusedField(null)}
-              onChangeText={setName}
+              onChangeText={(t) => {
+                setName(t);
+                setFieldErrors((prev) => ({ ...prev, name: null }));
+              }}
               onFocus={() => setFocusedField("name")}
               placeholder="Your name"
               placeholderTextColor="#4b5563"
@@ -120,6 +150,11 @@ export default function SignUpScreen() {
               }}
               value={name}
             />
+            {fieldErrors.name ? (
+              <Text style={{ color: "#f87171", fontSize: 12, marginTop: 4 }}>
+                {fieldErrors.name}
+              </Text>
+            ) : null}
           </Animated.View>
 
           {/* Email input */}
@@ -143,7 +178,10 @@ export default function SignUpScreen() {
               autoCapitalize="none"
               keyboardType="email-address"
               onBlur={() => setFocusedField(null)}
-              onChangeText={setEmail}
+              onChangeText={(t) => {
+                setEmail(t);
+                setFieldErrors((prev) => ({ ...prev, email: null }));
+              }}
               onFocus={() => setFocusedField("email")}
               placeholder="you@example.com"
               placeholderTextColor="#4b5563"
@@ -159,6 +197,11 @@ export default function SignUpScreen() {
               }}
               value={email}
             />
+            {fieldErrors.email ? (
+              <Text style={{ color: "#f87171", fontSize: 12, marginTop: 4 }}>
+                {fieldErrors.email}
+              </Text>
+            ) : null}
           </Animated.View>
 
           {/* Password input */}
@@ -180,7 +223,10 @@ export default function SignUpScreen() {
             </Text>
             <TextInput
               onBlur={() => setFocusedField(null)}
-              onChangeText={setPassword}
+              onChangeText={(t) => {
+                setPassword(t);
+                setFieldErrors((prev) => ({ ...prev, password: null }));
+              }}
               onFocus={() => setFocusedField("password")}
               placeholder="••••••••"
               placeholderTextColor="#4b5563"
@@ -198,9 +244,14 @@ export default function SignUpScreen() {
               }}
               value={password}
             />
+            {fieldErrors.password ? (
+              <Text style={{ color: "#f87171", fontSize: 12, marginTop: 4 }}>
+                {fieldErrors.password}
+              </Text>
+            ) : null}
           </Animated.View>
 
-          {error ? (
+          {serverError ? (
             <Text
               style={{
                 color: "#f87171",
@@ -208,7 +259,7 @@ export default function SignUpScreen() {
                 marginBottom: 12,
               }}
             >
-              {error}
+              {serverError}
             </Text>
           ) : null}
 

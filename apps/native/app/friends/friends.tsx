@@ -17,6 +17,8 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { RunConfigModal } from "@/components/RunConfigModal";
 import { useAuthStore } from "@/stores/auth-store";
 
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 function formatPace(secPerKm: number): string {
   if (secPerKm <= 0) {
     return "—";
@@ -48,6 +50,11 @@ export default function FriendsScreen() {
 
   const handleAddFriend = async () => {
     if (!newFriendEmail.trim()) {
+      setAddError("Email is required");
+      return;
+    }
+    if (!EMAIL_REGEX.test(newFriendEmail.trim())) {
+      setAddError("Enter a valid email address");
       return;
     }
     setAddLoading(true);
@@ -165,7 +172,10 @@ export default function FriendsScreen() {
               autoCorrect={false}
               className="mb-3 rounded-xl bg-neutral-800 px-4 py-3 text-white"
               keyboardType="email-address"
-              onChangeText={setNewFriendEmail}
+              onChangeText={(t) => {
+                setNewFriendEmail(t);
+                setAddError(null);
+              }}
               placeholder="friend@example.com"
               placeholderTextColor="#6b7280"
               value={newFriendEmail}
