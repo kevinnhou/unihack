@@ -1,7 +1,18 @@
-import { Tabs } from "expo-router";
+import { Tabs, useRouter } from "expo-router";
 import { Activity, BarChart2, Shield, User, Users } from "lucide-react-native";
+import { useEffect } from "react";
+import { useAuthStore } from "@/stores/auth-store";
 
 export default function TabsLayout() {
+  const { userId } = useAuthStore();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!userId) {
+      router.replace("/(auth)/signin");
+    }
+  }, [userId, router]);
+
   return (
     <Tabs
       initialRouteName="index"

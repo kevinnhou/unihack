@@ -1,9 +1,9 @@
 import { api } from "@unihack/backend/convex/_generated/api";
 import type { Id } from "@unihack/backend/convex/_generated/dataModel";
 import { useQuery } from "convex/react";
-import { Redirect } from "expo-router";
+import { useRouter } from "expo-router";
 import { useState } from "react";
-import { FlatList, Text, TouchableOpacity, View } from "react-native";
+import { FlatList, Image, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useAuthStore } from "@/stores/auth-store";
 
@@ -29,6 +29,7 @@ function medalColor(rank: number) {
 }
 
 export default function LeaderboardsScreen() {
+  const router = useRouter();
   const [tab, setTab] = useState<Tab>("elo");
   const { userId } = useAuthStore();
 
@@ -40,15 +41,12 @@ export default function LeaderboardsScreen() {
     userId ? { limit: 50, sortBy } : "skip"
   );
 
-  if (!userId) {
-    return <Redirect href="/(auth)/signin" />;
-  }
-
   const rows =
     entries?.map((e, i) => ({
       key: e.userId,
       rank: i + 1,
       name: e.name,
+      image: e.image ?? null,
       isMe: e.userId === (userId as Id<"users">),
       primary:
         tab === "elo"
@@ -97,38 +95,60 @@ export default function LeaderboardsScreen() {
           </View>
         }
         renderItem={({ item }) => (
-          <View
-            className="mx-4 mb-2 flex-row items-center gap-3 rounded-2xl px-4 py-3"
-            style={{
-              backgroundColor: item.isMe ? "#ff450015" : "#171717",
-              borderWidth: item.isMe ? 1 : 0,
-              borderColor: item.isMe ? "#FF4500" : "transparent",
+          <TouchableOpacity
+            onPress={() => {
+              if (item.isMe) {
+                router.push("/(tabs)/profile");
+              } else {
+                router.push({
+                  pathname: "/users/[id]",
+                  params: { id: item.key },
+                });
+              }
             }}
           >
-            <Text
-              className="w-8 text-center font-black text-lg"
-              style={{ color: medalColor(item.rank) }}
+            <View
+              className="mx-4 mb-2 flex-row items-center gap-3 rounded-2xl px-4 py-3"
+              style={{
+                backgroundColor: item.isMe ? "#ff450015" : "#171717",
+                borderWidth: item.isMe ? 1 : 0,
+                borderColor: item.isMe ? "#FF4500" : "transparent",
+              }}
             >
-              {item.rank}
-            </Text>
-            <View className="h-10 w-10 items-center justify-center rounded-full bg-neutral-700">
-              <Text className="font-bold text-white">
-                {item.name.charAt(0)}
+              <Text
+                className="w-8 text-center font-black text-lg"
+                style={{ color: medalColor(item.rank) }}
+              >
+                {item.rank}
               </Text>
+              {item.image ? (
+                <Image
+                  className="h-10 w-10 rounded-full"
+                  source={{ uri: item.image }}
+                />
+              ) : (
+                <View className="h-10 w-10 items-center justify-center rounded-full bg-neutral-700">
+                  <Text className="font-bold text-white">
+                    {item.name.charAt(0)}
+                  </Text>
+                </View>
+              )}
+              <View className="flex-1">
+                <Text className="font-semibold text-sm text-white">
+                  {item.name}
+                  {item.isMe ? " (You)" : ""}
+                </Text>
+              </View>
+              <View className="items-end">
+                <Text className="font-bold text-base text-orange-400">
+                  {item.primary}
+                </Text>
+                <Text className="text-gray-500 text-xs">
+                  {item.primaryLabel}
+                </Text>
+              </View>
             </View>
-            <View className="flex-1">
-              <Text className="font-semibold text-sm text-white">
-                {item.name}
-                {item.isMe ? " (You)" : ""}
-              </Text>
-            </View>
-            <View className="items-end">
-              <Text className="font-bold text-base text-orange-400">
-                {item.primary}
-              </Text>
-              <Text className="text-gray-500 text-xs">{item.primaryLabel}</Text>
-            </View>
-          </View>
+          </TouchableOpacity>
         )}
       />
     </SafeAreaView>

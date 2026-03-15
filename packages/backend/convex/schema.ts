@@ -16,6 +16,17 @@ export default defineSchema({
     phoneNumber: v.optional(v.union(v.null(), v.string())),
     phoneNumberVerified: v.optional(v.union(v.null(), v.boolean())),
     elo: v.number(),
+    settings: v.optional(
+      v.object({
+        profileVisibility: v.union(
+          v.literal("everyone"),
+          v.literal("friends_only"),
+          v.literal("nobody")
+        ),
+        showStats: v.boolean(),
+        showRunHistory: v.boolean(),
+      })
+    ),
   })
     .index("by_email", ["email"])
     .index("by_elo", ["elo"]),

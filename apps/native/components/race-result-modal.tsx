@@ -20,10 +20,19 @@ export function RaceResultModal({ visible, eloChange, isWin, onClose }: Props) {
   const messageClass = isWin ? "text-green-200" : "text-red-200";
 
   return (
-    <Modal animationType="slide" presentationStyle="fullScreen" visible={visible}>
-      <View className="flex-1 justify-end bg-black" style={{ paddingBottom: insets.bottom }}>
+    <Modal
+      animationType="slide"
+      presentationStyle="fullScreen"
+      visible={visible}
+    >
+      <View
+        className="flex-1 justify-end bg-black"
+        style={{ paddingBottom: insets.bottom }}
+      >
         <View className="flex-1 justify-center px-6">
-          <Text className={`mb-4 text-center font-black text-2xl ${titleClass}`}>
+          <Text
+            className={`mb-4 text-center font-black text-2xl ${titleClass}`}
+          >
             {isWin ? "You Won!" : "You Lost"}
           </Text>
 
@@ -33,7 +42,10 @@ export function RaceResultModal({ visible, eloChange, isWin, onClose }: Props) {
               : `You lost to the ghost and lost ${absChange} ELO.`}
           </Text>
 
-          <TouchableOpacity className="mb-4 items-center rounded-2xl bg-orange-500 py-4" onPress={onClose}>
+          <TouchableOpacity
+            className="mb-4 items-center rounded-2xl bg-orange-500 py-4"
+            onPress={onClose}
+          >
             <Text className="font-bold text-lg text-white">Continue</Text>
           </TouchableOpacity>
         </View>

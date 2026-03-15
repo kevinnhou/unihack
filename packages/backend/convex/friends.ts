@@ -176,6 +176,46 @@ export const removeFriend = mutation({
   },
 });
 
+export const getFriendStatus = query({
+  args: {
+    userId: v.id("users"),
+    targetId: v.id("users"),
+  },
+  returns: v.union(
+    v.literal("none"),
+    v.literal("friend"),
+    v.literal("request_sent"),
+    v.literal("request_received")
+  ),
+  handler: async (ctx, { userId, targetId }) => {
+    const outgoing = await ctx.db
+      .query("friends")
+      .withIndex("by_user_friend", (q) =>
+        q.eq("userId", userId).eq("friendId", targetId)
+      )
+      .first();
+    const incoming = await ctx.db
+      .query("friends")
+      .withIndex("by_user_friend", (q) =>
+        q.eq("userId", targetId).eq("friendId", userId)
+      )
+      .first();
+    if (
+      (outgoing && !outgoing.requested) ||
+      (incoming && !incoming.requested)
+    ) {
+      return "friend";
+    }
+    if (outgoing?.requested) {
+      return "request_sent";
+    }
+    if (incoming?.requested) {
+      return "request_received";
+    }
+    return "none";
+  },
+});
+
 export const getFriends = query({
   args: { userId: v.id("users") },
   returns: v.array(

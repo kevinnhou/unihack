@@ -1,9 +1,10 @@
 import { api } from "@unihack/backend/convex/_generated/api";
 import type { Id } from "@unihack/backend/convex/_generated/dataModel";
 import { useQuery } from "convex/react";
-import { Redirect, useRouter } from "expo-router";
-import { LogOut } from "lucide-react-native";
+import { useRouter } from "expo-router";
+import { Settings } from "lucide-react-native";
 import {
+  Image,
   Pressable,
   ScrollView,
   Text,
@@ -37,25 +38,25 @@ function StatRow({ label, value }: { label: string; value: string }) {
 
 export default function ProfileScreen() {
   const router = useRouter();
-  const { userId, userName, userEmail, signOut } = useAuthStore();
+  const { userId, userName, userEmail } = useAuthStore();
+
+  const typedUserId = userId as Id<"users"> | null;
 
   const stats = useQuery(
     api.users.getUserStats,
-    userId ? { userId: userId as Id<"users"> } : "skip"
+    typedUserId ? { userId: typedUserId } : "skip"
   );
   const friends = useQuery(
     api.friends.getFriends,
-    userId ? { userId: userId as Id<"users"> } : "skip"
+    typedUserId ? { userId: typedUserId } : "skip"
+  );
+  const profile = useQuery(
+    api.users.getUserProfile,
+    typedUserId ? { userId: typedUserId } : "skip"
   );
 
-  if (!userId) {
-    return <Redirect href="/(auth)/signin" />;
-  }
-
-  const handleSignOut = async () => {
-    await signOut();
-    router.replace("/(auth)/signin");
-  };
+  const imageUrl = profile?.image ?? null;
+  const initial = (userName ?? "?").charAt(0).toUpperCase();
 
   return (
     <SafeAreaView className="flex-1 bg-black">
@@ -63,17 +64,32 @@ export default function ProfileScreen() {
         {/* Profile header */}
         <View className="flex flex-col pt-6 pb-6">
           <View className="flex-row items-center gap-4 px-4">
-            <View className="h-20 w-20 items-center justify-center rounded-full bg-orange-500">
-              <Text className="font-black text-3xl text-white">
-                {(userName ?? "?").charAt(0).toUpperCase()}
-              </Text>
-            </View>
+            <TouchableOpacity onPress={() => router.push("/settings")}>
+              {imageUrl ? (
+                <Image
+                  className="h-20 w-20 rounded-full"
+                  source={{ uri: imageUrl }}
+                />
+              ) : (
+                <View className="h-20 w-20 items-center justify-center rounded-full bg-orange-500">
+                  <Text className="font-black text-3xl text-white">
+                    {initial}
+                  </Text>
+                </View>
+              )}
+            </TouchableOpacity>
             <View className="flex-1">
               <Text className="font-black text-2xl text-white">
                 {userName ?? "Runner"}
               </Text>
               <Text className="text-gray-400 text-sm">{userEmail ?? ""}</Text>
             </View>
+            <TouchableOpacity
+              className="h-10 w-10 items-center justify-center rounded-full bg-neutral-900"
+              onPress={() => router.push("/settings")}
+            >
+              <Settings color="#9ca3af" size={20} />
+            </TouchableOpacity>
           </View>
 
           <Pressable
@@ -108,15 +124,6 @@ export default function ProfileScreen() {
             value={stats ? formatPace(stats.bestPaceSecPerKm) : "—"}
           />
         </View>
-
-        {/* Sign out */}
-        <TouchableOpacity
-          className="mx-4 mt-8 flex-row items-center justify-center gap-2 rounded-2xl bg-neutral-900 py-4"
-          onPress={handleSignOut}
-        >
-          <LogOut color="#ef4444" size={20} />
-          <Text className="font-semibold text-red-400">Sign Out</Text>
-        </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
   );

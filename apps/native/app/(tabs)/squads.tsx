@@ -1,7 +1,7 @@
 import { api } from "@unihack/backend/convex/_generated/api";
 import type { Id } from "@unihack/backend/convex/_generated/dataModel";
 import { useMutation, useQuery } from "convex/react";
-import { Redirect, useRouter } from "expo-router";
+import { useRouter } from "expo-router";
 import { Plus, Shield, Users } from "lucide-react-native";
 import { useState } from "react";
 import {
@@ -35,6 +35,7 @@ export default function SquadsScreen() {
   const [newPrivate, setNewPrivate] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(false);
+  const [joinCodeInput, setJoinCodeInput] = useState("");
 
   const allSquads = useQuery(
     api.squads.getAllSquads,
@@ -53,10 +54,6 @@ export default function SquadsScreen() {
     const description = squad.description?.toLowerCase() ?? "";
     return name.includes(query) || description.includes(query);
   });
-
-  if (!userId) {
-    return <Redirect href="/(auth)/signin" />;
-  }
 
   const handleCreate = async () => {
     if (!newName.trim()) {
@@ -83,9 +80,10 @@ export default function SquadsScreen() {
     }
   };
 
-  const [joinCodeInput, setJoinCodeInput] = useState("");
   const handleJoinByCode = async () => {
-    if (!joinCodeInput.trim()) return;
+    if (!joinCodeInput.trim()) {
+      return;
+    }
     setLoading(true);
     try {
       const res = await joinSquadByCodeMutation({
@@ -94,9 +92,6 @@ export default function SquadsScreen() {
       });
       if (res.success) {
         router.push({ pathname: "/squads/[id]", params: { id: res.squadId } });
-      } else {
-        // simple alert fallback
-        alert(res.reason || "Could not join squad");
       }
     } finally {
       setLoading(false);
@@ -207,7 +202,9 @@ export default function SquadsScreen() {
                   newPrivate ? "bg-orange-500" : "bg-neutral-800"
                 }`}
               >
-                {newPrivate && <View className="h-3 w-3 rounded bg-white" />}
+                {newPrivate ? (
+                  <View className="h-3 w-3 rounded bg-white" />
+                ) : null}
               </View>
               <Text className="text-gray-300">Private squad</Text>
             </TouchableOpacity>

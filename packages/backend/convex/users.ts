@@ -1,6 +1,167 @@
 import { v } from "convex/values";
 import type { Id } from "./_generated/dataModel";
-import { query } from "./_generated/server";
+import { mutation, query } from "./_generated/server";
+
+// ------------------------------------------------------------------
+// SETTINGS
+// ------------------------------------------------------------------
+export const getUserSettings = query({
+  args: { userId: v.id("users") },
+  returns: v.object({
+    profileVisibility: v.union(
+      v.literal("everyone"),
+      v.literal("friends_only"),
+      v.literal("nobody")
+    ),
+    showStats: v.boolean(),
+    showRunHistory: v.boolean(),
+  }),
+  handler: async (ctx, { userId }) => {
+    const user = await ctx.db.get(userId);
+    return (
+      user?.settings ?? {
+        profileVisibility: "everyone" as const,
+        showStats: true,
+        showRunHistory: true,
+      }
+    );
+  },
+});
+
+export const updateUserSettings = mutation({
+  args: {
+    userId: v.id("users"),
+    settings: v.object({
+      profileVisibility: v.union(
+        v.literal("everyone"),
+        v.literal("friends_only"),
+        v.literal("nobody")
+      ),
+      showStats: v.boolean(),
+      showRunHistory: v.boolean(),
+    }),
+  },
+  returns: v.null(),
+  handler: async (ctx, { userId, settings }) => {
+    await ctx.db.patch(userId, { settings });
+    return null;
+  },
+});
+
+export const updateProfileImage = mutation({
+  args: { userId: v.id("users"), imageUrl: v.string() },
+  returns: v.null(),
+  handler: async (ctx, { userId, imageUrl }) => {
+    await ctx.db.patch(userId, { image: imageUrl });
+    return null;
+  },
+});
+
+export const generateImageUploadUrl = mutation({
+  args: {},
+  returns: v.string(),
+  handler: async (ctx) => await ctx.storage.generateUploadUrl(),
+});
+
+export const saveProfileImage = mutation({
+  args: {
+    userId: v.id("users"),
+    storageId: v.id("_storage"),
+  },
+  returns: v.null(),
+  handler: async (ctx, { userId, storageId }) => {
+    const url = await ctx.storage.getUrl(storageId);
+    if (url) {
+      await ctx.db.patch(userId, { image: url });
+    }
+    return null;
+  },
+});
+
+// ------------------------------------------------------------------
+// PUBLIC PROFILE
+// ------------------------------------------------------------------
+export const getUserProfile = query({
+  args: { userId: v.id("users") },
+  returns: v.union(
+    v.null(),
+    v.object({
+      name: v.string(),
+      email: v.string(),
+      image: v.optional(v.union(v.null(), v.string())),
+    })
+  ),
+  handler: async (ctx, { userId }) => {
+    const user = await ctx.db.get(userId);
+    if (!user) {
+      return null;
+    }
+    return { name: user.name, email: user.email, image: user.image };
+  },
+});
+
+export const getUserPublicProfile = query({
+  args: {
+    targetUserId: v.id("users"),
+    viewerId: v.id("users"),
+  },
+  returns: v.union(
+    v.null(),
+    v.object({
+      isPrivate: v.literal(true),
+      name: v.string(),
+    }),
+    v.object({
+      isPrivate: v.literal(false),
+      name: v.string(),
+      elo: v.number(),
+      image: v.union(v.null(), v.string()),
+      showStats: v.boolean(),
+      showRunHistory: v.boolean(),
+    })
+  ),
+  handler: async (ctx, { targetUserId, viewerId }) => {
+    const target = await ctx.db.get(targetUserId);
+    if (!target) {
+      return null;
+    }
+    const visibility = target.settings?.profileVisibility ?? "everyone";
+
+    if (visibility === "nobody") {
+      return { isPrivate: true as const, name: target.name };
+    }
+
+    if (visibility === "friends_only") {
+      const fw = await ctx.db
+        .query("friends")
+        .withIndex("by_user_friend", (q) =>
+          q.eq("userId", viewerId).eq("friendId", targetUserId)
+        )
+        .first();
+      const bw = await ctx.db
+        .query("friends")
+        .withIndex("by_user_friend", (q) =>
+          q.eq("userId", targetUserId).eq("friendId", viewerId)
+        )
+        .first();
+      const isFriend =
+        (fw !== null && fw !== undefined && !fw.requested) ||
+        (bw !== null && bw !== undefined && !bw.requested);
+      if (!isFriend) {
+        return { isPrivate: true as const, name: target.name };
+      }
+    }
+
+    return {
+      isPrivate: false as const,
+      name: target.name,
+      elo: target.elo,
+      image: target.image ?? null,
+      showStats: target.settings?.showStats ?? true,
+      showRunHistory: target.settings?.showRunHistory ?? true,
+    };
+  },
+});
 
 const ONE_DAY_MS = 86_400_000;
 
@@ -250,6 +411,7 @@ export const getGlobalLeaderboard = query({
       name: v.string(),
       value: v.number(),
       runId: v.optional(v.id("runs")),
+      image: v.union(v.null(), v.string()),
     })
   ),
   handler: async (ctx, args) => {
@@ -264,6 +426,7 @@ export const getGlobalLeaderboard = query({
         name: user.name,
         value: user.elo,
         runId: undefined,
+        image: user.image ?? null,
       }));
     }
 
@@ -323,6 +486,7 @@ export const getGlobalLeaderboard = query({
           name: user?.name ?? "Unknown Runner",
           value: entry.value,
           runId: entry.runId as Id<"runs">,
+          image: user?.image ?? null,
         };
       })
     );
