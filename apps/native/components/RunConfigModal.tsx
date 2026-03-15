@@ -21,6 +21,9 @@ import { useLiveStore } from "@/stores/live-store";
 import { useRunStore } from "@/stores/run-store";
 import { GhostAlertModal } from "./ghost-alert-modal";
 
+const MIN_KM = 0.1;
+const MAX_KM = 42.2;
+
 const PRESET_DISTANCES = [
   { m: 1000, label: "1 km" },
   { m: 3000, label: "3 km" },
@@ -139,8 +142,11 @@ export function RunConfigModal({
     }
 
     const km = Number.parseFloat(distanceKm);
-    const targetDistanceMeters =
-      Number.isFinite(km) && km > 0 ? Math.round(km * 1000) : 5000;
+    if (!Number.isFinite(km) || km < MIN_KM || km > MAX_KM) {
+      setCreateError(`Distance must be between ${MIN_KM} and ${MAX_KM} km`);
+      return;
+    }
+    const targetDistanceMeters = Math.round(km * 1000);
 
     setLoading(true);
     setCreateError(null);

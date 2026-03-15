@@ -36,6 +36,7 @@ export default function SquadsScreen() {
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(false);
   const [joinCodeInput, setJoinCodeInput] = useState("");
+  const [createError, setCreateError] = useState<string | null>(null);
 
   const allSquads = useQuery(
     api.squads.getAllSquads,
@@ -56,9 +57,11 @@ export default function SquadsScreen() {
   });
 
   const handleCreate = async () => {
-    if (!newName.trim()) {
+    if (newName.trim().length < 2) {
+      setCreateError("Squad name must be at least 2 characters");
       return;
     }
+    setCreateError(null);
     setLoading(true);
     try {
       const result = await createSquadMutation({
@@ -180,12 +183,20 @@ export default function SquadsScreen() {
               Create Squad
             </Text>
             <TextInput
-              className="mb-4 rounded-2xl bg-neutral-800 px-4 py-3 text-base text-white"
-              onChangeText={setNewName}
+              className="mb-1 rounded-2xl bg-neutral-800 px-4 py-3 text-base text-white"
+              onChangeText={(t) => {
+                setNewName(t);
+                setCreateError(null);
+              }}
               placeholder="Squad name"
               placeholderTextColor="#4b5563"
               value={newName}
             />
+            {createError ? (
+              <Text className="mb-3 text-red-400 text-xs">{createError}</Text>
+            ) : (
+              <View className="mb-3" />
+            )}
             <TextInput
               className="mb-4 rounded-2xl bg-neutral-800 px-4 py-3 text-base text-white"
               onChangeText={setNewDescription}
@@ -214,6 +225,7 @@ export default function SquadsScreen() {
                 onPress={() => {
                   setShowCreate(false);
                   setNewName("");
+                  setCreateError(null);
                 }}
               >
                 <Text className="font-medium text-gray-300">Cancel</Text>

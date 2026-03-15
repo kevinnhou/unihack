@@ -18,32 +18,54 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { AgonLogo } from "@/components/agon-logo";
 import { useAuthStore } from "@/stores/auth-store";
 
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+function validateSignIn(
+  email: string,
+  password: string
+): { email: string | null; password: string | null } {
+  const emailErr = email.trim()
+    ? EMAIL_REGEX.test(email.trim())
+      ? null
+      : "Enter a valid email address"
+    : "Email is required";
+  const passwordErr = password ? null : "Password is required";
+  return { email: emailErr, password: passwordErr };
+}
+
 export default function SignInScreen() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<{
+    email: string | null;
+    password: string | null;
+  }>({ email: null, password: null });
+  const [serverError, setServerError] = useState<string | null>(null);
   const [focusedField, setFocusedField] = useState<string | null>(null);
   const signIn = useAuthStore((state) => state.signIn);
   const signInMutation = useMutation(api.authpwd.signIn);
 
   const handleSignIn = async () => {
-    if (!(email && password)) {
+    const errs = validateSignIn(email, password);
+    if (errs.email || errs.password) {
+      setFieldErrors(errs);
       return;
     }
+
     setLoading(true);
-    setError(null);
+    setServerError(null);
     try {
       const result = await signInMutation({ email, password });
       if (!result.success) {
-        setError(result.reason);
+        setServerError(result.reason);
         return;
       }
       await signIn(result.userId, result.name, result.email);
       router.replace("/(tabs)");
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : "Something went wrong");
+      setServerError(e instanceof Error ? e.message : "Something went wrong");
     } finally {
       setLoading(false);
     }
@@ -96,7 +118,10 @@ export default function SignInScreen() {
               autoCapitalize="none"
               keyboardType="email-address"
               onBlur={() => setFocusedField(null)}
-              onChangeText={setEmail}
+              onChangeText={(t) => {
+                setEmail(t);
+                setFieldErrors((prev) => ({ ...prev, email: null }));
+              }}
               onFocus={() => setFocusedField("email")}
               placeholder="you@example.com"
               placeholderTextColor="#4b5563"
@@ -112,6 +137,11 @@ export default function SignInScreen() {
               }}
               value={email}
             />
+            {fieldErrors.email ? (
+              <Text style={{ color: "#f87171", fontSize: 12, marginTop: 4 }}>
+                {fieldErrors.email}
+              </Text>
+            ) : null}
           </Animated.View>
 
           {/* Password input */}
@@ -133,7 +163,10 @@ export default function SignInScreen() {
             </Text>
             <TextInput
               onBlur={() => setFocusedField(null)}
-              onChangeText={setPassword}
+              onChangeText={(t) => {
+                setPassword(t);
+                setFieldErrors((prev) => ({ ...prev, password: null }));
+              }}
               onFocus={() => setFocusedField("password")}
               placeholder="••••••••"
               placeholderTextColor="#4b5563"
@@ -151,9 +184,14 @@ export default function SignInScreen() {
               }}
               value={password}
             />
+            {fieldErrors.password ? (
+              <Text style={{ color: "#f87171", fontSize: 12, marginTop: 4 }}>
+                {fieldErrors.password}
+              </Text>
+            ) : null}
           </Animated.View>
 
-          {error ? (
+          {serverError ? (
             <Text
               style={{
                 color: "#f87171",
@@ -161,7 +199,7 @@ export default function SignInScreen() {
                 marginBottom: 12,
               }}
             >
-              {error}
+              {serverError}
             </Text>
           ) : null}
 
