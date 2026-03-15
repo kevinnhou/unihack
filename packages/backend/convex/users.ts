@@ -411,6 +411,7 @@ export const getGlobalLeaderboard = query({
       name: v.string(),
       value: v.number(),
       runId: v.optional(v.id("runs")),
+      image: v.union(v.null(), v.string()),
     })
   ),
   handler: async (ctx, args) => {
@@ -425,6 +426,7 @@ export const getGlobalLeaderboard = query({
         name: user.name,
         value: user.elo,
         runId: undefined,
+        image: user.image ?? null,
       }));
     }
 
@@ -484,6 +486,7 @@ export const getGlobalLeaderboard = query({
           name: user?.name ?? "Unknown Runner",
           value: entry.value,
           runId: entry.runId as Id<"runs">,
+          image: user?.image ?? null,
         };
       })
     );

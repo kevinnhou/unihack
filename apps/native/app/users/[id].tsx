@@ -55,21 +55,28 @@ export default function UserProfileScreen() {
       : "skip"
   );
 
-  const friends = useQuery(
-    api.friends.getFriends,
-    typedUserId ? { userId: typedUserId } : "skip"
+  const friendStatus = useQuery(
+    api.friends.getFriendStatus,
+    typedUserId && targetId ? { userId: typedUserId, targetId } : "skip"
   );
 
   const sendFriendRequest = useMutation(api.friends.sendFriendRequest);
+  const acceptFriendRequest = useMutation(api.friends.acceptFriendRequest);
 
   const isSelf = typedUserId === targetId;
-  const isFriend = friends?.some((f) => f.friendId === targetId) ?? false;
 
   const handleAddFriend = async () => {
     if (!typedUserId) {
       return;
     }
     await sendFriendRequest({ userId: typedUserId, friendId: targetId });
+  };
+
+  const handleAcceptFriend = async () => {
+    if (!typedUserId) {
+      return;
+    }
+    await acceptFriendRequest({ userId: typedUserId, senderId: targetId });
   };
 
   if (!profile) {
@@ -124,7 +131,7 @@ export default function UserProfileScreen() {
         {/* Actions: only shown when viewing someone else */}
         {!(isSelf || profile.isPrivate) && (
           <View className="mx-4 mb-4 flex-row gap-3">
-            {!isFriend && (
+            {friendStatus === "none" && (
               <TouchableOpacity
                 className="flex-1 flex-row items-center justify-center gap-2 rounded-2xl bg-orange-500 py-3"
                 onPress={handleAddFriend}
@@ -133,7 +140,23 @@ export default function UserProfileScreen() {
                 <Text className="font-semibold text-white">Add Friend</Text>
               </TouchableOpacity>
             )}
-            {isFriend && (
+            {friendStatus === "request_sent" && (
+              <View className="flex-1 flex-row items-center justify-center gap-2 rounded-2xl bg-neutral-900 py-3">
+                <Text className="font-semibold text-gray-400">
+                  Request Sent
+                </Text>
+              </View>
+            )}
+            {friendStatus === "request_received" && (
+              <TouchableOpacity
+                className="flex-1 flex-row items-center justify-center gap-2 rounded-2xl bg-orange-500 py-3"
+                onPress={handleAcceptFriend}
+              >
+                <UserPlus color="white" size={18} />
+                <Text className="font-semibold text-white">Accept Request</Text>
+              </TouchableOpacity>
+            )}
+            {friendStatus === "friend" && (
               <View className="flex-1 flex-row items-center justify-center gap-2 rounded-2xl bg-neutral-900 py-3">
                 <Text className="font-semibold text-gray-400">✓ Friends</Text>
               </View>

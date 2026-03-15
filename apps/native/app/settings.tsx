@@ -79,7 +79,6 @@ export default function SettingsScreen() {
 
   const handleSignOut = async () => {
     await signOut();
-    router.replace("/(auth)/signin");
   };
 
   const imageUrl = profile?.image ?? null;

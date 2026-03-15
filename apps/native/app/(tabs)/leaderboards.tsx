@@ -1,9 +1,9 @@
 import { api } from "@unihack/backend/convex/_generated/api";
 import type { Id } from "@unihack/backend/convex/_generated/dataModel";
 import { useQuery } from "convex/react";
-import { Redirect, useRouter } from "expo-router";
+import { useRouter } from "expo-router";
 import { useState } from "react";
-import { FlatList, Text, TouchableOpacity, View } from "react-native";
+import { FlatList, Image, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useAuthStore } from "@/stores/auth-store";
 
@@ -41,15 +41,12 @@ export default function LeaderboardsScreen() {
     userId ? { limit: 50, sortBy } : "skip"
   );
 
-  if (!userId) {
-    return <Redirect href="/(auth)/signin" />;
-  }
-
   const rows =
     entries?.map((e, i) => ({
       key: e.userId,
       rank: i + 1,
       name: e.name,
+      image: e.image ?? null,
       isMe: e.userId === (userId as Id<"users">),
       primary:
         tab === "elo"
@@ -124,11 +121,18 @@ export default function LeaderboardsScreen() {
               >
                 {item.rank}
               </Text>
-              <View className="h-10 w-10 items-center justify-center rounded-full bg-neutral-700">
-                <Text className="font-bold text-white">
-                  {item.name.charAt(0)}
-                </Text>
-              </View>
+              {item.image ? (
+                <Image
+                  className="h-10 w-10 rounded-full"
+                  source={{ uri: item.image }}
+                />
+              ) : (
+                <View className="h-10 w-10 items-center justify-center rounded-full bg-neutral-700">
+                  <Text className="font-bold text-white">
+                    {item.name.charAt(0)}
+                  </Text>
+                </View>
+              )}
               <View className="flex-1">
                 <Text className="font-semibold text-sm text-white">
                   {item.name}

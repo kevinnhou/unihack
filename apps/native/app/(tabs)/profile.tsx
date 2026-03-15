@@ -1,7 +1,7 @@
 import { api } from "@unihack/backend/convex/_generated/api";
 import type { Id } from "@unihack/backend/convex/_generated/dataModel";
 import { useQuery } from "convex/react";
-import { Redirect, useRouter } from "expo-router";
+import { useRouter } from "expo-router";
 import { Settings } from "lucide-react-native";
 import {
   Image,
@@ -54,10 +54,6 @@ export default function ProfileScreen() {
     api.users.getUserProfile,
     typedUserId ? { userId: typedUserId } : "skip"
   );
-
-  if (!userId) {
-    return <Redirect href="/(auth)/signin" />;
-  }
 
   const imageUrl = profile?.image ?? null;
   const initial = (userName ?? "?").charAt(0).toUpperCase();
