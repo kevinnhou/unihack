@@ -1,17 +1,21 @@
 import { api } from "@unihack/backend/convex/_generated/api";
 import { useMutation } from "convex/react";
 import { useRouter } from "expo-router";
+import { ChevronRight } from "lucide-react-native";
 import { useState } from "react";
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
   Pressable,
+  ScrollView,
   Text,
   TextInput,
   TouchableOpacity,
 } from "react-native";
+import Animated, { FadeInUp } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { AgonLogo } from "@/components/agon-logo";
 import { useAuthStore } from "@/stores/auth-store";
 
 export default function SignInScreen() {
@@ -20,6 +24,7 @@ export default function SignInScreen() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [focusedField, setFocusedField] = useState<string | null>(null);
   const signIn = useAuthStore((state) => state.signIn);
   const signInMutation = useMutation(api.authpwd.signIn);
 
@@ -45,59 +50,175 @@ export default function SignInScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-black">
+    <SafeAreaView style={{ flex: 1, backgroundColor: "#000" }}>
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
-        style={{
-          flex: 1,
-          justifyContent: "center",
-          paddingHorizontal: 24,
-          paddingTop: 96,
-        }}
+        style={{ flex: 1 }}
       >
-        <Text className="mb-2 font-black text-4xl text-white">agon 🔥</Text>
-        <Text className="mb-8 text-gray-400">Sign in to compete</Text>
-
-        <TextInput
-          autoCapitalize="none"
-          className="mb-3 rounded-2xl bg-neutral-900 px-4 py-4 text-base text-white"
-          keyboardType="email-address"
-          onChangeText={setEmail}
-          placeholder="Email"
-          placeholderTextColor="#4b5563"
-          value={email}
-        />
-        <TextInput
-          className="mb-3 rounded-2xl bg-neutral-900 px-4 py-4 text-base text-white"
-          onChangeText={setPassword}
-          placeholder="Password"
-          placeholderTextColor="#4b5563"
-          secureTextEntry
-          value={password}
-        />
-
-        {error ? (
-          <Text className="mb-3 text-red-400 text-sm">{error}</Text>
-        ) : null}
-
-        <TouchableOpacity
-          className="mb-4 items-center rounded-2xl bg-orange-500 py-4"
-          disabled={loading}
-          onPress={handleSignIn}
+        <ScrollView
+          contentContainerStyle={{
+            flexGrow: 1,
+            backgroundColor: "#000",
+            paddingHorizontal: 24,
+            justifyContent: "center",
+            paddingTop: 80,
+            paddingBottom: 40,
+          }}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
         >
-          {loading ? (
-            <ActivityIndicator color="white" />
-          ) : (
-            <Text className="font-bold text-base text-white">Sign In</Text>
-          )}
-        </TouchableOpacity>
+          {/* Hero section */}
+          <Animated.View
+            entering={FadeInUp.duration(600)}
+            style={{ alignItems: "center", marginBottom: 48 }}
+          >
+            <AgonLogo animateOnMount showTagline size="xl" />
+          </Animated.View>
 
-        <Pressable onPress={() => router.push("/(auth)/signup")}>
-          <Text className="text-center text-gray-400">
-            No account?{" "}
-            <Text className="font-semibold text-orange-400">Sign up</Text>
-          </Text>
-        </Pressable>
+          {/* Email input */}
+          <Animated.View
+            entering={FadeInUp.delay(100).duration(500)}
+            style={{ marginBottom: 16 }}
+          >
+            <Text
+              style={{
+                color: "#9ca3af",
+                fontSize: 12,
+                fontWeight: "600",
+                letterSpacing: 1,
+                textTransform: "uppercase",
+                marginBottom: 6,
+              }}
+            >
+              Email
+            </Text>
+            <TextInput
+              autoCapitalize="none"
+              keyboardType="email-address"
+              onBlur={() => setFocusedField(null)}
+              onChangeText={setEmail}
+              onFocus={() => setFocusedField("email")}
+              placeholder="you@example.com"
+              placeholderTextColor="#4b5563"
+              style={{
+                backgroundColor: "#111",
+                borderColor: focusedField === "email" ? "#f97316" : "#1f2937",
+                borderRadius: 16,
+                borderWidth: 1,
+                color: "#fff",
+                fontSize: 16,
+                paddingHorizontal: 16,
+                paddingVertical: 16,
+              }}
+              value={email}
+            />
+          </Animated.View>
+
+          {/* Password input */}
+          <Animated.View
+            entering={FadeInUp.delay(200).duration(500)}
+            style={{ marginBottom: 16 }}
+          >
+            <Text
+              style={{
+                color: "#9ca3af",
+                fontSize: 12,
+                fontWeight: "600",
+                letterSpacing: 1,
+                textTransform: "uppercase",
+                marginBottom: 6,
+              }}
+            >
+              Password
+            </Text>
+            <TextInput
+              onBlur={() => setFocusedField(null)}
+              onChangeText={setPassword}
+              onFocus={() => setFocusedField("password")}
+              placeholder="••••••••"
+              placeholderTextColor="#4b5563"
+              secureTextEntry
+              style={{
+                backgroundColor: "#111",
+                borderColor:
+                  focusedField === "password" ? "#f97316" : "#1f2937",
+                borderRadius: 16,
+                borderWidth: 1,
+                color: "#fff",
+                fontSize: 16,
+                paddingHorizontal: 16,
+                paddingVertical: 16,
+              }}
+              value={password}
+            />
+          </Animated.View>
+
+          {error ? (
+            <Text
+              style={{
+                color: "#f87171",
+                fontSize: 13,
+                marginBottom: 12,
+              }}
+            >
+              {error}
+            </Text>
+          ) : null}
+
+          {/* Sign In button */}
+          <Animated.View entering={FadeInUp.delay(300).duration(500)}>
+            <TouchableOpacity
+              disabled={loading}
+              onPress={handleSignIn}
+              style={{
+                alignItems: "center",
+                backgroundColor: "#f97316",
+                borderRadius: 20,
+                flexDirection: "row",
+                justifyContent: "center",
+                marginBottom: 24,
+                marginTop: 8,
+                paddingVertical: 18,
+              }}
+            >
+              {loading ? (
+                <ActivityIndicator color="white" />
+              ) : (
+                <>
+                  <Text
+                    style={{
+                      color: "#fff",
+                      fontSize: 16,
+                      fontWeight: "700",
+                      marginRight: 8,
+                    }}
+                  >
+                    Sign In
+                  </Text>
+                  <ChevronRight color="#fff" size={20} />
+                </>
+              )}
+            </TouchableOpacity>
+          </Animated.View>
+
+          {/* Sign up link */}
+          <Animated.View entering={FadeInUp.delay(400).duration(500)}>
+            <Pressable onPress={() => router.push("/(auth)/signup")}>
+              <Text
+                style={{
+                  color: "#6b7280",
+                  fontSize: 14,
+                  textAlign: "center",
+                }}
+              >
+                No account?{" "}
+                <Text style={{ color: "#f97316", fontWeight: "600" }}>
+                  Sign up
+                </Text>
+              </Text>
+            </Pressable>
+          </Animated.View>
+        </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );

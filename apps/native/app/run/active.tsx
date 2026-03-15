@@ -280,7 +280,6 @@ export default function ActiveRunScreen() {
       }
     : undefined;
 
-
   return (
     <SafeAreaView className="flex-1 bg-black">
       <ScrollView contentContainerStyle={{ flexGrow: 1, paddingVertical: 24 }}>
