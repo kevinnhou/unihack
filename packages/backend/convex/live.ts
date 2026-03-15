@@ -152,6 +152,7 @@ export const startLiveRoom = mutation({
       if (p.status !== "waiting") {
         continue;
       }
+      const user = await ctx.db.get(p.userId);
       const runId = await ctx.db.insert("runs", {
         userId: p.userId,
         mode: "social",
@@ -160,7 +161,13 @@ export const startLiveRoom = mutation({
         duration: 0,
         avgPace: 0,
         startedAt,
-        telemetry: [],
+        currentUserElo: user?.elo ?? 1200,
+        telemetry: [] as {
+          timestamp: number;
+          lat: number;
+          lng: number;
+          speed: number;
+        }[],
         liveRoomId: roomId,
       });
       // biome-ignore lint/suspicious/noAwaitInLoop: sequential per-participant setup
@@ -472,6 +479,7 @@ export const acceptLiveInvite = mutation({
     const targetDistanceMeters = Math.max(1000, participant.distance);
 
     if (room.status === "running") {
+      const user = await ctx.db.get(userId);
       const runId = await ctx.db.insert("runs", {
         userId,
         mode: "social",
@@ -480,7 +488,13 @@ export const acceptLiveInvite = mutation({
         duration: 0,
         avgPace: 0,
         startedAt: Date.now(),
-        telemetry: [],
+        currentUserElo: user?.elo ?? 1000,
+        telemetry: [] as {
+          timestamp: number;
+          lat: number;
+          lng: number;
+          speed: number;
+        }[],
         liveRoomId: roomId,
       });
 

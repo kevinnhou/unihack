@@ -3,7 +3,6 @@
 /** biome-ignore-all assist/source/useSortedAttributes: <explanation> */
 import { api } from "@unihack/backend/convex/_generated/api";
 import type { Id } from "@unihack/backend/convex/_generated/dataModel";
-import { useQuery } from "convex/react";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { ArrowLeft, Copy, Play } from "lucide-react-native";
 import { useState } from "react";
@@ -15,6 +14,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { useMutation, useQuery } from "convex/react";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { RunConfigModal } from "@/components/RunConfigModal";
 import { useAuthStore } from "@/stores/auth-store";
@@ -54,6 +54,13 @@ export default function SquadDetailScreen() {
     squadId ? { squadId: squadId as Id<"squads"> } : "skip"
   );
 
+  const userSquads = useQuery(
+    api.squads.getUserSquads,
+    userId ? { userId: userId as Id<"users"> } : "skip"
+  );
+
+  const joinByCode = useMutation(api.squads.joinSquad);
+
   const leaderboard = useQuery(
     api.squads.getSquadLeaderboard,
     squadId ? { squadId: squadId as Id<"squads">, sortBy } : "skip"
@@ -63,6 +70,13 @@ export default function SquadDetailScreen() {
     if (squad?.joinCode) {
       Clipboard.setString(squad.joinCode);
     }
+  };
+
+  const isMember = !!userSquads?.find((s) => s.squadId === squadId);
+
+  const handleJoinByCode = async () => {
+    if (!squad?.joinCode || !userId) return;
+    await joinByCode({ userId: userId as Id<"users">, joinCode: squad.joinCode });
   };
 
   if (squad === undefined || leaderboard === undefined) {
@@ -102,6 +116,18 @@ export default function SquadDetailScreen() {
             </Text>
             <Copy color="#6b7280" size={16} />
           </TouchableOpacity>
+        )}
+
+        {/* Join button (if not member) */}
+        {!isMember && (
+          <View className="px-4">
+            <TouchableOpacity
+              className="mb-4 rounded-2xl bg-orange-500 px-4 py-3"
+              onPress={handleJoinByCode}
+            >
+              <Text className="text-center font-bold text-white">Join Squad</Text>
+            </TouchableOpacity>
+          </View>
         )}
 
         {/* Sorting Pills */}
