@@ -21,6 +21,7 @@ type SquadItem = {
   name: string;
   description?: string;
   memberCount: number;
+  topStreak: number;
   isMember: boolean;
   isPrivate: boolean;
 };
@@ -263,6 +264,13 @@ function SquadCard({
             <Users color="#6b7280" size={12} />
             <Text className="text-gray-400 text-xs">{item.memberCount}</Text>
           </View>
+          {item.topStreak > 0 && (
+            <View className="flex-row items-center gap-1">
+              <Text className="text-orange-400 text-xs">
+                🔥 {item.topStreak}d squad streak
+              </Text>
+            </View>
+          )}
         </View>
       </View>
       {item.isMember ? (
