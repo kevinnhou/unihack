@@ -103,7 +103,7 @@ export default function SquadDetailScreen() {
               {squad?.name ?? "Squad Details"}
             </Text>
             {squad?.description ? (
-              <Text className="mt-1 text-sm text-gray-400">
+              <Text className="mt-1 text-gray-400 text-sm">
                 {squad.description}
               </Text>
             ) : null}

@@ -11,8 +11,8 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { RunMap } from "@/components/run-map";
 import { RaceResultModal } from "@/components/race-result-modal";
+import { RunMap } from "@/components/run-map";
 import { useLivePing } from "@/hooks/use-live-ping";
 import { useLocationTracking } from "@/hooks/use-location-tracking";
 import { type GhostInfo, useRunStore } from "@/stores/run-store";
@@ -119,14 +119,11 @@ export default function ActiveRunScreen() {
   const [resultModalVisible, setResultModalVisible] = useState(false);
   const [resultEloChange, setResultEloChange] = useState<number | null>(null);
   const [resultIsWin, setResultIsWin] = useState<boolean | null>(null);
-  const [pendingFinishParams, setPendingFinishParams] = useState<
-    | {
-        distance: number;
-        elapsedSeconds: number;
-        avgPace: number;
-      }
-    | null
-  >(null);
+  const [pendingFinishParams, setPendingFinishParams] = useState<{
+    distance: number;
+    elapsedSeconds: number;
+    avgPace: number;
+  } | null>(null);
 
   const { startTracking, stopTracking, permissionDenied } = useLocationTracking(
     {
@@ -267,12 +264,19 @@ export default function ActiveRunScreen() {
     const targetDistance =
       targetDistanceStore > 0
         ? targetDistanceStore
-        : ghostRun?.totalDistance ?? Math.max(distance, 1000);
+        : (ghostRun?.totalDistance ?? Math.max(distance, 1000));
     if (distance >= targetDistance && !isEnding) {
       // Trigger finish
       void handleFinish();
     }
-  }, [distance, targetDistanceStore, isRunning, isEnding, ghostRun, handleFinish]);
+  }, [
+    distance,
+    targetDistanceStore,
+    isRunning,
+    isEnding,
+    ghostRun,
+    handleFinish,
+  ]);
 
   // When the result modal is dismissed, navigate to the finish screen
   const onDismissResultModal = useCallback(() => {
@@ -341,108 +345,91 @@ export default function ActiveRunScreen() {
 
   return (
     <>
-      <RaceResultModal visible={resultModalVisible} eloChange={resultEloChange} isWin={resultIsWin} onClose={onDismissResultModal} />
+      <RaceResultModal
+        eloChange={resultEloChange}
+        isWin={resultIsWin}
+        onClose={onDismissResultModal}
+        visible={resultModalVisible}
+      />
 
       <SafeAreaView className="flex-1 bg-black">
-      <ScrollView contentContainerStyle={{ flexGrow: 1, paddingVertical: 24 }}>
-        <View className="flex-1 justify-center px-6">
-          <View className="gap-8 rounded-3xl bg-neutral-900 px-6 py-8">
-            <RunMap coords={mapCoords} region={mapRegion} />
+        <ScrollView
+          contentContainerStyle={{ flexGrow: 1, paddingVertical: 24 }}
+        >
+          <View className="flex-1 justify-center px-6">
+            <View className="gap-8 rounded-3xl bg-neutral-900 px-6 py-8">
+              <RunMap coords={mapCoords} region={mapRegion} />
 
-            {/* Stats row */}
-            <View className="flex-row items-center justify-between">
-              <Stat label="Distance" value={formatDistance(distance)} />
-              <Stat label="Time" large value={formatTime(elapsedSeconds)} />
-              <Stat label="Pace" value={formatPace(currentPace)} />
-            </View>
-
-            {permissionDenied && (
-              <View className="rounded-2xl border border-red-500/40 bg-red-500/10 px-4 py-3">
-                <Text className="font-semibold text-red-300 text-sm">
-                  Location permission is required for live distance tracking.
-                </Text>
-                <TouchableOpacity
-                  className="mt-2 self-start rounded-lg bg-red-500 px-3 py-2"
-                  onPress={() => {
-                    Linking.openSettings().catch(() => {
-                      // ignore settings open failures
-                    });
-                  }}
-                >
-                  <Text className="font-semibold text-white text-xs">
-                    Open Settings
-                  </Text>
-                </TouchableOpacity>
+              {/* Stats row */}
+              <View className="flex-row items-center justify-between">
+                <Stat label="Distance" value={formatDistance(distance)} />
+                <Stat label="Time" large value={formatTime(elapsedSeconds)} />
+                <Stat label="Pace" value={formatPace(currentPace)} />
               </View>
-            )}
 
-            {/* Progress bars */}
-            <View className="gap-5">
-              {liveRoomId && liveParticipants.length > 0 ? (
-                liveParticipants.map((participant, index) => {
-                  const isMe = participant.userId === userId;
-                  const participantLabel = isMe ? "You" : participant.name;
-                  const barColor = isMe
-                    ? "#f97316"
-                    : barColors[index % barColors.length];
+              {permissionDenied && (
+                <View className="rounded-2xl border border-red-500/40 bg-red-500/10 px-4 py-3">
+                  <Text className="font-semibold text-red-300 text-sm">
+                    Location permission is required for live distance tracking.
+                  </Text>
+                  <TouchableOpacity
+                    className="mt-2 self-start rounded-lg bg-red-500 px-3 py-2"
+                    onPress={() => {
+                      Linking.openSettings().catch(() => {
+                        // ignore settings open failures
+                      });
+                    }}
+                  >
+                    <Text className="font-semibold text-white text-xs">
+                      Open Settings
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              )}
 
-                  return (
-                    <View key={participant.userId}>
-                      <View className="mb-2 flex-row items-center justify-between">
-                        <Text className="font-medium text-sm text-white">
-                          {participantLabel}
-                        </Text>
-                        <Text className="text-sm text-white">
-                          {formatDistance(participant.distance)} /{" "}
-                          {formatDistance(targetDistance)}
-                        </Text>
+              {/* Progress bars */}
+              <View className="gap-5">
+                {liveRoomId && liveParticipants.length > 0 ? (
+                  liveParticipants.map((participant, index) => {
+                    const isMe = participant.userId === userId;
+                    const participantLabel = isMe ? "You" : participant.name;
+                    const barColor = isMe
+                      ? "#f97316"
+                      : barColors[index % barColors.length];
+
+                    return (
+                      <View key={participant.userId}>
+                        <View className="mb-2 flex-row items-center justify-between">
+                          <Text className="font-medium text-sm text-white">
+                            {participantLabel}
+                          </Text>
+                          <Text className="text-sm text-white">
+                            {formatDistance(participant.distance)} /{" "}
+                            {formatDistance(targetDistance)}
+                          </Text>
+                        </View>
+                        <View className="h-4 overflow-hidden rounded-full bg-neutral-700">
+                          <View
+                            className="h-full rounded-full"
+                            style={{
+                              backgroundColor: barColor,
+                              width: `${progressPercent(participant.distance, targetDistance)}%`,
+                            }}
+                          />
+                        </View>
                       </View>
-                      <View className="h-4 overflow-hidden rounded-full bg-neutral-700">
-                        <View
-                          className="h-full rounded-full"
-                          style={{
-                            backgroundColor: barColor,
-                            width: `${progressPercent(participant.distance, targetDistance)}%`,
-                          }}
-                        />
-                      </View>
-                    </View>
-                  );
-                })
-              ) : (
-                <>
-                  {/* Your progress */}
-                  <View>
-                    <View className="mb-2 flex-row items-center justify-between">
-                      <Text className="font-medium text-sm text-white">
-                        You
-                      </Text>
-                      <Text className="text-sm text-white">
-                        {formatDistance(distance)} /{" "}
-                        {formatDistance(targetDistance)}
-                      </Text>
-                    </View>
-                    <View className="h-4 overflow-hidden rounded-full bg-neutral-700">
-                      <View
-                        className="h-full rounded-full"
-                        style={{
-                          backgroundColor: "#f97316",
-                          width: `${progressPercent(distance, targetDistance)}%`,
-                        }}
-                      />
-                    </View>
-                  </View>
-
-                  {/* Opponent progress */}
-                  {/** biome-ignore lint/nursery/noLeakedRender: PASS */}
-                  {ghostRun && ghostDistM !== null && (
+                    );
+                  })
+                ) : (
+                  <>
+                    {/* Your progress */}
                     <View>
                       <View className="mb-2 flex-row items-center justify-between">
                         <Text className="font-medium text-sm text-white">
-                          {ghostRun.name}
+                          You
                         </Text>
                         <Text className="text-sm text-white">
-                          {formatDistance(ghostDistM)} /{" "}
+                          {formatDistance(distance)} /{" "}
                           {formatDistance(targetDistance)}
                         </Text>
                       </View>
@@ -450,33 +437,57 @@ export default function ActiveRunScreen() {
                         <View
                           className="h-full rounded-full"
                           style={{
-                            backgroundColor: "#3b82f6",
-                            width: `${progressPercent(ghostDistM, targetDistance)}%`,
+                            backgroundColor: "#f97316",
+                            width: `${progressPercent(distance, targetDistance)}%`,
                           }}
                         />
                       </View>
-                      <Text className="mt-3 text-center font-bold text-base text-orange-400">
-                        {ghostDeltaLabel(distance, ghostDistM)}
-                      </Text>
                     </View>
-                  )}
-                </>
-              )}
-            </View>
 
-            {/* Finish button */}
-            <TouchableOpacity
-              className="mt-4 items-center rounded-2xl bg-red-600 py-4"
-              disabled={isEnding}
-              onPress={handleFinish}
-            >
-              <Text className="font-bold text-lg text-white">
-                {isEnding ? "Saving..." : "Finish Run"}
-              </Text>
-            </TouchableOpacity>
+                    {/* Opponent progress */}
+                    {/** biome-ignore lint/nursery/noLeakedRender: PASS */}
+                    {ghostRun && ghostDistM !== null && (
+                      <View>
+                        <View className="mb-2 flex-row items-center justify-between">
+                          <Text className="font-medium text-sm text-white">
+                            {ghostRun.name}
+                          </Text>
+                          <Text className="text-sm text-white">
+                            {formatDistance(ghostDistM)} /{" "}
+                            {formatDistance(targetDistance)}
+                          </Text>
+                        </View>
+                        <View className="h-4 overflow-hidden rounded-full bg-neutral-700">
+                          <View
+                            className="h-full rounded-full"
+                            style={{
+                              backgroundColor: "#3b82f6",
+                              width: `${progressPercent(ghostDistM, targetDistance)}%`,
+                            }}
+                          />
+                        </View>
+                        <Text className="mt-3 text-center font-bold text-base text-orange-400">
+                          {ghostDeltaLabel(distance, ghostDistM)}
+                        </Text>
+                      </View>
+                    )}
+                  </>
+                )}
+              </View>
+
+              {/* Finish button */}
+              <TouchableOpacity
+                className="mt-4 items-center rounded-2xl bg-red-600 py-4"
+                disabled={isEnding}
+                onPress={handleFinish}
+              >
+                <Text className="font-bold text-lg text-white">
+                  {isEnding ? "Saving..." : "Finish Run"}
+                </Text>
+              </TouchableOpacity>
+            </View>
           </View>
-        </View>
-      </ScrollView>
+        </ScrollView>
       </SafeAreaView>
     </>
   );

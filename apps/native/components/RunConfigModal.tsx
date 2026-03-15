@@ -12,7 +12,10 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import {
+  SafeAreaView,
+  useSafeAreaInsets,
+} from "react-native-safe-area-context";
 import { useAuthStore } from "@/stores/auth-store";
 import { useLiveStore } from "@/stores/live-store";
 import { useRunStore } from "@/stores/run-store";
@@ -94,11 +97,11 @@ export function RunConfigModal({
   );
 
   const availableGhosts = availableGhostsData?.ghosts ?? [];
-    // Only consider ghosts that match the selected distance exactly
-    const filteredGhosts = availableGhosts.filter(
-      (g) => g.bestDistance === selectedDistanceM
-    );
-    const closestGhost = filteredGhosts.find((g) => !g.isSelf) ?? null;
+  // Only consider ghosts that match the selected distance exactly
+  const filteredGhosts = availableGhosts.filter(
+    (g) => g.bestDistance === selectedDistanceM
+  );
+  const closestGhost = filteredGhosts.find((g) => !g.isSelf) ?? null;
 
   useEffect(() => {
     if (initialGhostUserId && availableGhosts.length > 0) {
@@ -111,7 +114,7 @@ export function RunConfigModal({
         return;
       }
     }
-      if (closestGhost) {
+    if (closestGhost) {
       setMode("ghost");
       setSelectedGhostId(closestGhost.userId);
     } else {
@@ -377,21 +380,22 @@ export function RunConfigModal({
                 <ActivityIndicator color="#FF4500" />
               ) : closestGhost === null ? (
                 <Text className="text-gray-500 text-sm">
-                    {filteredGhosts.length === 0
+                  {filteredGhosts.length === 0
                     ? "No ghosts available yet. Complete a run first!"
                     : "No ghosts available within 100 ELO of your skill level."}
                 </Text>
               ) : (
                 // Display the single closest ghost (auto-selected). No manual selection.
                 <View>
-                  <View className="mb-2 flex-row items-center rounded-2xl px-4 py-3 bg-neutral-900">
+                  <View className="mb-2 flex-row items-center rounded-2xl bg-neutral-900 px-4 py-3">
                     <View className="flex-1">
                       <Text className="font-semibold text-white">
                         {closestGhost?.name}
                         {closestGhost?.isSelf ? " (You)" : ""}
                       </Text>
                       <Text className="text-gray-400 text-xs">
-                        {formatPace(closestGhost?.bestPace ?? 0)} · {formatDist(closestGhost?.bestDistance ?? 0)}
+                        {formatPace(closestGhost?.bestPace ?? 0)} ·{" "}
+                        {formatDist(closestGhost?.bestDistance ?? 0)}
                       </Text>
                     </View>
                     <Text className="font-bold text-orange-500">✓</Text>
