@@ -161,7 +161,7 @@ export const startLiveRoom = mutation({
         duration: 0,
         avgPace: 0,
         startedAt,
-        currentUserElo: user?.elo ?? 1000,
+        currentUserElo: user?.elo ?? 1200,
         telemetry: [] as {
           timestamp: number;
           lat: number;
