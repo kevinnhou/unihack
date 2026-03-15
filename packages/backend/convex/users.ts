@@ -370,8 +370,12 @@ export const getUserStats = query({
     bestPaceSecPerKm: v.number(),
     currentStreak: v.number(),
     longestStreak: v.number(),
+    currentElo: v.number(),
   }),
   handler: async (ctx, { userId }) => {
+    const user = await ctx.db.get(userId);
+    const currentElo = user?.elo ?? 1200;
+
     const runs = await ctx.db
       .query("runs")
       .withIndex("by_user_status", (q) =>
@@ -386,6 +390,7 @@ export const getUserStats = query({
         bestPaceSecPerKm: 0,
         currentStreak: 0,
         longestStreak: 0,
+        currentElo,
       };
     }
 
@@ -412,6 +417,7 @@ export const getUserStats = query({
       bestPaceSecPerKm: bestPace === Number.POSITIVE_INFINITY ? 0 : bestPace,
       currentStreak: computeCurrentStreak(dateSets),
       longestStreak: computeLongestStreak(uniqueDates),
+      currentElo,
     };
   },
 });

@@ -118,12 +118,12 @@ export const endRun = mutation({
         const expectedScore = 1 / (1 + 10 ** ((opponent.elo - user.elo) / 400));
         eloChange = Math.round(K * (actualScore - expectedScore));
 
-        // Apply increments/decrements
-        await ctx.db.patch(user._id, {
-          elo: Math.max(0, Math.round(user.elo + eloChange)),
-        });
+        const newElo = Math.max(0, Math.round(user.elo + eloChange));
+        const eloGained = Math.round(eloChange);
 
-        // Symmetrically adjust the opponent's Elo
+        await ctx.db.patch(user._id, { elo: newElo });
+        await ctx.db.patch(args.runId, { eloGained });
+
         await ctx.db.patch(opponent._id, {
           elo: Math.max(0, Math.round(opponent.elo - eloChange)),
         });
@@ -170,10 +170,88 @@ export const getRunById = query({
     if (!run) {
       return null;
     }
-    if (requestingUserId && run.userId !== requestingUserId) {
-      return null;
+    if (!requestingUserId) {
+      return run;
     }
-    return run;
+    if (run.userId === requestingUserId) {
+      return run;
+    }
+    // Allow friends to view each other's runs
+    const asUser = await ctx.db
+      .query("friends")
+      .withIndex("by_user_friend", (q) =>
+        q.eq("userId", requestingUserId).eq("friendId", run.userId)
+      )
+      .first();
+    const asFriend = await ctx.db
+      .query("friends")
+      .withIndex("by_user_friend", (q) =>
+        q.eq("userId", run.userId).eq("friendId", requestingUserId)
+      )
+      .first();
+    const isFriend =
+      (asUser && !asUser.requested) || (asFriend && !asFriend.requested);
+    if (isFriend) {
+      return run;
+    }
+    return null;
+  },
+});
+
+/** Feed of user + friends' completed runs, ordered by startedAt desc. Returns full run metrics. */
+export const getFeedRuns = query({
+  args: { currentUserId: v.id("users") },
+  handler: async (ctx, { currentUserId }) => {
+    const asUser = await ctx.db
+      .query("friends")
+      .withIndex("by_user", (q) => q.eq("userId", currentUserId))
+      .collect();
+    const asFriend = await ctx.db
+      .query("friends")
+      .withIndex("by_friend", (q) => q.eq("friendId", currentUserId))
+      .collect();
+    const friendIds = new Set<typeof currentUserId>([
+      ...asUser.filter((f) => !f.requested).map((f) => f.friendId),
+      ...asFriend.filter((f) => !f.requested).map((f) => f.userId),
+    ]);
+    const allowedUserIds = [currentUserId, ...friendIds];
+
+    const allRuns = await ctx.db
+      .query("runs")
+      .filter((q) => q.eq(q.field("status"), "completed"))
+      .collect();
+
+    const feedRuns = allRuns
+      .filter((r) => allowedUserIds.includes(r.userId))
+      .sort((a, b) => (b.startedAt ?? 0) - (a.startedAt ?? 0))
+      .slice(0, 50);
+
+    const results: {
+      run: (typeof feedRuns)[0];
+      runnerName: string;
+      runnerImage: string | null;
+      opponentName: string | null;
+      runType: "ghost" | "live" | "solo";
+    }[] = [];
+
+    for (const run of feedRuns) {
+      const runner = await ctx.db.get(run.userId);
+      const opponent = run.opponentId ? await ctx.db.get(run.opponentId) : null;
+      const runType: "ghost" | "live" | "solo" = run.opponentId
+        ? "ghost"
+        : run.liveRoomId
+          ? "live"
+          : "solo";
+      results.push({
+        run,
+        runnerName: runner?.name ?? "Unknown",
+        runnerImage: runner?.image ?? null,
+        opponentName: opponent?.name ?? null,
+        runType,
+      });
+    }
+
+    return results;
   },
 });
 

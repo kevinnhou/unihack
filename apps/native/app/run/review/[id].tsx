@@ -47,11 +47,6 @@ export default function ReviewRaceScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { userId } = useAuthStore();
 
-  const runs = useQuery(
-    api.users.getUserRuns,
-    userId ? { userId: userId as Id<"users"> } : "skip"
-  );
-
   const fullRun = useQuery(
     api.runs.getRunById,
     id && userId
@@ -59,9 +54,7 @@ export default function ReviewRaceScreen() {
       : "skip"
   );
 
-  const run = runs?.find((r) => r._id === id);
-
-  if (runs === undefined || fullRun === undefined) {
+  if (fullRun === undefined) {
     return (
       <SafeAreaView className="flex-1 items-center justify-center bg-black">
         <ActivityIndicator color="#FF4500" size="large" />
@@ -69,7 +62,7 @@ export default function ReviewRaceScreen() {
     );
   }
 
-  if (!run) {
+  if (!fullRun) {
     return (
       <SafeAreaView className="flex-1 bg-black">
         <View className="flex-row items-center gap-3 px-4 pt-4 pb-2">
@@ -85,11 +78,12 @@ export default function ReviewRaceScreen() {
     );
   }
 
-  // duration is not in getUserRuns, compute from avgPace and distance
   const durationSec =
-    run.avgPace > 0 ? Math.round(run.avgPace * (run.distance / 1000)) : 0;
+    fullRun.avgPace > 0
+      ? Math.round(fullRun.avgPace * (fullRun.distance / 1000))
+      : 0;
 
-  const telemetry = fullRun?.telemetry ?? [];
+  const telemetry = fullRun.telemetry ?? [];
   const mapCoords = telemetry.map((p) => ({
     latitude: p.lat,
     longitude: p.lng,
@@ -138,14 +132,14 @@ export default function ReviewRaceScreen() {
           </Text>
           <StatRow
             label="Date"
-            value={new Date(run.startedAt).toLocaleDateString()}
+            value={new Date(fullRun.startedAt).toLocaleDateString()}
           />
-          <StatRow label="Distance" value={distLabel(run.distance)} />
+          <StatRow label="Distance" value={distLabel(fullRun.distance)} />
           <StatRow
             label="Time"
             value={durationSec > 0 ? formatTime(durationSec) : "—"}
           />
-          <StatRow label="Avg Pace" value={paceLabel(run.avgPace)} />
+          <StatRow label="Avg Pace" value={paceLabel(fullRun.avgPace)} />
         </View>
       </ScrollView>
     </SafeAreaView>
