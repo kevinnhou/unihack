@@ -63,7 +63,7 @@ export default defineSchema({
     joinCode: v.string(),
     createdBy: v.id("users"),
     createdAt: v.number(),
-    private: v.boolean(),
+    isPrivate: v.boolean(),
     memberCount: v.number(),
   })
     .index("by_join_code", ["joinCode"])

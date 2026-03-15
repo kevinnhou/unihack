@@ -22,6 +22,7 @@ type SquadItem = {
   description?: string;
   memberCount: number;
   isMember: boolean;
+  isPrivate: boolean;
 };
 
 export default function SquadsScreen() {
@@ -29,6 +30,8 @@ export default function SquadsScreen() {
   const { userId } = useAuthStore();
   const [showCreate, setShowCreate] = useState(false);
   const [newName, setNewName] = useState("");
+  const [newDescription, setNewDescription] = useState("");
+  const [newPrivate, setNewPrivate] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -62,8 +65,12 @@ export default function SquadsScreen() {
       const result = await createSquadMutation({
         userId: userId as Id<"users">,
         name: newName.trim(),
+        description: newDescription.trim() || undefined,
+        isPrivate: newPrivate,
       });
       setNewName("");
+      setNewDescription("");
+      setNewPrivate(false);
       setShowCreate(false);
       router.push({
         pathname: "/squads/[id]",
@@ -146,6 +153,26 @@ export default function SquadsScreen() {
               placeholderTextColor="#4b5563"
               value={newName}
             />
+            <TextInput
+              className="mb-4 rounded-2xl bg-neutral-800 px-4 py-3 text-base text-white"
+              onChangeText={setNewDescription}
+              placeholder="Description (optional)"
+              placeholderTextColor="#4b5563"
+              value={newDescription}
+            />
+            <TouchableOpacity
+              className="mb-4 flex-row items-center gap-3"
+              onPress={() => setNewPrivate((s) => !s)}
+            >
+              <View
+                className={`h-5 w-5 items-center justify-center rounded ${
+                  newPrivate ? "bg-orange-500" : "bg-neutral-800"
+                }`}
+              >
+                {newPrivate && <View className="h-3 w-3 rounded bg-white" />}
+              </View>
+              <Text className="text-gray-300">Private squad</Text>
+            </TouchableOpacity>
             <View className="flex-row gap-3">
               <TouchableOpacity
                 className="flex-1 items-center rounded-2xl bg-neutral-800 py-3"

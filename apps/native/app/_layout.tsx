@@ -10,9 +10,13 @@ import { KeyboardProvider } from "react-native-keyboard-controller";
 import { useAuthStore } from "@/stores/auth-store";
 import { useThemeStore } from "@/stores/theme-store";
 
-const CONVEX_URL =
-  process.env.EXPO_PUBLIC_CONVEX_URL ??
-  "https://giddy-guineapig-514.convex.cloud";
+const CONVEX_URL = process.env.EXPO_PUBLIC_CONVEX_URL;
+
+if (!CONVEX_URL) {
+  throw new Error(
+    "EXPO_PUBLIC_CONVEX_URL is not set. Set it in your environment or expo config extras."
+  );
+}
 
 const convex = new ConvexReactClient(CONVEX_URL);
 

@@ -17,9 +17,10 @@ export const createSquad = mutation({
     userId: v.id("users"),
     name: v.string(),
     description: v.optional(v.string()),
+    isPrivate: v.optional(v.boolean()),
   },
   returns: v.object({ squadId: v.id("squads"), joinCode: v.string() }),
-  handler: async (ctx, { userId, name, description }) => {
+  handler: async (ctx, { userId, name, description, isPrivate }) => {
     let joinCode = generateJoinCode(6);
     let existing = await ctx.db
       .query("squads")
@@ -41,7 +42,7 @@ export const createSquad = mutation({
       createdBy: userId,
       createdAt: Date.now(),
       memberCount: 1,
-      private: true,
+      isPrivate: !!isPrivate,
     });
 
     await ctx.db.insert("squadMemberships", {
@@ -213,6 +214,7 @@ export const getAllSquads = query({
       description: v.optional(v.string()),
       memberCount: v.number(),
       isMember: v.boolean(),
+      isPrivate: v.boolean(),
     })
   ),
   handler: async (ctx, { userId }) => {
@@ -224,6 +226,7 @@ export const getAllSquads = query({
       description: string | undefined;
       memberCount: number;
       isMember: boolean;
+      isPrivate: boolean;
     }[] = [];
 
     for (const squad of squads) {
@@ -237,12 +240,17 @@ export const getAllSquads = query({
           .first();
         isMember = membership !== null;
       }
+      // Don't show private squads in the browse list unless the user is already a member.
+      if (squad.isPrivate && !isMember) {
+        continue;
+      }
       results.push({
         squadId: squad._id,
         name: squad.name,
         description: squad.description,
         memberCount: squad.memberCount,
         isMember,
+        isPrivate: !!squad.isPrivate,
       });
     }
     return results;
