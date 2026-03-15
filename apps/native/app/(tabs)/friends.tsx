@@ -73,19 +73,7 @@ export default function FriendsTabScreen() {
     // biome-ignore lint/suspicious/noExplicitAny: forward-compat
     (api as any).live.requestGhostChallenge
   );
-  const getGhostChallengesQuery = useQuery(
-    // biome-ignore lint/suspicious/noExplicitAny: forward-compat
-    (api as any).live.getGhostChallenges,
-    userId ? { userId: userId as Id<'users'> } : 'skip'
-  ) as any[] | undefined;
-  const acceptGhostChallengeMutation = useMutation(
-    // biome-ignore lint/suspicious/noExplicitAny
-    (api as any).live.acceptGhostChallenge
-  );
-  const dismissGhostChallengeMutation = useMutation(
-    // biome-ignore lint/suspicious/noExplicitAny
-    (api as any).live.dismissGhostChallenge
-  );
+  
   const liveStore = useLiveStore();
   const insets = useSafeAreaInsets();
 
@@ -307,43 +295,7 @@ export default function FriendsTabScreen() {
         </SafeAreaView>
       </Modal>
 
-      {/* Incoming ghost challenge popup (shows first pending) */}
-      {getGhostChallengesQuery && getGhostChallengesQuery.length > 0 && (
-        <Modal animationType="slide" transparent visible>
-          <SafeAreaView className="flex-1 justify-center" style={{ backgroundColor: 'rgba(0,0,0,0.6)' }}>
-            <View className="mx-6 rounded-2xl bg-neutral-900 p-6">
-              <Text className="mb-2 font-black text-2xl text-white">Ghost Challenge</Text>
-              <Text className="mb-4 text-gray-400">{getGhostChallengesQuery[0].hostName} challenged you to race their ghost — {Math.round(getGhostChallengesQuery[0].distance) >= 1000 ? `${(getGhostChallengesQuery[0].distance/1000).toFixed(1)} km` : `${getGhostChallengesQuery[0].distance} m`}.</Text>
-
-              <View className="mb-4">
-                <TouchableOpacity
-                  className="mb-3 items-center rounded-2xl bg-orange-500 py-3"
-                  onPress={async () => {
-                    const c = getGhostChallengesQuery[0];
-                    // mark accepted
-                    const res: any = await acceptGhostChallengeMutation({ challengeId: c._id, userId: userId as Id<'users'> });
-                    if (res?.success && res.runId) {
-                      // start a ranked run for acceptor and set ghost info
-                      const runId = await startRunMutation({ userId: userId as Id<'users'>, mode: 'ranked' });
-                      runStore.startRun(runId, 'ranked', userId);
-                      runStore.setTargetDistance(c.distance);
-                      runStore.setGhostRun({ userId: c.hostUserId, name: c.hostName, avgPace: c.hostRunAvgPace, totalDistance: c.hostRunDistance });
-                      // navigate to active run
-                      router.replace('/run/active');
-                    }
-                  }}
-                >
-                  <Text className="font-bold text-white">Start Race</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity className="items-center rounded-2xl border border-neutral-600 py-3" onPress={async () => { await dismissGhostChallengeMutation({ challengeId: getGhostChallengesQuery[0]._id, userId: userId as Id<'users'> }); }}>
-                  <Text className="font-semibold text-gray-400">Dismiss</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          </SafeAreaView>
-        </Modal>
-      )}
+      
 
       {/* Distance picker used for both Live and Ghost flows */}
       <Modal animationType="slide" visible={showDistancePicker} transparent>

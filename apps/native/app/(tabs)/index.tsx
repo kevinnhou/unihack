@@ -14,6 +14,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { RunConfigModal } from "@/components/RunConfigModal";
+import { useRunStore } from "@/stores/run-store";
 import { useAuthStore } from "@/stores/auth-store";
 import { useLiveStore } from "@/stores/live-store";
 
@@ -108,12 +109,33 @@ export default function HomeScreen() {
     api.friends.acceptFriendRequest
   );
 
+  const startRunMutation = useMutation(api.runs.startRun);
+  const runStore = useRunStore();
+
+  const getGhostChallengesQuery = useQuery(
+    // biome-ignore lint/suspicious/noExplicitAny: _generated/api not yet regenerated with live module
+    (api as any).live.getGhostChallenges,
+    userId ? { userId: userId as Id<"users"> } : "skip"
+  ) as any[] | undefined;
+
+  const acceptGhostChallengeMutation = useMutation(
+    // biome-ignore lint/suspicious/noExplicitAny
+    (api as any).live.acceptGhostChallenge
+  );
+
+  const dismissGhostChallengeMutation = useMutation(
+    // biome-ignore lint/suspicious/noExplicitAny
+    (api as any).live.dismissGhostChallenge
+  );
+
   if (!userId) {
     return <Redirect href="/(auth)/signin" />;
   }
 
   const notificationCount =
-    (liveInvites?.length ?? 0) + (incomingFriendRequests?.length ?? 0);
+    (liveInvites?.length ?? 0) +
+    (incomingFriendRequests?.length ?? 0) +
+    (getGhostChallengesQuery?.length ?? 0);
 
   const handleAcceptInvite = async (roomId: string) => {
     if (!(userId && roomId)) {
@@ -299,7 +321,8 @@ export default function HomeScreen() {
 
             <ScrollView>
               {(liveInvites ?? []).length === 0 &&
-              (incomingFriendRequests ?? []).length === 0 ? (
+              (incomingFriendRequests ?? []).length === 0 &&
+              (getGhostChallengesQuery ?? []).length === 0 ? (
                 <Text className="mt-8 text-center text-gray-400">
                   No notifications right now.
                 </Text>
@@ -381,6 +404,40 @@ export default function HomeScreen() {
                             <Text className="font-semibold text-gray-300 text-sm">
                               Dismiss
                             </Text>
+                          </TouchableOpacity>
+                        </View>
+                      </View>
+                    );
+                  })}
+
+                  {(getGhostChallengesQuery ?? []).map((c) => {
+                    return (
+                      <View className="mb-3 rounded-2xl bg-neutral-900 p-4" key={`ghost-${c._id}`}>
+                        <Text className="font-semibold text-white">{c.hostName} sent you a ghost challenge</Text>
+                        <Text className="mt-1 text-gray-400 text-xs">{Math.round(c.distance) >= 1000 ? `${(c.distance/1000).toFixed(1)} km` : `${c.distance} m`}</Text>
+                        <View className="mt-3 flex-row gap-2">
+                          <TouchableOpacity
+                            className="flex-1 items-center rounded-xl bg-orange-500 py-2.5"
+                            onPress={async () => {
+                              if (!userId) return;
+                              const res: any = await acceptGhostChallengeMutation({ challengeId: c._id, userId: userId as Id<'users'> });
+                              if (res?.success && res.runId) {
+                                const runId = await startRunMutation({ userId: userId as Id<'users'>, mode: 'ranked' });
+                                runStore.startRun(runId, 'ranked', userId);
+                                runStore.setTargetDistance(c.distance);
+                                runStore.setGhostRun({ userId: c.hostUserId, name: c.hostName, avgPace: c.hostRunAvgPace, totalDistance: c.hostRunDistance });
+                                setNotificationsOpen(false);
+                                router.replace('/run/active');
+                              }
+                            }}
+                          >
+                            <Text className="font-semibold text-sm text-white">Start Race</Text>
+                          </TouchableOpacity>
+                          <TouchableOpacity
+                            className="items-center rounded-xl border border-neutral-700 px-4 py-2.5"
+                            onPress={async () => { await dismissGhostChallengeMutation({ challengeId: c._id, userId: userId as Id<'users'> }); }}
+                          >
+                            <Text className="font-semibold text-gray-300 text-sm">Dismiss</Text>
                           </TouchableOpacity>
                         </View>
                       </View>
