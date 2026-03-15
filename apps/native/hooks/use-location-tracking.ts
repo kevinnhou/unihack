@@ -10,8 +10,8 @@ import {
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRunStore } from "@/stores/run-store";
 
-/** Ignore movement below this speed (GPS noise floor). */
-const MIN_MOVE_SPEED_MS = 0.3; // m/s ≈ 1 km/h
+/** Ignore tiny coordinate jitter between GPS samples. */
+const MIN_MOVE_DISTANCE_M = 2;
 /** Rolling window for pace computation. */
 const PACE_WINDOW_MS = 20_000;
 /** Minimum distance moved in window before emitting a valid pace. */
@@ -52,15 +52,13 @@ function computePaceFromWindow(win: PacePoint[]): number {
 function computeDistanceDelta(
   prev: { lat: number; lng: number } | null,
   lat: number,
-  lng: number,
-  speed: number
+  lng: number
 ): number {
   if (prev === null) {
     return 0;
   }
   const rawDelta = haversineMeters(prev.lat, prev.lng, lat, lng);
-  const effectiveSpeed = Math.max(speed, 0);
-  return effectiveSpeed >= MIN_MOVE_SPEED_MS ? rawDelta : 0;
+  return rawDelta >= MIN_MOVE_DISTANCE_M ? rawDelta : 0;
 }
 
 type UseLocationTrackingOptions = {
@@ -130,8 +128,7 @@ export function useLocationTracking({
         const delta = computeDistanceDelta(
           prevCoordRef.current,
           latitude,
-          longitude,
-          safeSpeed
+          longitude
         );
         prevCoordRef.current = { lat: latitude, lng: longitude };
 
