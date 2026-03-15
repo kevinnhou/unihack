@@ -12,6 +12,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { RunMap } from "@/components/run-map";
+import { RaceResultModal } from "@/components/race-result-modal";
 import { useLivePing } from "@/hooks/use-live-ping";
 import { useLocationTracking } from "@/hooks/use-location-tracking";
 import { type GhostInfo, useRunStore } from "@/stores/run-store";
@@ -115,6 +116,17 @@ export default function ActiveRunScreen() {
 
   const tickRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [isEnding, setIsEnding] = useState(false);
+  const [resultModalVisible, setResultModalVisible] = useState(false);
+  const [resultEloChange, setResultEloChange] = useState<number | null>(null);
+  const [resultIsWin, setResultIsWin] = useState<boolean | null>(null);
+  const [pendingFinishParams, setPendingFinishParams] = useState<
+    | {
+        distance: number;
+        elapsedSeconds: number;
+        avgPace: number;
+      }
+    | null
+  >(null);
 
   const { startTracking, stopTracking, permissionDenied } = useLocationTracking(
     {
@@ -196,7 +208,7 @@ export default function ActiveRunScreen() {
 
     // Handle Solo/Ghost Run Ending
     if (runId) {
-      await endRunMutation({
+      const res: any = await endRunMutation({
         runId: runId as Id<"runs">,
         distance: summary.distance,
         duration: summary.elapsedSeconds,
@@ -207,6 +219,20 @@ export default function ActiveRunScreen() {
         opponentAvgPace:
           mode === "ranked" && ghostRun ? ghostRun.avgPace : undefined,
       });
+
+      // If this was a ranked ghost race and the server reports a win, show result modal
+      if (mode === "ranked" && res && typeof res.eloChange === "number") {
+        setResultEloChange(res.eloChange);
+        setResultIsWin(Boolean(res.isWin));
+        setPendingFinishParams({
+          distance: summary.distance,
+          elapsedSeconds: summary.elapsedSeconds,
+          avgPace: summary.avgPace,
+        });
+        setResultModalVisible(true);
+        setIsEnding(false); // keep UI responsive until user dismisses
+        return;
+      }
     }
 
     router.replace({
@@ -234,6 +260,39 @@ export default function ActiveRunScreen() {
     ghostRun,
     router,
   ]);
+
+  // Auto-finish when user reaches the target distance. Do not auto-finish based on ghost progress.
+  useEffect(() => {
+    if (!isRunning) return;
+    const targetDistance =
+      targetDistanceStore > 0
+        ? targetDistanceStore
+        : ghostRun?.totalDistance ?? Math.max(distance, 1000);
+    if (distance >= targetDistance && !isEnding) {
+      // Trigger finish
+      void handleFinish();
+    }
+  }, [distance, targetDistanceStore, isRunning, isEnding, ghostRun, handleFinish]);
+
+  // When the result modal is dismissed, navigate to the finish screen
+  const onDismissResultModal = useCallback(() => {
+    setResultModalVisible(false);
+    const params = pendingFinishParams;
+    setPendingFinishParams(null);
+    setResultEloChange(null);
+    setResultIsWin(null);
+    if (params) {
+      router.replace({
+        pathname: "/run/finish",
+        params: {
+          distance: String(params.distance),
+          duration: String(params.elapsedSeconds),
+          avgPace: String(params.avgPace),
+          runId,
+        },
+      });
+    }
+  }, [pendingFinishParams, router, runId]);
 
   // ---------------------------------------------------------------------------
   // Render Computations
@@ -281,7 +340,10 @@ export default function ActiveRunScreen() {
     : undefined;
 
   return (
-    <SafeAreaView className="flex-1 bg-black">
+    <>
+      <RaceResultModal visible={resultModalVisible} eloChange={resultEloChange} isWin={resultIsWin} onClose={onDismissResultModal} />
+
+      <SafeAreaView className="flex-1 bg-black">
       <ScrollView contentContainerStyle={{ flexGrow: 1, paddingVertical: 24 }}>
         <View className="flex-1 justify-center px-6">
           <View className="gap-8 rounded-3xl bg-neutral-900 px-6 py-8">
@@ -415,6 +477,7 @@ export default function ActiveRunScreen() {
           </View>
         </View>
       </ScrollView>
-    </SafeAreaView>
+      </SafeAreaView>
+    </>
   );
 }

@@ -103,18 +103,20 @@ export const endRun = mutation({
     });
 
     // Elo logic: Strictly isolated to the global experience.
+    let eloChange: number | null = null;
+    let isWin: boolean | null = null;
     if (run.mode === "ranked" && args.opponentId && args.opponentAvgPace) {
       const user = await ctx.db.get(run.userId);
       const opponent = await ctx.db.get(args.opponentId);
 
       if (user && opponent && avgPace > 0) {
         // A lower pace (sec/km) wins the race
-        const isWin = avgPace < args.opponentAvgPace;
+        isWin = avgPace < args.opponentAvgPace;
         const actualScore = isWin ? 1 : 0;
 
         const K = 32;
         const expectedScore = 1 / (1 + 10 ** ((opponent.elo - user.elo) / 400));
-        const eloChange = K * (actualScore - expectedScore);
+        eloChange = Math.round(K * (actualScore - expectedScore));
 
         // Apply increments/decrements
         await ctx.db.patch(user._id, {
@@ -128,7 +130,7 @@ export const endRun = mutation({
       }
     }
 
-    return { success: true };
+    return { success: true, eloChange, isWin };
   },
 });
 
