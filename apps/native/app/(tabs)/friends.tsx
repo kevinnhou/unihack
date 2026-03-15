@@ -5,7 +5,6 @@ import { Redirect, useRouter } from "expo-router";
 import { Bell, Play, UserPlus } from "lucide-react-native";
 import { useMemo, useState } from "react";
 import {
-  ActivityIndicator,
   FlatList,
   Modal,
   Text,
@@ -13,11 +12,15 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import {
+  SafeAreaView,
+  useSafeAreaInsets,
+} from "react-native-safe-area-context";
 import { RunConfigModal } from "@/components/RunConfigModal";
-import { useRunStore } from "@/stores/run-store";
-import { useLiveStore } from "@/stores/live-store";
+import { RunningSpinner } from "@/components/running-spinner";
 import { useAuthStore } from "@/stores/auth-store";
+import { useLiveStore } from "@/stores/live-store";
+import { useRunStore } from "@/stores/run-store";
 
 function formatPace(secPerKm: number): string {
   if (secPerKm <= 0) {
@@ -73,7 +76,7 @@ export default function FriendsTabScreen() {
     // biome-ignore lint/suspicious/noExplicitAny: forward-compat
     (api as any).live.requestGhostChallenge
   );
-  
+
   const liveStore = useLiveStore();
   const insets = useSafeAreaInsets();
 
@@ -198,7 +201,7 @@ export default function FriendsTabScreen() {
                         onPress={() => senderId && handleAccept(senderId)}
                       >
                         {isLoading ? (
-                          <ActivityIndicator color="white" size="small" />
+                          <RunningSpinner color="white" size="small" />
                         ) : (
                           <Text className="font-semibold text-white text-xs">
                             Accept
@@ -236,7 +239,7 @@ export default function FriendsTabScreen() {
                   setChallengeUserName(item.name);
                   // Open distance picker directly so user can pick distance and then choose Live or Ghost
                   setShowDistancePicker(true);
-                  setDistanceMode('live');
+                  setDistanceMode("live");
                 }}
               >
                 <Play color="white" fill="white" size={16} />
@@ -258,10 +261,18 @@ export default function FriendsTabScreen() {
         visible={modalOpen}
       />
 
-      <Modal animationType="slide" visible={showChallengeOptions} transparent>
-        <SafeAreaView className="flex-1 justify-end" style={{ backgroundColor: 'rgba(0,0,0,0.7)' }}>
-          <View style={{ marginTop: insets.top + 40, maxHeight: '80%' }} className="rounded-t-3xl bg-neutral-900 p-6">
-            <Text className="mb-2 font-black text-2xl text-white">Race {challengeUserName}</Text>
+      <Modal animationType="slide" transparent visible={showChallengeOptions}>
+        <SafeAreaView
+          className="flex-1 justify-end"
+          style={{ backgroundColor: "rgba(0,0,0,0.7)" }}
+        >
+          <View
+            className="rounded-t-3xl bg-neutral-900 p-6"
+            style={{ marginTop: insets.top + 40, maxHeight: "80%" }}
+          >
+            <Text className="mb-2 font-black text-2xl text-white">
+              Race {challengeUserName}
+            </Text>
             <Text className="mb-4 text-gray-400">Choose an option</Text>
 
             <TouchableOpacity
@@ -295,23 +306,33 @@ export default function FriendsTabScreen() {
         </SafeAreaView>
       </Modal>
 
-      
-
       {/* Distance picker used for both Live and Ghost flows */}
-      <Modal animationType="slide" visible={showDistancePicker} transparent>
-        <SafeAreaView className="flex-1 justify-end" style={{ backgroundColor: 'rgba(0,0,0,0.7)' }}>
-          <View style={{ marginTop: insets.top + 40 }} className="rounded-t-3xl bg-neutral-900 p-6">
-            <Text className="mb-2 font-black text-2xl text-white">Set Distance</Text>
-            <Text className="mb-4 text-gray-400">Choose a distance for this challenge</Text>
+      <Modal animationType="slide" transparent visible={showDistancePicker}>
+        <SafeAreaView
+          className="flex-1 justify-end"
+          style={{ backgroundColor: "rgba(0,0,0,0.7)" }}
+        >
+          <View
+            className="rounded-t-3xl bg-neutral-900 p-6"
+            style={{ marginTop: insets.top + 40 }}
+          >
+            <Text className="mb-2 font-black text-2xl text-white">
+              Set Distance
+            </Text>
+            <Text className="mb-4 text-gray-400">
+              Choose a distance for this challenge
+            </Text>
 
-            <View style={{ flexDirection: 'row', gap: 8, marginBottom: 12 }}>
-              {[1000, 3000, 5000, 10000].map((m) => (
+            <View style={{ flexDirection: "row", gap: 8, marginBottom: 12 }}>
+              {[1000, 3000, 5000, 10_000].map((m) => (
                 <TouchableOpacity
+                  className={`flex-1 items-center rounded-xl py-2 ${Math.round(Number.parseFloat(distanceKm) * 1000) === m ? "bg-orange-500" : "bg-neutral-800"}`}
                   key={m}
-                  className={`flex-1 items-center rounded-xl py-2 ${Math.round(parseFloat(distanceKm) * 1000) === m ? 'bg-orange-500' : 'bg-neutral-800'}`}
                   onPress={() => setDistanceKm((m / 1000).toFixed(1))}
                 >
-                  <Text className={`font-semibold ${Math.round(parseFloat(distanceKm) * 1000) === m ? 'text-white' : 'text-gray-300'}`}>
+                  <Text
+                    className={`font-semibold ${Math.round(Number.parseFloat(distanceKm) * 1000) === m ? "text-white" : "text-gray-300"}`}
+                  >
                     {m >= 1000 ? `${m / 1000} km` : `${m} m`}
                   </Text>
                 </TouchableOpacity>
@@ -319,10 +340,10 @@ export default function FriendsTabScreen() {
             </View>
 
             <TextInput
-              keyboardType="decimal-pad"
               className="mb-4 rounded-xl bg-neutral-800 px-4 py-3 text-white"
-              value={distanceKm}
+              keyboardType="decimal-pad"
               onChangeText={setDistanceKm}
+              value={distanceKm}
             />
 
             <View style={{ gap: 12 }}>
@@ -331,23 +352,26 @@ export default function FriendsTabScreen() {
                 onPress={async () => {
                   // Live flow
                   const km = Number.parseFloat(distanceKm);
-                  const meters = Number.isFinite(km) && km > 0 ? Math.round(km * 1000) : 5000;
+                  const meters =
+                    Number.isFinite(km) && km > 0
+                      ? Math.round(km * 1000)
+                      : 5000;
                   setShowDistancePicker(false);
                   setShowChallengeOptions(false);
-                  if (!userId || !challengeUserId) return;
+                  if (!(userId && challengeUserId)) return;
                   setStarting(true);
                   try {
                     const { roomId, code } = await createRoomMutation({
-                      userId: userId as Id<'users'>,
+                      userId: userId as Id<"users">,
                     });
                     await requestLiveInviteMutation({
                       roomId,
-                      hostUserId: userId as Id<'users'>,
-                      targetUserId: challengeUserId as Id<'users'>,
+                      hostUserId: userId as Id<"users">,
+                      targetUserId: challengeUserId as Id<"users">,
                       targetDistanceMeters: meters,
                     });
                     liveStore.setRoom(roomId, code, true, meters);
-                    router.push('/live/lobby');
+                    router.push("/live/lobby");
                   } finally {
                     setStarting(false);
                   }
@@ -362,28 +386,31 @@ export default function FriendsTabScreen() {
                 onPress={async () => {
                   // Ghost flow
                   const km = Number.parseFloat(distanceKm);
-                  const meters = Number.isFinite(km) && km > 0 ? Math.round(km * 1000) : 5000;
+                  const meters =
+                    Number.isFinite(km) && km > 0
+                      ? Math.round(km * 1000)
+                      : 5000;
                   setShowDistancePicker(false);
                   setShowChallengeOptions(false);
                   if (!userId) return;
                   setStarting(true);
                   try {
                     const runId = await startRunMutation({
-                      userId: userId as Id<'users'>,
-                      mode: 'ranked',
+                      userId: userId as Id<"users">,
+                      mode: "ranked",
                     });
-                    runStore.startRun(runId, 'ranked', userId);
+                    runStore.startRun(runId, "ranked", userId);
                     runStore.setTargetDistance(meters);
-                      // notify target of ghost challenge
-                      if (challengeUserId) {
-                        await requestGhostChallengeMutation({
-                          hostUserId: userId as Id<'users'>,
-                          targetUserId: challengeUserId as Id<'users'>,
-                          runId,
-                          distance: meters,
-                        });
-                      }
-                    router.replace('/run/active');
+                    // notify target of ghost challenge
+                    if (challengeUserId) {
+                      await requestGhostChallengeMutation({
+                        hostUserId: userId as Id<"users">,
+                        targetUserId: challengeUserId as Id<"users">,
+                        runId,
+                        distance: meters,
+                      });
+                    }
+                    router.replace("/run/active");
                   } finally {
                     setStarting(false);
                   }
@@ -393,7 +420,10 @@ export default function FriendsTabScreen() {
               </TouchableOpacity>
             </View>
 
-            <TouchableOpacity className="items-center rounded-2xl border border-neutral-600 py-3" onPress={() => setShowDistancePicker(false)}>
+            <TouchableOpacity
+              className="items-center rounded-2xl border border-neutral-600 py-3"
+              onPress={() => setShowDistancePicker(false)}
+            >
               <Text className="font-semibold text-gray-400">Cancel</Text>
             </TouchableOpacity>
           </View>

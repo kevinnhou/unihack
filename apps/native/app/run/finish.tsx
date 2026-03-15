@@ -4,14 +4,9 @@ import { useMutation } from "convex/react";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { CheckCircle } from "lucide-react-native";
 import { useEffect, useRef, useState } from "react";
-import {
-  ActivityIndicator,
-  Animated,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { Animated, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { RunningSpinner } from "@/components/running-spinner";
 import { useAuthStore } from "@/stores/auth-store";
 import { useRunStore } from "@/stores/run-store";
 
@@ -133,7 +128,7 @@ export default function FinishScreen() {
           onPress={handleSave}
         >
           {saving ? (
-            <ActivityIndicator color="white" />
+            <RunningSpinner color="white" size="small" />
           ) : (
             <Text className="font-bold text-base text-white">Save Run ▶</Text>
           )}
@@ -146,7 +141,7 @@ export default function FinishScreen() {
             onPress={handleDontLog}
           >
             {deleting ? (
-              <ActivityIndicator color="#ef4444" />
+              <RunningSpinner color="#ef4444" size="small" />
             ) : (
               <Text className="font-semibold text-base text-red-400">
                 Don't Log

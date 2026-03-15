@@ -380,7 +380,10 @@ export const requestGhostChallenge = mutation({
     runId: v.id("runs"),
     distance: v.number(),
   },
-  returns: v.union(v.object({ success: v.literal(true) }), v.object({ success: v.literal(false), reason: v.string() })),
+  returns: v.union(
+    v.object({ success: v.literal(true) }),
+    v.object({ success: v.literal(false), reason: v.string() })
+  ),
   handler: async (ctx, { hostUserId, targetUserId, runId, distance }) => {
     if (hostUserId === targetUserId) {
       return { success: false as const, reason: "Cannot challenge yourself" };
@@ -401,7 +404,11 @@ export const requestGhostChallenge = mutation({
     await ctx.db.insert("notifications", {
       userId: targetUserId,
       type: "ghostChallenge",
-      data: { title, body, payload: { challengeId, hostUserId, runId, distance } },
+      data: {
+        title,
+        body,
+        payload: { challengeId, hostUserId, runId, distance },
+      },
       read: false,
       createdAt: Date.now(),
     });
@@ -418,7 +425,11 @@ export const getGhostChallenges = query({
       targetUserId: v.id("users"),
       runId: v.id("runs"),
       distance: v.number(),
-      status: v.union(v.literal("pending"), v.literal("accepted"), v.literal("dismissed")),
+      status: v.union(
+        v.literal("pending"),
+        v.literal("accepted"),
+        v.literal("dismissed")
+      ),
       createdAt: v.number(),
       hostName: v.string(),
       hostRunAvgPace: v.number(),
@@ -454,13 +465,21 @@ export const getGhostChallenges = query({
 
 export const acceptGhostChallenge = mutation({
   args: { challengeId: v.id("ghostChallenges"), userId: v.id("users") },
-  returns: v.union(v.object({ success: v.literal(true), runId: v.id("runs") }), v.object({ success: v.literal(false), reason: v.string() })),
+  returns: v.union(
+    v.object({ success: v.literal(true), runId: v.id("runs") }),
+    v.object({ success: v.literal(false), reason: v.string() })
+  ),
   handler: async (ctx, { challengeId, userId }) => {
     const ch = await ctx.db.get(challengeId);
     if (!ch) return { success: false as const, reason: "Challenge not found" };
-    if (ch.targetUserId !== userId) return { success: false as const, reason: "Not target" };
-    if (ch.status !== "pending") return { success: false as const, reason: "Already responded" };
-    await ctx.db.patch(challengeId, { status: "accepted", respondedAt: Date.now() });
+    if (ch.targetUserId !== userId)
+      return { success: false as const, reason: "Not target" };
+    if (ch.status !== "pending")
+      return { success: false as const, reason: "Already responded" };
+    await ctx.db.patch(challengeId, {
+      status: "accepted",
+      respondedAt: Date.now(),
+    });
     return { success: true as const, runId: ch.runId };
   },
 });
@@ -473,7 +492,10 @@ export const dismissGhostChallenge = mutation({
     if (!ch) return null;
     if (ch.targetUserId !== userId) return null;
     if (ch.status !== "pending") return null;
-    await ctx.db.patch(challengeId, { status: "dismissed", respondedAt: Date.now() });
+    await ctx.db.patch(challengeId, {
+      status: "dismissed",
+      respondedAt: Date.now(),
+    });
     return null;
   },
 });

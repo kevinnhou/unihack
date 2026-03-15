@@ -5,7 +5,6 @@ import { Redirect, useRouter } from "expo-router";
 import { ChevronLeft, Play, UserPlus } from "lucide-react-native";
 import { useState } from "react";
 import {
-  ActivityIndicator,
   FlatList,
   Modal,
   Text,
@@ -15,6 +14,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { RunConfigModal } from "@/components/RunConfigModal";
+import { RunningSpinner } from "@/components/running-spinner";
 import { useAuthStore } from "@/stores/auth-store";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -207,7 +207,7 @@ export default function FriendsScreen() {
                 onPress={handleAddFriend}
               >
                 {addLoading ? (
-                  <ActivityIndicator color="white" size="small" />
+                  <RunningSpinner color="white" size="small" />
                 ) : (
                   <Text className="font-bold text-white">Add Friend</Text>
                 )}

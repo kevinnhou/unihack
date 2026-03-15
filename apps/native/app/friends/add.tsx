@@ -5,7 +5,6 @@ import { Redirect, useRouter } from "expo-router";
 import { ArrowLeft, UserPlus } from "lucide-react-native";
 import { useCallback, useMemo, useState } from "react";
 import {
-  ActivityIndicator,
   FlatList,
   Text,
   TextInput,
@@ -13,6 +12,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { RunningSpinner } from "@/components/running-spinner";
 import { useAuthStore } from "@/stores/auth-store";
 
 type SearchUser = {
@@ -154,7 +154,7 @@ export default function AddFriendsScreen() {
                 }
               >
                 {isAdding ? (
-                  <ActivityIndicator color="white" size="small" />
+                  <RunningSpinner color="white" size="small" />
                 ) : isIncomingRequest ? (
                   <Text className="font-semibold text-white text-xs">
                     Accept

@@ -5,7 +5,6 @@ import { Redirect, useRouter } from "expo-router";
 import { Bell, ChartArea, Flame, Play, X } from "lucide-react-native";
 import { useState } from "react";
 import {
-  ActivityIndicator,
   Dimensions,
   Modal,
   ScrollView,
@@ -16,9 +15,10 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { RunActivityCard } from "@/components/RunActivityCard";
 import { RunConfigModal } from "@/components/RunConfigModal";
-import { useRunStore } from "@/stores/run-store";
+import { RunningSpinner } from "@/components/running-spinner";
 import { useAuthStore } from "@/stores/auth-store";
 import { useLiveStore } from "@/stores/live-store";
+import { useRunStore } from "@/stores/run-store";
 
 function formatDist(m: number) {
   return m >= 1000 ? `${(m / 1000).toFixed(1)} km` : `${Math.round(m)} m`;
@@ -448,7 +448,7 @@ export default function HomeScreen() {
                             }}
                           >
                             {isLoading ? (
-                              <ActivityIndicator color="white" size="small" />
+                              <RunningSpinner color="white" size="small" />
                             ) : (
                               <Text className="font-semibold text-sm text-white">
                                 Accept
@@ -482,7 +482,7 @@ export default function HomeScreen() {
                             onPress={() => handleAcceptInvite(invite.roomId)}
                           >
                             {isLoading ? (
-                              <ActivityIndicator color="white" size="small" />
+                              <RunningSpinner color="white" size="small" />
                             ) : (
                               <Text className="font-semibold text-sm text-white">
                                 Join Race
@@ -503,39 +503,68 @@ export default function HomeScreen() {
                     );
                   })}
 
-                  {(getGhostChallengesQuery ?? []).map((c) => {
-                    return (
-                      <View className="mb-3 rounded-2xl bg-neutral-900 p-4" key={`ghost-${c._id}`}>
-                        <Text className="font-semibold text-white">{c.hostName} sent you a ghost challenge</Text>
-                        <Text className="mt-1 text-gray-400 text-xs">{Math.round(c.distance) >= 1000 ? `${(c.distance/1000).toFixed(1)} km` : `${c.distance} m`}</Text>
-                        <View className="mt-3 flex-row gap-2">
-                          <TouchableOpacity
-                            className="flex-1 items-center rounded-xl bg-orange-500 py-2.5"
-                            onPress={async () => {
-                              if (!userId) return;
-                              const res: any = await acceptGhostChallengeMutation({ challengeId: c._id, userId: userId as Id<'users'> });
-                              if (res?.success && res.runId) {
-                                const runId = await startRunMutation({ userId: userId as Id<'users'>, mode: 'ranked' });
-                                runStore.startRun(runId, 'ranked', userId);
-                                runStore.setTargetDistance(c.distance);
-                                runStore.setGhostRun({ userId: c.hostUserId, name: c.hostName, avgPace: c.hostRunAvgPace, totalDistance: c.hostRunDistance });
-                                setNotificationsOpen(false);
-                                router.replace('/run/active');
+                  {(getGhostChallengesQuery ?? []).map((c) => (
+                    <View
+                      className="mb-3 rounded-2xl bg-neutral-900 p-4"
+                      key={`ghost-${c._id}`}
+                    >
+                      <Text className="font-semibold text-white">
+                        {c.hostName} sent you a ghost challenge
+                      </Text>
+                      <Text className="mt-1 text-gray-400 text-xs">
+                        {Math.round(c.distance) >= 1000
+                          ? `${(c.distance / 1000).toFixed(1)} km`
+                          : `${c.distance} m`}
+                      </Text>
+                      <View className="mt-3 flex-row gap-2">
+                        <TouchableOpacity
+                          className="flex-1 items-center rounded-xl bg-orange-500 py-2.5"
+                          onPress={async () => {
+                            if (!userId) return;
+                            const res: any = await acceptGhostChallengeMutation(
+                              {
+                                challengeId: c._id,
+                                userId: userId as Id<"users">,
                               }
-                            }}
-                          >
-                            <Text className="font-semibold text-sm text-white">Start Race</Text>
-                          </TouchableOpacity>
-                          <TouchableOpacity
-                            className="items-center rounded-xl border border-neutral-700 px-4 py-2.5"
-                            onPress={async () => { await dismissGhostChallengeMutation({ challengeId: c._id, userId: userId as Id<'users'> }); }}
-                          >
-                            <Text className="font-semibold text-gray-300 text-sm">Dismiss</Text>
-                          </TouchableOpacity>
-                        </View>
+                            );
+                            if (res?.success && res.runId) {
+                              const runId = await startRunMutation({
+                                userId: userId as Id<"users">,
+                                mode: "ranked",
+                              });
+                              runStore.startRun(runId, "ranked", userId);
+                              runStore.setTargetDistance(c.distance);
+                              runStore.setGhostRun({
+                                userId: c.hostUserId,
+                                name: c.hostName,
+                                avgPace: c.hostRunAvgPace,
+                                totalDistance: c.hostRunDistance,
+                              });
+                              setNotificationsOpen(false);
+                              router.replace("/run/active");
+                            }
+                          }}
+                        >
+                          <Text className="font-semibold text-sm text-white">
+                            Start Race
+                          </Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          className="items-center rounded-xl border border-neutral-700 px-4 py-2.5"
+                          onPress={async () => {
+                            await dismissGhostChallengeMutation({
+                              challengeId: c._id,
+                              userId: userId as Id<"users">,
+                            });
+                          }}
+                        >
+                          <Text className="font-semibold text-gray-300 text-sm">
+                            Dismiss
+                          </Text>
+                        </TouchableOpacity>
                       </View>
-                    );
-                  })}
+                    </View>
+                  ))}
                 </>
               )}
             </ScrollView>

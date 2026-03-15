@@ -7,6 +7,7 @@ import { useState } from "react";
 import { Image, ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { RunConfigModal } from "@/components/RunConfigModal";
+import { RunningSpinner } from "@/components/running-spinner";
 import { useAuthStore } from "@/stores/auth-store";
 
 function formatDist(m: number) {
@@ -88,7 +89,7 @@ export default function UserProfileScreen() {
           </TouchableOpacity>
         </View>
         <View className="flex-1 items-center justify-center">
-          <Text className="text-gray-500">Loading...</Text>
+          <RunningSpinner color="#f97316" size="large" />
         </View>
       </SafeAreaView>
     );
