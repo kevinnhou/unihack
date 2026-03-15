@@ -41,6 +41,7 @@ export default function SquadsScreen() {
   );
   const createSquadMutation = useMutation(api.squads.createSquad);
   const joinSquadByIdMutation = useMutation(api.squads.joinSquadById);
+  const joinSquadByCodeMutation = useMutation(api.squads.joinSquad);
 
   const filteredSquads = (allSquads ?? []).filter((squad) => {
     const query = searchTerm.trim().toLowerCase();
@@ -76,6 +77,26 @@ export default function SquadsScreen() {
         pathname: "/squads/[id]",
         params: { id: result.squadId },
       });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const [joinCodeInput, setJoinCodeInput] = useState("");
+  const handleJoinByCode = async () => {
+    if (!joinCodeInput.trim()) return;
+    setLoading(true);
+    try {
+      const res = await joinSquadByCodeMutation({
+        userId: userId as Id<"users">,
+        joinCode: joinCodeInput.trim(),
+      });
+      if (res.success) {
+        router.push({ pathname: "/squads/[id]", params: { id: res.squadId } });
+      } else {
+        // simple alert fallback
+        alert(res.reason || "Could not join squad");
+      }
     } finally {
       setLoading(false);
     }
@@ -123,6 +144,22 @@ export default function SquadsScreen() {
               placeholderTextColor="#6b7280"
               value={searchTerm}
             />
+            <View className="mt-3 flex-row gap-2">
+              <TextInput
+                className="flex-1 rounded-xl bg-neutral-900 px-4 py-3 text-white"
+                onChangeText={setJoinCodeInput}
+                placeholder="Join code"
+                placeholderTextColor="#6b7280"
+                value={joinCodeInput}
+                autoCapitalize="characters"
+              />
+              <TouchableOpacity
+                className="rounded-xl bg-orange-500 px-4 py-3"
+                onPress={handleJoinByCode}
+              >
+                <Text className="font-bold text-white">Join</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         }
         renderItem={({ item }) => (
