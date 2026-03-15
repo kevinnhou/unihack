@@ -92,7 +92,11 @@ export function RunConfigModal({
   );
 
   const availableGhosts = availableGhostsData?.ghosts ?? [];
-  const closestGhost = availableGhosts.find((g) => !g.isSelf) ?? null;
+    // Only consider ghosts that match the selected distance exactly
+    const filteredGhosts = availableGhosts.filter(
+      (g) => g.bestDistance === selectedDistanceM
+    );
+    const closestGhost = filteredGhosts.find((g) => !g.isSelf) ?? null;
 
   useEffect(() => {
     if (initialGhostUserId && availableGhosts.length > 0) {
@@ -105,7 +109,7 @@ export function RunConfigModal({
         return;
       }
     }
-    if (closestGhost) {
+      if (closestGhost) {
       setMode("ghost");
       setSelectedGhostId(closestGhost.userId);
     } else {
@@ -368,43 +372,26 @@ export function RunConfigModal({
                 <ActivityIndicator color="#FF4500" />
               ) : closestGhost === null ? (
                 <Text className="text-gray-500 text-sm">
-                  {availableGhosts.length === 0
+                    {filteredGhosts.length === 0
                     ? "No ghosts available yet. Complete a run first!"
                     : "No ghosts available within 100 ELO of your skill level."}
                 </Text>
               ) : (
-                availableGhosts
-                  .filter((g) => !g.isSelf)
-                  .map((ghost) => {
-                    const isSelected = ghost.userId === selectedGhostId;
-                    return (
-                      <TouchableOpacity
-                        className={`mb-2 flex-row items-center rounded-2xl px-4 py-3 ${
-                          isSelected
-                            ? "border border-orange-500 bg-orange-500/10"
-                            : "bg-neutral-900"
-                        }`}
-                        key={ghost.userId}
-                        onPress={() =>
-                          setSelectedGhostId(isSelected ? null : ghost.userId)
-                        }
-                      >
-                        <View className="flex-1">
-                          <Text className="font-semibold text-white">
-                            {ghost.name}
-                            {ghost.isSelf ? " (You)" : ""}
-                          </Text>
-                          <Text className="text-gray-400 text-xs">
-                            {formatPace(ghost.bestPace)} ·{" "}
-                            {formatDist(ghost.bestDistance)}
-                          </Text>
-                        </View>
-                        {isSelected ? (
-                          <Text className="font-bold text-orange-500">✓</Text>
-                        ) : null}
-                      </TouchableOpacity>
-                    );
-                  })
+                // Display the single closest ghost (auto-selected). No manual selection.
+                <View>
+                  <View className="mb-2 flex-row items-center rounded-2xl px-4 py-3 bg-neutral-900">
+                    <View className="flex-1">
+                      <Text className="font-semibold text-white">
+                        {closestGhost?.name}
+                        {closestGhost?.isSelf ? " (You)" : ""}
+                      </Text>
+                      <Text className="text-gray-400 text-xs">
+                        {formatPace(closestGhost?.bestPace ?? 0)} · {formatDist(closestGhost?.bestDistance ?? 0)}
+                      </Text>
+                    </View>
+                    <Text className="font-bold text-orange-500">✓</Text>
+                  </View>
+                </View>
               )}
             </View>
           )}
