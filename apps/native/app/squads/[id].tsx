@@ -102,6 +102,11 @@ export default function SquadDetailScreen() {
             <Text className="font-black text-2xl text-white">
               {squad?.name ?? "Squad Details"}
             </Text>
+            {squad?.description ? (
+              <Text className="mt-1 text-sm text-gray-400">
+                {squad.description}
+              </Text>
+            ) : null}
           </View>
         </View>
 

@@ -2,7 +2,67 @@ import { v } from "convex/values";
 import type { Id } from "./_generated/dataModel";
 import { mutation, query } from "./_generated/server";
 
+const ONE_DAY_MS = 86_400_000;
 const JOIN_CODE_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+
+function dateKey(ts: number): string {
+  const d = new Date(ts);
+  const month = String(d.getUTCMonth() + 1).padStart(2, "0");
+  const day = String(d.getUTCDate()).padStart(2, "0");
+  return `${d.getUTCFullYear()}-${month}-${day}`;
+}
+
+function computeCurrentStreak(dates: Set<string>): number {
+  const today = new Date();
+  const todayKey = dateKey(today.getTime());
+  const yesterdayKey = dateKey(today.getTime() - ONE_DAY_MS);
+
+  if (!(dates.has(todayKey) || dates.has(yesterdayKey))) {
+    return 0;
+  }
+
+  let current = 1;
+  let checkTime = dates.has(todayKey)
+    ? today.getTime() - ONE_DAY_MS
+    : today.getTime() - ONE_DAY_MS * 2;
+
+  for (;;) {
+    if (!dates.has(dateKey(checkTime))) {
+      break;
+    }
+    current += 1;
+    checkTime -= ONE_DAY_MS;
+  }
+  return current;
+}
+
+function buildRunDateSet(
+  runs: Array<{ completedAt?: number; startedAt: number }>
+): Set<string> {
+  const dates = new Set<string>();
+  for (const run of runs) {
+    const streakTimestamp = run.completedAt ?? run.startedAt;
+    dates.add(dateKey(streakTimestamp));
+  }
+  return dates;
+}
+
+function computeSharedSquadStreak(memberDateSets: Set<string>[]): number {
+  if (memberDateSets.length === 0) {
+    return 0;
+  }
+
+  const sharedDates = new Set(memberDateSets[0]);
+  for (const dateSet of memberDateSets.slice(1)) {
+    for (const day of sharedDates) {
+      if (!dateSet.has(day)) {
+        sharedDates.delete(day);
+      }
+    }
+  }
+
+  return computeCurrentStreak(sharedDates);
+}
 
 function generateJoinCode(length: number): string {
   let code = "";
@@ -213,6 +273,7 @@ export const getAllSquads = query({
       name: v.string(),
       description: v.optional(v.string()),
       memberCount: v.number(),
+      topStreak: v.number(),
       isMember: v.boolean(),
       isPrivate: v.boolean(),
     })
@@ -225,6 +286,7 @@ export const getAllSquads = query({
       name: string;
       description: string | undefined;
       memberCount: number;
+      topStreak: number;
       isMember: boolean;
       isPrivate: boolean;
     }[] = [];
@@ -244,11 +306,32 @@ export const getAllSquads = query({
       if (squad.isPrivate && !isMember) {
         continue;
       }
+
+      const memberships = await ctx.db
+        .query("squadMemberships")
+        .withIndex("by_squad", (q) => q.eq("squadId", squad._id))
+        .collect();
+
+      const memberDateSets: Set<string>[] = [];
+      for (const membership of memberships) {
+        const runs = await ctx.db
+          .query("runs")
+          .withIndex("by_user_status", (q) =>
+            q.eq("userId", membership.userId).eq("status", "completed")
+          )
+          .collect();
+
+        memberDateSets.push(buildRunDateSet(runs));
+      }
+
+      const topStreak = computeSharedSquadStreak(memberDateSets);
+
       results.push({
         squadId: squad._id,
         name: squad.name,
         description: squad.description,
         memberCount: squad.memberCount,
+        topStreak,
         isMember,
         isPrivate: !!squad.isPrivate,
       });
@@ -303,17 +386,22 @@ export const getSquadLeaderboard = query({
 
       let totalDistance = 0;
       let bestPace = 0;
+      const dateSets = new Set<string>();
       for (const run of runs) {
         totalDistance += run.distance;
         if (run.avgPace > 0 && (bestPace === 0 || run.avgPace < bestPace)) {
           bestPace = run.avgPace;
+        }
+        const streakTimestamp = run.completedAt ?? run.startedAt;
+        if (streakTimestamp) {
+          dateSets.add(dateKey(streakTimestamp));
         }
       }
 
       rows.push({
         userId: m.userId,
         name: user.name,
-        streak: m.currentStreak,
+        streak: computeCurrentStreak(dateSets),
         totalDistance,
         bestPace,
       });

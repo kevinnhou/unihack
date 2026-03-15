@@ -6,7 +6,9 @@ const ONE_DAY_MS = 86_400_000;
 
 function dateKey(ts: number): string {
   const d = new Date(ts);
-  return `${d.getUTCFullYear()}-${d.getUTCMonth()}-${d.getUTCDate()}`;
+  const month = String(d.getUTCMonth() + 1).padStart(2, "0");
+  const day = String(d.getUTCDate()).padStart(2, "0");
+  return `${d.getUTCFullYear()}-${month}-${day}`;
 }
 
 function computeCurrentStreak(dates: Set<string>): number {
@@ -225,8 +227,9 @@ export const getFriends = query({
         if (run.avgPace > 0 && (bestPace === 0 || run.avgPace < bestPace)) {
           bestPace = run.avgPace;
         }
-        if (run.completedAt) {
-          dateSets.add(dateKey(run.completedAt));
+        const streakTimestamp = run.completedAt ?? run.startedAt;
+        if (streakTimestamp) {
+          dateSets.add(dateKey(streakTimestamp));
         }
       }
 

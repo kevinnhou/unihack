@@ -89,6 +89,7 @@ export const endRun = mutation({
 
     const avgPace =
       args.distance > 0 ? args.duration / (args.distance / 1000) : 0;
+    const finishedAt = Date.now();
 
     // Persist final metrics and opponent data
     await ctx.db.patch(args.runId, {
@@ -96,6 +97,7 @@ export const endRun = mutation({
       duration: args.duration,
       avgPace,
       status: "completed",
+      completedAt: finishedAt,
       opponentId: args.opponentId,
       opponentAvgPace: args.opponentAvgPace,
     });

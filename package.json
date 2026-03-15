@@ -33,6 +33,7 @@
     "expo-router": "^55.0.5",
     "expo-task-manager": "~55.0.9",
     "ngrok": "^5.0.0-beta.2",
+    "react-native-maps": "^1.27.2",
     "tunnel": "^0.0.6"
   },
   "devDependencies": {
